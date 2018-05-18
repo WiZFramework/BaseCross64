@@ -1,0 +1,8 @@
+*.user
+*.aps
+/Libs/lib/
+/**/Temp/
+/**/Debug/
+/**/Release/
+/**/media/Shaders/
+/**/.vs/
