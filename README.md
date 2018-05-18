@@ -7,7 +7,7 @@
 https://github.com/WiZFramework/BaseCross  
 
 ＊「BaseCross64」の開発環境はVisualStudio2017、x64、Windows10SDK（SDKバージョン「10.0.17134.0」以降）です。  
-＊「BaseCross」が32ビット（Win32）だったのに対して、「BaseCross12」は64ビット環境となります。  
+＊「BaseCross」が32ビット（Win32）だったのに対して、「BaseCross64」は64ビット環境となります。  
 ＊SDKバージョンの「10.0.17134.0」は重要です。  
 　このバージョンは2018年5月のWindows10の大きなバージョンアップに合わせたSDKと理解しています。  
 　VisualStudio2017のアップデートがおすみでない方は、「ツール」「ツールの機能を取得」でインストーラーを最新の状態にしてからSDKバージョン「10.0.17134.0」もセットアップしてください。  
@@ -30,7 +30,8 @@ https://github.com/WiZFramework/BaseCross
 https://wizframework.github.io/Documents/img/yy.png  
   
 　この似顔絵のアイコンを見つけましたら「友達依頼」を出してください。更新した都度、なるべく発言をするようにしています。    
-　、主な更新履歴です（細かいのは、gitなのでレポジトリ内を参照ください）  
+※主な更新履歴です（細かいのは、gitなのでレポジトリ内を参照ください）  
+  
 2018年5月19日　最初のサンプル実装  
   
 　それでは末永くよろしくお願いします。  
