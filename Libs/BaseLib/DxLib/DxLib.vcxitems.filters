@@ -434,6 +434,9 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)BaseHelper.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)XmlDoc.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
     <ClCompile Include="$(MSBuildThisFileDirectory)MeshHelper.cpp">
       <Filter>Sources</Filter>
     </ClCompile>

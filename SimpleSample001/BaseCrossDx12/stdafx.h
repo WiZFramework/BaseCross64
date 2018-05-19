@@ -16,9 +16,6 @@
 #include <initguid.h>
 #include <mmsystem.h>
 #include <atlbase.h>
-#include <atlstr.h>  
-#include <comutil.h> 
-
 #include <commctrl.h> // for InitCommonControls() 
 #include <shellapi.h> // for ExtractIcon()
 #include <new.h>

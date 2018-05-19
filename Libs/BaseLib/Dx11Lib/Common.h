@@ -8,6 +8,8 @@
 
 //ユーティリティ基本クラス（削除テンプレート、例外処理など）
 #include "../DxLib/BaseHelper.h"
+//XML読み込み
+#include "../DxLib/XmlDoc.h"
 //シンプルな計算クラス
 #include "../DxLib/BaseMath.h"
 //物理計算

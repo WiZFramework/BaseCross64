@@ -186,7 +186,7 @@ namespace basecross {
 	template<typename T>
 	struct BackupData : public BackupDataBase {
 		vector<T> m_Vertices;
-		vector<uint32_t> m_Indices;
+		vector<uint16_t> m_Indices;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -633,7 +633,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void PostEvent(float Delay, const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
-			const wstring& MsgStr,const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const  shared_ptr<void>& Info = shared_ptr<void>());
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	イベントのPOST（キューに入れる）
@@ -670,7 +670,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SendEvent(const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
-			const wstring& MsgStr, const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const  shared_ptr<void>& Info = shared_ptr<void>());
 
 		//--------------------------------------------------------------------------------------
 		/*!

@@ -806,11 +806,11 @@ namespace basecross {
 				}
 
 				param.verts = &vertFloat.front();
-				param.numVerts = (PfxUInt32)vertices.size();
+				param.numVerts = (UINT)vertices.size();
 				param.vertexStrideBytes = sizeof(float) * 6;
 				param.triangles = &indices.front();
-				param.numTriangles = (PfxUInt32)(indices.size() / 3);
-				param.triangleStrideBytes = (PfxUInt32)(sizeof(uint16_t) * 3);
+				param.numTriangles = (UINT)(indices.size() / 3);
+				param.triangleStrideBytes = sizeof(uint16_t) * 3;
 				//numConvexMeshes
 				//convexMeshes
 				m_Index = ps::getNextConvexMesheIndex();

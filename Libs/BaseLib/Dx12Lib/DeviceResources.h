@@ -160,7 +160,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, const vector<uint32_t>& indices, bool AccessWrite) {
+		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, const vector<uint16_t>& indices, bool AccessWrite) {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			auto Ptr = ObjectFactory::Create<MeshResource>();
@@ -211,7 +211,7 @@ namespace basecross {
 			//頂点数の設定
 			Ptr->m_NumVertices = static_cast<UINT>(vertices.size());
 			//インデックスバッファの作成
-			UINT indexBufferSize = static_cast<UINT>(sizeof(uint32_t) * indices.size());
+			UINT indexBufferSize = static_cast<UINT>(sizeof(uint16_t) * indices.size());
 			{
 				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
@@ -239,7 +239,7 @@ namespace basecross {
 
 				// Describe the index buffer view.
 				Ptr->m_IndexBufferView.BufferLocation = Ptr->m_IndexBuffer->GetGPUVirtualAddress();
-				Ptr->m_IndexBufferView.Format = DXGI_FORMAT_R32_UINT;
+				Ptr->m_IndexBufferView.Format = DXGI_FORMAT_R16_UINT;
 				Ptr->m_IndexBufferView.SizeInBytes = indexBufferSize;
 
 			}
@@ -320,7 +320,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateSquare(float Size, bool AccessWrite = false) {
 			vector<VertexPositionNormalTexture> vertices;
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			MeshUtill::CreateSquare(Size, vertices, indices);
 			return CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 		}
@@ -335,7 +335,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateCube(float Size, bool AccessWrite = false) {
 			vector<VertexPositionNormalTexture> vertices;
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			MeshUtill::CreateCube(Size, vertices, indices);
 			return CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 		}
@@ -350,7 +350,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateSphere(float Diameter, size_t Tessellation, bool AccessWrite = false) {
 			vector<VertexPositionNormalTexture> vertices;
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			MeshUtill::CreateSphere(Diameter, Tessellation, vertices, indices);
 			return CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 		}
@@ -366,7 +366,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static shared_ptr<MeshResource> CreateCapsule(float Diameter, float Height, size_t Tessellation, bool AccessWrite = false) {
 			vector<VertexPositionNormalTexture> vertices;
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			bsm::Vec3 PointA(0, -Height / 2.0f, 0);
 			bsm::Vec3 PointB(0, Height / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
@@ -387,7 +387,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Cylinderの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCylinder(Height, Diameter, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -406,7 +406,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Coneの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCone(Diameter, Height, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -425,7 +425,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Torusの作成(ヘルパー関数を利用)
 			MeshUtill::CreateTorus(Diameter, Thickness, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -442,7 +442,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Tetrahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateTetrahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -459,7 +459,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Octahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateOctahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -476,7 +476,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Dodecahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateDodecahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -493,7 +493,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Icosahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateIcosahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);

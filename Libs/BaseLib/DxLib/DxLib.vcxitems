@@ -181,5 +181,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)physics_effects\src\util\pfx_mass.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)physics_effects\src\util\pfx_mesh_creator.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)physics_effects\src\util\pfx_util_common.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)XmlDoc.cpp" />
   </ItemGroup>
 </Project>

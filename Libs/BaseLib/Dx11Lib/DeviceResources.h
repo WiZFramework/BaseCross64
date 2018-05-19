@@ -680,7 +680,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static void ReadBaseData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 			vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
-			vector<uint32_t>& indices, vector<MaterialEx>& materials);
+			vector<uint16_t>& indices, vector<MaterialEx>& materials);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	オリジナルメッシュデータの読み込み（ボーンメッシュ）
@@ -698,7 +698,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		static void ReadBaseBoneData(BinaryReader& Reader,const wstring& BinDataDir, const wstring& BinDataFile,
 			vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
-			vector<uint32_t>& indices, vector<MaterialEx>& materials,
+			vector<uint16_t>& indices, vector<MaterialEx>& materials,
 			vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount);
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -851,7 +851,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, const vector<uint32_t>& indices, bool AccessWrite) {
+		static  shared_ptr<MeshResource> CreateMeshResource(const vector<T>& vertices, const vector<uint16_t>& indices, bool AccessWrite) {
 			std::mutex Mutex;
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
@@ -959,7 +959,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		vector<uint32_t>& GetBackupIndices() const {
+		vector<uint16_t>& GetBackupIndices() const {
 			auto Ptr = dynamic_pointer_cast< BackupData<T> >(m_MeshPrimData.m_BackUpData);
 			if (!Ptr) {
 				throw BaseException(
@@ -1264,7 +1264,7 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		template<typename T>
-		size_t AddMesh(const vector<T>& vertices, const vector<uint32_t>& indices, bool AccessWrite) {
+		size_t AddMesh(const vector<T>& vertices, const vector<uint16_t>& indices, bool AccessWrite) {
 			auto Ptr = MeshResource::CreateMeshResource<T>(vertices, indices, AccessWrite);
 			return AddMesh(Ptr->GetMeshData());
 		}

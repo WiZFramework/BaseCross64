@@ -12,7 +12,7 @@ namespace basecross {
 	const float MeshUtill::SQRT6(2.44948974278317809820f);
 
 
-	void MeshUtill::CreateCylinderCap(vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices,
+	void MeshUtill::CreateCylinderCap(vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
 		size_t tessellation, float height, float radius, bool isTop)
 	{
 		// indices.
@@ -27,9 +27,9 @@ namespace basecross {
 			}
 
 			size_t vbase = vertices.size();
-			indices.push_back((uint32_t)vbase);
-			indices.push_back((uint32_t)(vbase + i1));
-			indices.push_back((uint32_t)(vbase + i2));
+			indices.push_back((uint16_t)vbase);
+			indices.push_back((uint16_t)(vbase + i1));
+			indices.push_back((uint16_t)(vbase + i2));
 		}
 
 		XMVECTOR normal = g_XMIdentityR1;
@@ -54,7 +54,7 @@ namespace basecross {
 	}
 
 	void  MeshUtill::CreateSquare(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 			float HelfSize = size / 2.0f;
 			//頂点配列
@@ -63,12 +63,12 @@ namespace basecross {
 			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(-HelfSize, -HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(0.0f, 1.0f)));
 			vertices.push_back(VertexPositionNormalTexture(bsm::Vec3(HelfSize, -HelfSize, 0), bsm::Vec3(0.0f, 0.0f, -1.0f), bsm::Vec2(1.0f, 1.0f)));
 			//インデックスを作成するための配列
-			indices.push_back((uint32_t)0);
-			indices.push_back((uint32_t)1);
-			indices.push_back((uint32_t)2);
-			indices.push_back((uint32_t)1);
-			indices.push_back((uint32_t)3);
-			indices.push_back((uint32_t)2);
+			indices.push_back((uint16_t)0);
+			indices.push_back((uint16_t)1);
+			indices.push_back((uint16_t)2);
+			indices.push_back((uint16_t)1);
+			indices.push_back((uint16_t)3);
+			indices.push_back((uint16_t)2);
 		}
 		catch (...) {
 			throw;
@@ -76,7 +76,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateCube(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 			//Face数は6
 			const int FaceCount = 6;
@@ -110,13 +110,13 @@ namespace basecross {
 
 				//インデックスの登録
 				size_t vbase = vertices.size();
-				indices.push_back((uint32_t)vbase + 0);
-				indices.push_back((uint32_t)vbase + 1);
-				indices.push_back((uint32_t)vbase + 2);
+				indices.push_back((uint16_t)vbase + 0);
+				indices.push_back((uint16_t)vbase + 1);
+				indices.push_back((uint16_t)vbase + 2);
 
-				indices.push_back((uint32_t)vbase + 0);
-				indices.push_back((uint32_t)vbase + 2);
-				indices.push_back((uint32_t)vbase + 3);
+				indices.push_back((uint16_t)vbase + 0);
+				indices.push_back((uint16_t)vbase + 2);
+				indices.push_back((uint16_t)vbase + 3);
 				//頂点の登録
 				vertices.push_back(VertexPositionNormalTexture((normal - side1 - side2) * size, normal, textureCoordinates[0]));
 				vertices.push_back(VertexPositionNormalTexture((normal - side1 + side2) * size, normal, textureCoordinates[1]));
@@ -133,7 +133,7 @@ namespace basecross {
 
 
 	void MeshUtill::CreateSphere(float diameter, size_t tessellation,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 			if (tessellation < 3) {
 				// 初期化失敗
@@ -182,13 +182,13 @@ namespace basecross {
 					size_t nextI = i + 1;
 					size_t nextJ = (j + 1) % stride;
 
-					indices.push_back((uint32_t)(i * stride + j));
-					indices.push_back((uint32_t)(nextI * stride + j));
-					indices.push_back((uint32_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(i * stride + j));
+					indices.push_back((uint16_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(i * stride + nextJ));
 
-					indices.push_back((uint32_t)(i * stride + nextJ));
-					indices.push_back((uint32_t)(nextI * stride + j));
-					indices.push_back((uint32_t)(nextI * stride + nextJ));
+					indices.push_back((uint16_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(nextI * stride + nextJ));
 				}
 			}
 			//RHからLHに変更
@@ -203,7 +203,7 @@ namespace basecross {
 	void MeshUtill::CreateCapsule(float diameter,
 		const bsm::Vec3& PointA, const bsm::Vec3& PointB,
 		size_t tessellation,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices,
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
 		bool landscape) {
 		try {
 			if (tessellation < 3) {
@@ -271,13 +271,13 @@ namespace basecross {
 					size_t nextI = i + 1;
 					size_t nextJ = (j + 1) % stride;
 
-					indices.push_back((uint32_t)(i * stride + j));
-					indices.push_back((uint32_t)(nextI * stride + j));
-					indices.push_back((uint32_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(i * stride + j));
+					indices.push_back((uint16_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(i * stride + nextJ));
 
-					indices.push_back((uint32_t)(i * stride + nextJ));
-					indices.push_back((uint32_t)(nextI * stride + j));
-					indices.push_back((uint32_t)(nextI * stride + nextJ));
+					indices.push_back((uint16_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(nextI * stride + nextJ));
 				}
 			}
 			//RHからLHに変更
@@ -302,7 +302,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateCylinder(float height, float diameter, size_t tessellation,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices,
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices,
 		bool landscape)
 	{
 		try {
@@ -336,13 +336,13 @@ namespace basecross {
 				vertices.push_back(VertexPositionNormalTexture(sideOffset + topOffset, normal, textureCoordinate));
 				vertices.push_back(VertexPositionNormalTexture(sideOffset - topOffset, normal, textureCoordinate + g_XMIdentityR1));
 
-				indices.push_back((uint32_t)(i * 2));
-				indices.push_back((uint32_t)((i * 2 + 2) % (stride * 2)));
-				indices.push_back((uint32_t)(i * 2 + 1));
+				indices.push_back((uint16_t)(i * 2));
+				indices.push_back((uint16_t)((i * 2 + 2) % (stride * 2)));
+				indices.push_back((uint16_t)(i * 2 + 1));
 
-				indices.push_back((uint32_t)(i * 2 + 1));
-				indices.push_back((uint32_t)((i * 2 + 2) % (stride * 2)));
-				indices.push_back((uint32_t)((i * 2 + 3) % (stride * 2)));
+				indices.push_back((uint16_t)(i * 2 + 1));
+				indices.push_back((uint16_t)((i * 2 + 2) % (stride * 2)));
+				indices.push_back((uint16_t)((i * 2 + 3) % (stride * 2)));
 			}
 			CreateCylinderCap(vertices, indices, tessellation, height, radius, true);
 			CreateCylinderCap(vertices, indices, tessellation, height, radius, false);
@@ -369,7 +369,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateCone(float diameter, float height, size_t tessellation,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 			if (tessellation < 3) {
 				// 初期化失敗
@@ -405,9 +405,9 @@ namespace basecross {
 				vertices.push_back(VertexPositionNormalTexture(topOffset, normal, g_XMZero));
 				vertices.push_back(VertexPositionNormalTexture(pt, normal, textureCoordinate + g_XMIdentityR1));
 
-				indices.push_back((uint32_t)(i * 2));
-				indices.push_back((uint32_t)((i * 2 + 3) % (stride * 2)));
-				indices.push_back((uint32_t)((i * 2 + 1) % (stride * 2)));
+				indices.push_back((uint16_t)(i * 2));
+				indices.push_back((uint16_t)((i * 2 + 3) % (stride * 2)));
+				indices.push_back((uint16_t)((i * 2 + 1) % (stride * 2)));
 			}
 
 			CreateCylinderCap(vertices, indices, tessellation, height, radius, false);
@@ -422,7 +422,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateTorus(float diameter, float thickness, size_t tessellation,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 			if (tessellation < 3) {
 				// 初期化失敗
@@ -464,13 +464,13 @@ namespace basecross {
 					size_t nextI = (i + 1) % stride;
 					size_t nextJ = (j + 1) % stride;
 
-					indices.push_back((uint32_t)(i * stride + j));
-					indices.push_back((uint32_t)(i * stride + nextJ));
-					indices.push_back((uint32_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(i * stride + j));
+					indices.push_back((uint16_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(nextI * stride + j));
 
-					indices.push_back((uint32_t)(i * stride + nextJ));
-					indices.push_back((uint32_t)(nextI * stride + nextJ));
-					indices.push_back((uint32_t)(nextI * stride + j));
+					indices.push_back((uint16_t)(i * stride + nextJ));
+					indices.push_back((uint16_t)(nextI * stride + nextJ));
+					indices.push_back((uint16_t)(nextI * stride + j));
 				}
 			}
 
@@ -485,7 +485,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateTetrahedron(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 
 			static const XMVECTORF32 verts[4] =
@@ -515,9 +515,9 @@ namespace basecross {
 				normal = XMVector3Normalize(normal);
 
 				size_t base = vertices.size();
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 1);
-				indices.push_back((uint32_t)base + 2);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 1);
+				indices.push_back((uint16_t)base + 2);
 
 				// Duplicate vertices to use face normals
 				XMVECTOR position = XMVectorScale(verts[v0], size);
@@ -552,7 +552,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateOctahedron(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 
 			static const XMVECTORF32 verts[6] =
@@ -588,9 +588,9 @@ namespace basecross {
 				normal = XMVector3Normalize(normal);
 
 				size_t base = vertices.size();
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 1);
-				indices.push_back((uint32_t)base + 2);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 1);
+				indices.push_back((uint16_t)base + 2);
 
 				XMVECTOR position = XMVectorScale(verts[v0], size);
 				vertices.push_back(VertexPositionNormalTexture(position, normal, g_XMZero /* 0, 0 */));
@@ -624,7 +624,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateDodecahedron(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 
 			static const float a = 1.f / SQRT3;
@@ -711,17 +711,17 @@ namespace basecross {
 
 				size_t base = vertices.size();
 
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 1);
-				indices.push_back((uint32_t)base + 2);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 1);
+				indices.push_back((uint16_t)base + 2);
 
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 2);
-				indices.push_back((uint32_t)base + 3);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 2);
+				indices.push_back((uint16_t)base + 3);
 
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 3);
-				indices.push_back((uint32_t)base + 4);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 3);
+				indices.push_back((uint16_t)base + 4);
 
 				// Duplicate vertices to use face normals
 				XMVECTOR position = XMVectorScale(verts[v0], size);
@@ -762,7 +762,7 @@ namespace basecross {
 	}
 
 	void MeshUtill::CreateIcosahedron(float size,
-		vector<VertexPositionNormalTexture>& vertices, vector<uint32_t>& indices) {
+		vector<VertexPositionNormalTexture>& vertices, vector<uint16_t>& indices) {
 		try {
 
 			static const float  t = 1.618033988749894848205f; // (1 + sqrt(5)) / 2
@@ -819,9 +819,9 @@ namespace basecross {
 				normal = XMVector3Normalize(normal);
 
 				size_t base = vertices.size();
-				indices.push_back((uint32_t)base);
-				indices.push_back((uint32_t)base + 1);
-				indices.push_back((uint32_t)base + 2);
+				indices.push_back((uint16_t)base);
+				indices.push_back((uint16_t)base + 1);
+				indices.push_back((uint16_t)base + 2);
 
 				// Duplicate vertices to use face normals
 				XMVECTOR position = XMVectorScale(verts[v0], size);

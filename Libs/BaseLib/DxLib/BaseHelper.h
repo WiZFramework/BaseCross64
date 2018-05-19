@@ -238,9 +238,10 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		bool ReadCsv();
+
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief Csvをwstringから読み込む<br />
+		@brief	Csvをwstringから読み込む<br />
 		＊すでに持ってるデータは破棄される<br/>
 		@return	失敗したらfalse
 		*/
@@ -427,87 +428,6 @@ namespace basecross{
 		stream << key1 << L"==" << val1 << L"," << key2 << L"==" << val2;
 		str = stream.str();
 		return str;
-	}
-
-	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	安全にポインタをdeleteする.
-	@tparam	T	ポインタの型
-	@param[in,out]	p	T型のポインタの参照
-	@return	なし
-	*/
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	inline void SafeDelete(T*& p){
-		if (p){
-			delete p;
-		}
-		p = nullptr;
-	}
-	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	安全に配列をdeleteする.
-	@tparam	T	配列の型
-	@param[in,out]	p	T型の配列の参照
-	@return	なし
-	*/
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	inline void SafeDeleteArr(T*& p){
-		if (p){
-			delete[] p;
-		}
-		p = nullptr;
-	}
-	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	安全にインターフェイスをreleaseする.
-	@tparam	T	インターフェイスの型
-	@param[in,out]	p  T型のインターフェイスのポインタの参照
-	@return	なし
-	*/
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	inline void SafeRelease(T*& p){
-		if (p){
-			p->Release();
-		}
-		p = nullptr;
-	}
-	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	ポインタの配列（vector）を安全にクリアする.
-	@tparam	T	配列のポインタ型
-	@param[in,out]	Vec	T型のポインタの配列の参照
-	@return	なし
-	*/
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	void SafeDeletePointerVector(vector<T*>& Vec){
-		size_t maxsz = Vec.size();
-		for (size_t i = 0; i < maxsz; i++){
-			delete Vec[i];
-		}
-		Vec.clear();
-	}
-	//--------------------------------------------------------------------------------------
-	/*!
-	@brief	インターフェイスの配列（vector）を安全にリリースする.
-	@tparam	T	インターフェイス型
-	@param[in,out]	Vec	T型インターフェイスのポインタ配列の参照
-	@return	なし
-	*/
-	//--------------------------------------------------------------------------------------
-	template<typename T>
-	void SafeReleasePointerVector(vector<T*>& Vec){
-		size_t maxsz = Vec.size();
-		for (size_t i = 0; i < maxsz; i++){
-			if (Vec[i]){
-				Vec[i]->Release();
-			}
-			Vec[i] = nullptr;
-		}
-		Vec.clear();
 	}
 	//--------------------------------------------------------------------------------------
 	/*!
@@ -1116,22 +1036,21 @@ namespace basecross{
 	@return	T型のshared_ptr
 	*/
 	//--------------------------------------------------------------------------------------
-/*
 	template<typename T>
 	shared_ptr<T> ThrowIfWeakToSharedFailed(const weak_ptr<T>& SrcPtr) {
 		auto shptr = SrcPtr.lock();
 		if (!shptr) {
 			string Str = typeid(T).name();
-			string Mess = Str += "は不定値になっています。"
-				ThrowBaseException(
-					"weak_ptrからshared_ptrへの変換に失敗しました。",
-					Mess,
-					"ThrowIfWeakToShared<T>()"
-				);
+			string Mess = Str + "は不定値になっています。";
+			ThrowBaseException(
+				"weak_ptrからshared_ptrへの変換に失敗しました。",
+				Mess,
+				"ThrowIfWeakToShared<T>()"
+			);
 		}
 		return shptr;
 	}
-*/
+
 
 
 
@@ -1806,7 +1725,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
-			const wstring& MsgStr,const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const shared_ptr<void>& Info = shared_ptr<void>());
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	イベントのPOST（キューに入れる）
@@ -1819,7 +1738,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void PostEvent(float DispatchTime, const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
-			const wstring& MsgStr,const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const  shared_ptr<void>& Info = shared_ptr<void>());
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1832,7 +1751,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void SendEvent(const shared_ptr<ObjectInterface>& Sender, const shared_ptr<ObjectInterface>& Receiver,
-			const wstring& MsgStr,const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const shared_ptr<void>& Info = shared_ptr<void>());
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	イベントのSEND（キューに入れずにそのまま送る）
@@ -1844,7 +1763,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void SendEvent(const shared_ptr<ObjectInterface>& Sender, const wstring& ReceiverKey,
-			const wstring& MsgStr,const shared_ptr<void>& Info = shared_ptr<void>());
+			const wstring& MsgStr, const  shared_ptr<void>& Info = shared_ptr<void>());
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	イベントを受け取る

@@ -24,10 +24,79 @@ namespace basecross {
 	CubeObject::~CubeObject() {}
 
 	void CubeObject::CreateBuffers() {
+		float HelfSize = 0.5f;
+		vector<Vec3> PosVec = {
+			{ Vec3(-HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, -HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, -HelfSize) },
+			{ Vec3(HelfSize, HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, HelfSize, HelfSize) },
+			{ Vec3(HelfSize, -HelfSize, HelfSize) },
+			{ Vec3(-HelfSize, -HelfSize, HelfSize) },
+		};
+		vector<UINT> PosIndeces = {
+			0, 1, 2, 3,
+			1, 4, 3, 6,
+			4, 5, 6, 7,
+			5, 0, 7, 2,
+			5, 4, 0, 1,
+			2, 3, 7, 6,
+		};
+
+
+		vector<Vec3> FaceNormalVec = {
+			{ Vec3(0, 0, -1.0f) },
+			{ Vec3(1.0f, 0, 0) },
+			{ Vec3(0, 0, 1.0f) },
+			{ Vec3(-1.0f, 0, 0) },
+			{ Vec3(0, 1.0f, 0) },
+			{ Vec3(0, -1.0f, 0) }
+		};
 
 		vector<VertexPositionNormalTexture> vertices;
-		vector<uint32_t> indices;
-		MeshUtill::CreateCube(1.0f, vertices, indices);
+		vector<uint16_t> indices;
+		UINT BasePosCount = 0;
+		for (int i = 0; i < 6; i++) {
+			for (int j = 0; j < 4; j++) {
+				VertexPositionNormalTexture Data;
+				Data.position = PosVec[PosIndeces[BasePosCount + j]];
+				if (m_Flat) {
+					//フラット表示の場合は法線は頂点方向にする
+					Data.normal = Data.position;
+					Data.normal.normalize();
+				}
+				else {
+					//フラット表示しない場合は、法線は面の向き
+					Data.normal = FaceNormalVec[i];
+				}
+				switch (j) {
+				case 0:
+					Data.textureCoordinate = Vec2(0, 0);
+					break;
+				case 1:
+					Data.textureCoordinate = Vec2(1.0f, 0);
+					break;
+				case 2:
+					Data.textureCoordinate = Vec2(0, 1.0f);
+					break;
+				case 3:
+					Data.textureCoordinate = Vec2(1.0f, 1.0f);
+					break;
+				}
+				vertices.push_back(Data);
+			}
+
+			indices.push_back((uint16_t)BasePosCount + 0);
+			indices.push_back((uint16_t)BasePosCount + 1);
+			indices.push_back((uint16_t)BasePosCount + 2);
+			indices.push_back((uint16_t)BasePosCount + 1);
+			indices.push_back((uint16_t)BasePosCount + 3);
+			indices.push_back((uint16_t)BasePosCount + 2);
+
+			BasePosCount += 4;
+		}
+
 		//メッシュの作成（変更できない）
 		m_CubeMesh = MeshResource::CreateMeshResource(vertices, indices, false);
 	}
@@ -94,7 +163,7 @@ namespace basecross {
 		//頂点バッファのセット
 		pD3D11DeviceContext->IASetVertexBuffers(0, 1, m_CubeMesh->GetVertexBuffer().GetAddressOf(), &stride, &offset);
 		//インデックスバッファのセット
-		pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R32_UINT, 0);
+		pD3D11DeviceContext->IASetIndexBuffer(m_CubeMesh->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
 
 		//描画方法（3角形）
 		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);

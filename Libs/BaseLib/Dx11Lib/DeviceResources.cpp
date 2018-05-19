@@ -191,7 +191,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Squareの作成(ヘルパー関数を利用)
 			MeshUtill::CreateSquare(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -205,7 +205,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Cubeの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCube(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -219,7 +219,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Sphereの作成(ヘルパー関数を利用)
 			MeshUtill::CreateSphere(Diameter, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -234,7 +234,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			bsm::Vec3 PointA(0, -Height / 2.0f, 0);
 			bsm::Vec3 PointB(0, Height / 2.0f, 0);
 			//Capsuleの作成(ヘルパー関数を利用)
@@ -255,7 +255,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Cylinderの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCylinder(Height, Diameter, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -270,7 +270,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Coneの作成(ヘルパー関数を利用)
 			MeshUtill::CreateCone(Diameter, Height, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -285,7 +285,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Torusの作成(ヘルパー関数を利用)
 			MeshUtill::CreateTorus(Diameter, Thickness, Tessellation, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -301,7 +301,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Tetrahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateTetrahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -317,7 +317,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Octahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateOctahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -332,7 +332,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Dodecahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateDodecahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -347,7 +347,7 @@ namespace basecross {
 			//頂点配列
 			vector<VertexPositionNormalTexture> vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//Icosahedronの作成(ヘルパー関数を利用)
 			MeshUtill::CreateIcosahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
@@ -359,7 +359,7 @@ namespace basecross {
 
 	void MeshResource::ReadBaseData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 		vector<VertexPositionNormalTexture>& vertices, vector<VertexPositionNormalTangentTexture>& vertices_withtan,
-		vector<uint32_t>& indices, vector<MaterialEx>& materials) {
+		vector<uint16_t>& indices, vector<MaterialEx>& materials) {
 		vertices.clear();
 		vertices_withtan.clear();
 		indices.clear();
@@ -427,8 +427,8 @@ namespace basecross {
 			);
 		}
 
-		auto IndexSize = blockHeader.m_Size / sizeof(uint32_t);
-		auto pIndex = Reader.ReadArray<uint32_t>((size_t)IndexSize);
+		auto IndexSize = blockHeader.m_Size / sizeof(uint16_t);
+		auto pIndex = Reader.ReadArray<uint16_t>((size_t)IndexSize);
 		for (UINT i = 0; i < IndexSize; i++) {
 			indices.push_back(pIndex[i]);
 		}
@@ -507,7 +507,7 @@ namespace basecross {
 	}
 	void MeshResource::ReadBaseBoneData(BinaryReader& Reader, const wstring& BinDataDir, const wstring& BinDataFile,
 		vector<VertexPositionNormalTextureSkinning>& vertices, vector<VertexPositionNormalTangentTextureSkinning>& vertices_withtan,
-		vector<uint32_t>& indices, vector<MaterialEx>& materials,
+		vector<uint16_t>& indices, vector<MaterialEx>& materials,
 		vector<bsm::Mat4x4>& bonematrix, UINT& BoneCount, UINT& SampleCount) {
 
 		vertices.clear();
@@ -581,8 +581,8 @@ namespace basecross {
 			);
 		}
 
-		auto IndexSize = blockHeader.m_Size / sizeof(uint32_t);
-		auto pIndex = Reader.ReadArray<uint32_t>((size_t)IndexSize);
+		auto IndexSize = blockHeader.m_Size / sizeof(uint16_t);
+		auto pIndex = Reader.ReadArray<uint16_t>((size_t)IndexSize);
 		for (UINT i = 0; i < IndexSize; i++) {
 			indices.push_back(pIndex[i]);
 		}
@@ -700,7 +700,7 @@ namespace basecross {
 			//タンジェント付きにコンバートする配列(ダミー)
 			vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			ReadBaseData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
@@ -724,7 +724,7 @@ namespace basecross {
 			//タンジェント付きにコンバートする配列
 			vector<VertexPositionNormalTangentTexture> new_pntnt_vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			ReadBaseData(Reader, BinDataDir, BinDataFile, vertices, new_pntnt_vertices, indices, Materials);
@@ -765,7 +765,7 @@ namespace basecross {
 			//タンジェント付きにコンバートする配列(ダミー)
 			vector<VertexPositionNormalTangentTextureSkinning> new_pntnt_vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			//サンプリング行列
@@ -804,7 +804,7 @@ namespace basecross {
 			//タンジェント付きにコンバートする配列
 			vector<VertexPositionNormalTangentTextureSkinning> new_pntnt_vertices;
 			//インデックスを作成するための配列
-			vector<uint32_t> indices;
+			vector<uint16_t> indices;
 			//マテリアルを設定する配列
 			vector<MaterialEx> Materials;
 			//サンプリング行列
@@ -2741,7 +2741,7 @@ namespace basecross {
 				Data.get(),
 				CsoSz,
 				SOEntries.data(),
-				(UINT)SOEntries.size(),
+				(INT)SOEntries.size(),
 				StridBuff,
 				NumStride,
 				0,
