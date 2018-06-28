@@ -814,6 +814,17 @@ namespace basecross{
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	size_t数値を文字列に変換する（wstring版）(UINT)にキャストするだけなので、32ビットを超える場合は注意が必要
+		@param[in]	num	unsigned数値
+		@param[in]	Modify = NumModify::Dec	進数
+		@return	変換した文字列
+		*/
+		//--------------------------------------------------------------------------------------
+		static wstring SizeTToWStr(size_t num, NumModify Modify = NumModify::Dec) {
+			return UintToWStr((UINT)num,Modify);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	unsigned数値を文字列に変換する（string版）
 		@param[in]	num	unsigned数値
 		@param[in]	Modify = NumModify::Dec	進数
@@ -841,7 +852,17 @@ namespace basecross{
 			str = stream.str();
 			return str;
 		}
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	unsigned数値を文字列に変換する（string版）(UINT)にキャストするだけなので、32ビットを超える場合は注意が必要
+		@param[in]	num	unsigned数値
+		@param[in]	Modify = NumModify::Dec	進数
+		@return	変換した文字列
+		*/
+		//--------------------------------------------------------------------------------------
+		static string SizeTToStr(UINT num, NumModify Modify = NumModify::Dec) {
+			return UintToStr((UINT)num,Modify);
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	signed数値を文字列に変換する（wstring版）

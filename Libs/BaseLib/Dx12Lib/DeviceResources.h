@@ -9,6 +9,8 @@
 
 namespace basecross {
 
+#define BASECROSS_DXVERSION 12
+
 	//--------------------------------------------------------------------------------------
 	/// メモリ上に保持するDx12テクスチャリソース
 	//--------------------------------------------------------------------------------------
@@ -117,6 +119,72 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	///	頂点ごとのスキニング情報
+	//--------------------------------------------------------------------------------------
+	struct SkinPrimData {
+		uint32_t indices[4];
+		float weights[4];
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	一つのメッシュデータ
+	//--------------------------------------------------------------------------------------
+	struct MeshPrimData {
+		//頂点バッファ
+		ComPtr<ID3D12Resource> m_VertexBuffer;
+		//インデックスバッファ
+		ComPtr<ID3D12Resource> m_IndexBuffer;
+		//頂点の数
+		UINT m_NumVertices;
+		//インデックスの数
+		UINT m_NumIndicis;
+		//このメッシュの形インデックス
+		type_index m_MeshTypeIndex;
+		//ストライド数
+		UINT m_NumStride;
+		//描画トポロジー
+		D3D12_PRIMITIVE_TOPOLOGY m_PrimitiveTopology;
+		//バックアップデータ
+		shared_ptr<BackupDataBase> m_BackUpData;
+		//メッシュととタンスフォームの差分行列（メッシュ単位で設定する場合）
+		bsm::Mat4x4 m_MeshToTransformMatrix;
+		//メッシュの差分行列を設定するかどうか
+		bool m_UseMeshToTransformMatrix;
+		//テクスチャリソース(メッシュ単位で設定する場合)
+		weak_ptr<TextureResource> m_TextureResource;
+		//マテリアルの配列（モデルで使用）
+		vector<MaterialEx> m_MaterialExVec;
+		//以下、ボーン用
+		//ボーンかどうか
+		bool m_IsSkining;
+		//ボーンの数
+		UINT m_BoneCount;
+		//サンプリング数
+		UINT m_SampleCount;
+		//サンプリングされたボーン行列
+		vector<bsm::Mat4x4> m_SampleMatrixVec;
+		//マルチメッシュの場合のメッシュインデックス
+		UINT m_MultiMeshIndex;
+		//汎用に使えるローカル頂点の配列
+		vector<VertexPosition> m_Vertices;
+		//スキニング情報
+		vector<SkinPrimData> m_Skins;
+		MeshPrimData() :
+			m_IsSkining(false),
+			m_BoneCount(0),
+			m_SampleCount(0),
+			m_MeshTypeIndex(typeid(VertexPosition)),	//便宜上VertexPositionに初期化
+			m_NumStride(sizeof(VertexPosition)),
+			m_PrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST),
+			m_MeshToTransformMatrix(),
+			m_UseMeshToTransformMatrix(false),
+			m_MultiMeshIndex(0)
+		{}
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	/// Dx12メッシュクラス
@@ -273,7 +341,7 @@ namespace basecross {
 				DataPtr->m_Vertices.push_back(v);
 			}
 			Ptr->m_BackupData = DataPtr;
-			UINT vertexBufferSize = sizeof(T) * vertices.size();
+			UINT vertexBufferSize = (UINT)(sizeof(T) * vertices.size());
 			// Create the vertex buffer.
 			{
 				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
@@ -626,8 +694,33 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
-	//	enum class BlendState;
-	//	用途: ブレンドステート
+	///	マルチメッシュリソース
+	//--------------------------------------------------------------------------------------
+	class MultiMeshResource : public BaseResource {
+	protected:
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	プロテクトコンストラクタ<br />
+		構築はスタティック関数を利用する
+		*/
+		//--------------------------------------------------------------------------------------
+		MultiMeshResource() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~MultiMeshResource() {}
+		virtual void OnPreCreate()override {}
+		virtual void OnCreate()override {}
+	};
+
+
+
+	//汎用的な設定用定義
+	//--------------------------------------------------------------------------------------
+	///	ブレンドステート
 	//--------------------------------------------------------------------------------------
 	enum class BlendState {
 		Opaque,
@@ -637,8 +730,7 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	enum class DepthStencilState;
-	//	用途: デプスステンシルステート
+	///	デプスステンシルステート
 	//--------------------------------------------------------------------------------------
 	enum class DepthStencilState {
 		None,
@@ -647,21 +739,21 @@ namespace basecross {
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	enum class RasterizerState;
-	//	用途: ラスタライザステート
+	///	ラスタライザステート
 	//--------------------------------------------------------------------------------------
 	enum class RasterizerState {
 		CullNone,
 		CullFront,
 		CullBack,
 		Wireframe,
+		DoubleDraw,	//背面描画の後、前面描画
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	enum class SamplerState;
-	//	用途: サンプラーステート
+	///	サンプラーステート
 	//--------------------------------------------------------------------------------------
 	enum class SamplerState {
+		SamplerNone,
 		PointWrap,
 		PointClamp,
 		LinearWrap,

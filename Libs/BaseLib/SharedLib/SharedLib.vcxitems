@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{CAA0470E-F76D-42A8-84FA-D6562FA70F4A}</ItemsProjectGuid>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)Action.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Behavior.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Collision.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)CollisionManager.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Components.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)GameObject.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)BehaviorSteering.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)Rigidbody.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)SharedResources.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)SpriteStudio5.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)Action.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Behavior.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)BehaviorSteering.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Collision.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)CollisionManager.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Components.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)GameObject.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)Rigidbody.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)SharedResources.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)SpriteStudio5.cpp" />
+  </ItemGroup>
+</Project>

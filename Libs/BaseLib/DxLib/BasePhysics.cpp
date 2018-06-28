@@ -10,6 +10,7 @@ namespace basecross {
 
 	using namespace sce::PhysicsEffects;
 
+
 #define NUM_RIGIDBODIES 500
 #define NUM_JOINTS    500
 #define NUM_CONTACTS  4000
@@ -586,6 +587,40 @@ namespace basecross {
 	}
 	sce::PhysicsEffects::PfxRigidBody& PsObject::getPfxRigidBody() {
 		return ps::bodies[GetIndex()];
+	}
+
+
+	//Transformから初期化するパラメータ
+
+	PsBoxParam::PsBoxParam(const bsm::Mat4x4& mat,
+		float mass, bool UseSleep, PsMotionType mtype) {
+		//DEFAULT_CUBEのスケーリングは各辺基準なので、ハーフサイズにする
+
+		m_HalfSize = mat.scaleInMatrix() * 0.5f;
+		m_Mass = mass;
+		if (mtype == PsMotionType::MotionTypeFixed) {
+			m_Inertia.identity();
+		}
+		else {
+			m_Inertia = BasePhysics::CalcInertiaBox(m_HalfSize, m_Mass);
+		}
+		m_UseSleep = UseSleep;
+		m_MotionType = mtype;
+		m_Quat = mat.quatInMatrix();
+		m_Pos = mat.transInMatrix();
+	}
+
+
+	PsSphereParam::PsSphereParam(const bsm::Mat4x4& mat, float mass, bool UseSleep, PsMotionType mtype) {
+		//basecrossのスケーリングは直径基準なので、半径基準にする
+		m_Radius = mat.scaleInMatrix().y * 0.5f;
+		m_Mass = mass;
+		//慣性テンソルの計算
+		m_Inertia = BasePhysics::CalcInertiaSphere(m_Radius, m_Mass);
+		m_UseSleep = UseSleep;
+		m_MotionType = mtype;
+		m_Quat = mat.quatInMatrix();
+		m_Pos = mat.transInMatrix();
 	}
 
 
@@ -1867,13 +1902,18 @@ namespace basecross {
 		pImpl->Reset();
 	}
 
-
-
-	void BasePhysics::Update() {
+	void BasePhysics::InitForce() {
 		for (int i = 0; i<ps::numRigidBodies; i++) {
 			if (pImpl->Params[i].m_IsGravityActive) {
 				pfxApplyExternalForce(ps::states[i], ps::bodies[i], ps::bodies[i].getMass()*PfxVector3(0.0f, -9.8f, 0.0f), PfxVector3(0.0f), ps::timeStep);
 			}
+		}
+	}
+
+
+	void BasePhysics::Update(bool initForce) {
+		if (initForce) {
+			InitForce();
 		}
 		ps::broadphase();
 		ps::collision();
