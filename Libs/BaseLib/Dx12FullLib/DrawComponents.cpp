@@ -10,9 +10,14 @@
 
 namespace basecross {
 
+	IMPLEMENT_DX12SHADER(VSShadowmap, App::GetApp()->GetShadersPath() + L"VSShadowmap.cso")
+		
 	IMPLEMENT_DX12SHADER(VSPNTStatic, App::GetApp()->GetShadersPath() + L"VSPNTStatic.cso")
 	IMPLEMENT_DX12SHADER(PSPNTStatic, App::GetApp()->GetShadersPath() + L"PSPNTStatic.cso")
 
+	IMPLEMENT_DX12SHADER(VSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"VSPNTStaticShadow.cso")
+	IMPLEMENT_DX12SHADER(PSPNTStaticShadow, App::GetApp()->GetShadersPath() + L"PSPNTStaticShadow.cso")
+	IMPLEMENT_DX12SHADER(PSPNTStaticShadow2, App::GetApp()->GetShadersPath() + L"PSPNTStaticShadow2.cso")
 
 	//--------------------------------------------------------------------------------------
 	///	汎用描画用
@@ -115,141 +120,6 @@ namespace basecross {
 	}
 
 
-
-	//--------------------------------------------------------------------------------------
-	//	struct Shadowmap::Impl;
-	//	用途: Implイディオム
-	//--------------------------------------------------------------------------------------
-	struct Shadowmap::Impl {
-		static float m_LightHeight;	//ライトの高さ（向きをこの値で掛ける）
-		static float m_LightNear;	//ライトのNear
-		static float m_LightFar;		//ライトのFar
-		static float m_ViewWidth;
-		static float m_ViewHeight;
-
-		//メッシュリソース
-		weak_ptr<MeshResource> m_MeshResource;
-		//マルチメッシュリソース
-		weak_ptr<MultiMeshResource> m_MultiMeshResource;
-
-
-		Impl()
-		{}
-		~Impl() {}
-	};
-
-	float Shadowmap::Impl::m_LightHeight(20.0f);
-	float Shadowmap::Impl::m_LightNear(1.0f);
-	float Shadowmap::Impl::m_LightFar(200.0f);
-	float Shadowmap::Impl::m_ViewWidth(32.0f);
-	float Shadowmap::Impl::m_ViewHeight(32.0f);
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	class Shadowmap : public Component;
-	//	用途: シャドウマップコンポーネント（前処理用）
-	//--------------------------------------------------------------------------------------
-	Shadowmap::Shadowmap(const shared_ptr<GameObject>& GameObjectPtr) :
-		DrawComponent(GameObjectPtr),
-		pImpl(new Impl())
-	{}
-	Shadowmap::~Shadowmap() {}
-
-	float Shadowmap::GetLightHeight() { return Impl::m_LightHeight; }
-	float Shadowmap::GetLightNear() { return  Impl::m_LightNear; }
-	float Shadowmap::GetLightFar() { return  Impl::m_LightFar; }
-	float Shadowmap::GetViewWidth() { return  Impl::m_ViewWidth; }
-	float Shadowmap::GetViewHeight() { return  Impl::m_ViewHeight; }
-
-	void Shadowmap::SetLightHeight(float f) { Impl::m_LightHeight = f; }
-	void Shadowmap::SetLightNear(float f) { Impl::m_LightNear = f; }
-	void Shadowmap::SetLightFar(float f) { Impl::m_LightFar = f; }
-	void Shadowmap::SetViewWidth(float f) { Impl::m_ViewWidth = f; }
-	void Shadowmap::SetViewHeight(float f) { Impl::m_ViewHeight = f; }
-	void Shadowmap::SetViewSize(float f) { Impl::m_ViewWidth = Impl::m_ViewHeight = f; }
-
-
-
-	shared_ptr<MeshResource> Shadowmap::GetMeshResource(bool ExceptionActive) const {
-		auto shptr = pImpl->m_MeshResource.lock();
-		if (shptr) {
-			return shptr;
-		}
-		else {
-			if (ExceptionActive) {
-				throw BaseException(
-					L"メッシュリソースが見つかりません",
-					L"if (pImpl->m_MeshResource.expired())",
-					L"ShadowmapComp::GetMeshResource()"
-				);
-			}
-		}
-		return nullptr;
-	}
-
-
-	void Shadowmap::SetMeshResource(const wstring& ResKey) {
-		try {
-			if (ResKey == L"") {
-				throw BaseException(
-					L"メッシュキーが空白です",
-					L"if (ResKey == L\"\"",
-					L"ShadowmapComp::SetMeshResource()"
-				);
-			}
-			pImpl->m_MeshResource = App::GetApp()->GetResource<MeshResource>(ResKey);
-		}
-		catch (...) {
-			throw;
-		}
-	}
-	void Shadowmap::SetMeshResource(const shared_ptr<MeshResource>& MeshResourcePtr) {
-		pImpl->m_MeshResource = MeshResourcePtr;
-	}
-
-	shared_ptr<MultiMeshResource> Shadowmap::GetMultiMeshResource(bool ExceptionActive) const {
-		auto shptr = pImpl->m_MultiMeshResource.lock();
-		if (shptr) {
-			return shptr;
-		}
-		else {
-			if (ExceptionActive) {
-				throw BaseException(
-					L"メッシュリソースが見つかりません",
-					L"if (pImpl->m_MultiMeshResource.expired())",
-					L"ShadowmapComp::GetMultiMeshResource()"
-				);
-			}
-		}
-		return nullptr;
-	}
-	void Shadowmap::SetMultiMeshResource(const wstring& ResKey) {
-		try {
-			if (ResKey == L"") {
-				throw BaseException(
-					L"メッシュキーが空白です",
-					L"if (ResKey == L\"\"",
-					L"ShadowmapComp::SetMultiMeshResource()"
-				);
-			}
-			pImpl->m_MultiMeshResource = App::GetApp()->GetResource<MultiMeshResource>(ResKey);
-		}
-		catch (...) {
-			throw;
-		}
-	}
-	void Shadowmap::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
-		pImpl->m_MultiMeshResource = MeshResourcePtr;
-	}
-
-	void Shadowmap::DrawSigle(const MeshPrimData& data) {
-	}
-
-
-	void Shadowmap::OnDraw() {
-
-	}
 
 
 
@@ -613,6 +483,329 @@ namespace basecross {
 	void PCTSpriteDraw::OnDraw() {
 	}
 
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct Shadowmap::Impl;
+	//	用途: Implイディオム
+	//--------------------------------------------------------------------------------------
+	struct Shadowmap::Impl {
+		static float m_LightHeight;	//ライトの高さ（向きをこの値で掛ける）
+		static float m_LightNear;	//ライトのNear
+		static float m_LightFar;		//ライトのFar
+		static float m_ViewWidth;
+		static float m_ViewHeight;
+
+		//メッシュリソース
+		weak_ptr<MeshResource> m_MeshResource;
+		//マルチメッシュリソース
+		weak_ptr<MultiMeshResource> m_MultiMeshResource;
+
+		Dx12DrawResources<ShadowConstants> m_Dx12DrawResources;
+
+		Impl()
+		{}
+		~Impl() {}
+	};
+
+	float Shadowmap::Impl::m_LightHeight(20.0f);
+	float Shadowmap::Impl::m_LightNear(1.0f);
+	float Shadowmap::Impl::m_LightFar(200.0f);
+	float Shadowmap::Impl::m_ViewWidth(32.0f);
+	float Shadowmap::Impl::m_ViewHeight(32.0f);
+
+
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class Shadowmap : public Component;
+	//	用途: シャドウマップコンポーネント（前処理用）
+	//--------------------------------------------------------------------------------------
+	Shadowmap::Shadowmap(const shared_ptr<GameObject>& GameObjectPtr) :
+		DrawComponent(GameObjectPtr),
+		pImpl(new Impl())
+	{}
+	Shadowmap::~Shadowmap() {}
+
+	float Shadowmap::GetLightHeight() { return Impl::m_LightHeight; }
+	float Shadowmap::GetLightNear() { return  Impl::m_LightNear; }
+	float Shadowmap::GetLightFar() { return  Impl::m_LightFar; }
+	float Shadowmap::GetViewWidth() { return  Impl::m_ViewWidth; }
+	float Shadowmap::GetViewHeight() { return  Impl::m_ViewHeight; }
+
+	void Shadowmap::SetLightHeight(float f) { Impl::m_LightHeight = f; }
+	void Shadowmap::SetLightNear(float f) { Impl::m_LightNear = f; }
+	void Shadowmap::SetLightFar(float f) { Impl::m_LightFar = f; }
+	void Shadowmap::SetViewWidth(float f) { Impl::m_ViewWidth = f; }
+	void Shadowmap::SetViewHeight(float f) { Impl::m_ViewHeight = f; }
+	void Shadowmap::SetViewSize(float f) { Impl::m_ViewWidth = Impl::m_ViewHeight = f; }
+
+
+
+	shared_ptr<MeshResource> Shadowmap::GetMeshResource(bool ExceptionActive) const {
+		auto shptr = pImpl->m_MeshResource.lock();
+		if (shptr) {
+			return shptr;
+		}
+		else {
+			if (ExceptionActive) {
+				throw BaseException(
+					L"メッシュリソースが見つかりません",
+					L"if (pImpl->m_MeshResource.expired())",
+					L"ShadowmapComp::GetMeshResource()"
+				);
+			}
+		}
+		return nullptr;
+	}
+
+
+	void Shadowmap::SetMeshResource(const wstring& ResKey) {
+		try {
+			if (ResKey == L"") {
+				throw BaseException(
+					L"メッシュキーが空白です",
+					L"if (ResKey == L\"\"",
+					L"ShadowmapComp::SetMeshResource()"
+				);
+			}
+			pImpl->m_MeshResource = App::GetApp()->GetResource<MeshResource>(ResKey);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+	void Shadowmap::SetMeshResource(const shared_ptr<MeshResource>& MeshResourcePtr) {
+		pImpl->m_MeshResource = MeshResourcePtr;
+	}
+
+	shared_ptr<MultiMeshResource> Shadowmap::GetMultiMeshResource(bool ExceptionActive) const {
+		auto shptr = pImpl->m_MultiMeshResource.lock();
+		if (shptr) {
+			return shptr;
+		}
+		else {
+			if (ExceptionActive) {
+				throw BaseException(
+					L"メッシュリソースが見つかりません",
+					L"if (pImpl->m_MultiMeshResource.expired())",
+					L"ShadowmapComp::GetMultiMeshResource()"
+				);
+			}
+		}
+		return nullptr;
+	}
+	void Shadowmap::SetMultiMeshResource(const wstring& ResKey) {
+		try {
+			if (ResKey == L"") {
+				throw BaseException(
+					L"メッシュキーが空白です",
+					L"if (ResKey == L\"\"",
+					L"ShadowmapComp::SetMultiMeshResource()"
+				);
+			}
+			pImpl->m_MultiMeshResource = App::GetApp()->GetResource<MultiMeshResource>(ResKey);
+		}
+		catch (...) {
+			throw;
+		}
+	}
+	void Shadowmap::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
+		pImpl->m_MultiMeshResource = MeshResourcePtr;
+	}
+
+
+	void Shadowmap::OnCreate() {
+		//コンスタントバッファ付ルートシグネチャ
+		pImpl->m_Dx12DrawResources.m_RootSignature = RootSignature::CreateCbv();
+		auto Dev = App::GetApp()->GetDeviceResources();
+		//デスクプリタヒープ作成
+		{
+			pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
+				= Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			//CbvSrvデスクプリタヒープ(コンスタントバッファのみ)
+			pImpl->m_Dx12DrawResources.m_DescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1);
+			//GPU側デスクプリタヒープのハンドルの配列の作成
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.clear();
+			CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				0,
+				0
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(CbvHandle);
+		}
+		///コンスタントバッファ作成
+		{
+			//コンスタントバッファは256バイトにアラインメント
+			UINT ConstBuffSize = (sizeof(ShadowConstants) + 255) & ~255;
+			ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap)),
+				L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommittedResource()",
+				L"Shadowmap::Impl::CreateConstantBuffer()"
+			);
+			//コンスタントバッファのビューを作成
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+			cbvDesc.BufferLocation = pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+			//コンスタントバッファは256バイトにアラインメント
+			cbvDesc.SizeInBytes = ConstBuffSize;
+			//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+			//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+			CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				0,
+				0
+			);
+			Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+			//コンスタントバッファのアップロードヒープのマップ
+			CD3DX12_RANGE readRange(0, 0);
+			ThrowIfFailed(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->Map(0, &readRange,
+				reinterpret_cast<void**>(&pImpl->m_Dx12DrawResources.m_pConstantBuffer)),
+				L"コンスタントバッファのマップに失敗しました",
+				L"pImpl->m_ConstantBufferUploadHeap->Map()",
+				L"Shadowmap::CreateNotShadow()"
+			);
+		}
+		///パイプラインステート作成
+		{
+			pImpl->m_Dx12DrawResources.m_PipelineState 
+				= PipelineState::CreateShadowmap3D<VertexPositionNormalTexture, VSShadowmap>(pImpl->m_Dx12DrawResources.m_RootSignature, pImpl->m_Dx12DrawResources.m_PineLineDesc);
+		}
+		///コマンドリスト作成
+		{
+			pImpl->m_Dx12DrawResources.m_CommandList = CommandList::CreateDefault(pImpl->m_Dx12DrawResources.m_PipelineState);
+			CommandList::Close(pImpl->m_Dx12DrawResources.m_CommandList);
+		}
+	}
+
+	void Shadowmap::UpdateConstantBuffer() {
+		//更新
+		memcpy(pImpl->m_Dx12DrawResources.m_pConstantBuffer, reinterpret_cast<void**>(&pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer),
+			sizeof(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer));
+	}
+
+	void Shadowmap::DrawObject() {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto ShMesh = GetMeshResource(false);
+		if (!ShMesh) {
+			return;
+		}
+		//コマンドリストのリセット
+		CommandList::Reset(pImpl->m_Dx12DrawResources.m_PipelineState, pImpl->m_Dx12DrawResources.m_CommandList);
+		//メッシュが更新されていればリソース更新
+		ShMesh->UpdateResources<VertexPositionNormalTexture>(pImpl->m_Dx12DrawResources.m_CommandList);
+		//ルートシグネチャのセット
+		pImpl->m_Dx12DrawResources.m_CommandList->SetGraphicsRootSignature(pImpl->m_Dx12DrawResources.m_RootSignature.Get());
+		//デスクプリタヒープのセット
+		ID3D12DescriptorHeap* ppHeaps[] = { pImpl->m_Dx12DrawResources.m_DescriptorHeap.Get() };
+		pImpl->m_Dx12DrawResources.m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		//GPUデスクプリタヒープハンドルのセット
+		for (size_t i = 0; i < pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.size(); i++) {
+			pImpl->m_Dx12DrawResources.m_CommandList->SetGraphicsRootDescriptorTable((UINT)i, pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec[i]);
+		}
+
+		auto ShadowMapDimension = Dev->GetShadowMapRenderTarget()->GetShadowMapDimension();
+
+
+		D3D12_VIEWPORT Viewport = {};
+		Viewport.Width = static_cast<float>(ShadowMapDimension);
+		Viewport.Height = static_cast<float>(ShadowMapDimension);
+		Viewport.MaxDepth = 1.0f;
+
+		D3D12_RECT ScissorRect = {};
+
+		ScissorRect.right = static_cast<LONG>(ShadowMapDimension);
+		ScissorRect.bottom = static_cast<LONG>(ShadowMapDimension);
+
+
+		pImpl->m_Dx12DrawResources.m_CommandList->RSSetViewports(1, &Viewport);
+		pImpl->m_Dx12DrawResources.m_CommandList->RSSetScissorRects(1, &ScissorRect);
+
+		//デプスステンシルビューのハンドルを取得
+		auto SMRenderTarget = Dev->GetShadowMapRenderTarget();
+		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle = SMRenderTarget->GetDsvHandle();
+		//取得したハンドルをセット
+		pImpl->m_Dx12DrawResources.m_CommandList->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle);
+
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetVertexBuffers(0, 1, &ShMesh->GetVertexBufferView());
+		//インデックスバッファをセット
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetIndexBuffer(&ShMesh->GetIndexBufferView());
+		//インデックス描画
+		pImpl->m_Dx12DrawResources.m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
+		//コマンドリストのクローズ
+		CommandList::Close(pImpl->m_Dx12DrawResources.m_CommandList);
+		//デバイスにコマンドリストを送る
+		Dev->InsertDrawCommandLists(pImpl->m_Dx12DrawResources.m_CommandList.Get());
+	}
+
+
+
+	void Shadowmap::OnDraw() {
+		auto PtrGameObject = GetGameObject();
+		auto PtrStage = PtrGameObject->GetStage();
+		if (!PtrStage) {
+			return;
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+
+		//行列の定義
+		bsm::Mat4x4 World, LightView, LightProj;
+		//行列の定義
+		auto PtrTrans = GetGameObject()->GetComponent<Transform>();
+		//ワールド行列の決定
+		World = GetMeshToTransformMatrix() * PtrTrans->GetWorldMatrix();
+		//ビュー行列の決定
+		auto StageView = PtrStage->GetView();
+		//ライトの取得
+		auto StageLight = PtrGameObject->OnGetDrawLight();
+		//位置の取得
+		auto Pos = PtrTrans->GetWorldMatrix().transInMatrix();
+		bsm::Vec3 PosSpan = StageLight.m_Directional;
+		PosSpan *= 0.1f;
+		Pos += PosSpan;
+		//ワールド行列の決定
+		World.affineTransformation(
+			PtrTrans->GetScale(),			//スケーリング
+			PtrTrans->GetPivot(),		//回転の中心（重心）
+			PtrTrans->GetQuaternion(),				//回転角度
+			Pos				//位置
+		);
+		bsm::Mat4x4 RealWorldMatrix;
+		//ワールド行列の決定
+//		if (data.m_UseMeshToTransformMatrix) {
+//			RealWorldMatrix = data.m_MeshToTransformMatrix * GetMeshToTransformMatrix();
+//			RealWorldMatrix *= World;
+//		}
+//		else {
+			RealWorldMatrix = GetMeshToTransformMatrix() * World;
+//		}
+		//ビュー行列の決定
+//		auto StageView = PtrStage->GetView();
+		bsm::Vec3 LightDir = -1.0 * StageLight.m_Directional;
+		bsm::Vec3 LightAt = StageView->GetTargetCamera()->GetAt();
+		bsm::Vec3 LightEye = LightAt + (LightDir * GetLightHeight());
+		//ライトのビューと射影を計算
+		LightView.lookatLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
+		LightProj.orthographicLH(GetViewWidth(), GetViewHeight(), GetLightNear(), GetLightFar());
+
+		pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer.mWorld = bsm::transpose(RealWorldMatrix);
+		pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer.mView = bsm::transpose(LightView);
+		pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer.mProj = bsm::transpose(LightProj);
+
+		UpdateConstantBuffer();
+		DrawObject();
+
+	}
+
+
 	//static変数の実体
 	vector<bsm::Vec3> DrawObjectBase::m_TempPositions;
 
@@ -669,6 +862,7 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct SmBaseDraw::Impl {
 		SmDrawObject m_SmDrawObject;
+		Dx12DrawResources<SimpleConstants> m_Dx12DrawResources;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -728,22 +922,20 @@ namespace basecross {
 		SmCb.m_ConstantBuffer.EyePos.w = 1.0f;
 		//影用
 		if (GetOwnShadowActive()) {
-/*
 			bsm::Vec3 CalcLightDir = -1.0 * StageLight.m_Directional;
 			bsm::Vec3 LightAt = CameraPtr->GetAt();
 			bsm::Vec3 LightEye = CalcLightDir;
 			LightEye *= Shadowmap::GetLightHeight();
 			LightEye = LightAt + LightEye;
-			SmCb.LightPos = LightEye;
-			SmCb.LightPos.w = 1.0f;
+			SmCb.m_ConstantBuffer.LightPos = LightEye;
+			SmCb.m_ConstantBuffer.LightPos.w = 1.0f;
 			bsm::Mat4x4 LightView, LightProj;
 			//ライトのビューと射影を計算
 			LightView = XMMatrixLookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
 			LightProj = XMMatrixOrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
 				Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
-			SmCb.LightView = bsm::transpose(LightView);
-			SmCb.LightProjection = bsm::transpose(LightProj);
-*/
+			SmCb.m_ConstantBuffer.LightView = bsm::transpose(LightView);
+			SmCb.m_ConstantBuffer.LightProjection = bsm::transpose(LightProj);
 		}
 		//ボーンの設定
 /*
@@ -1240,7 +1432,7 @@ namespace basecross {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//テクスチャハンドルを作成
 		CD3DX12_CPU_DESCRIPTOR_HANDLE Handle(
-			m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+			pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 			0,
 			0
 		);
@@ -1256,7 +1448,22 @@ namespace basecross {
 			ShPtr->GetTexture().Get(),
 			&srvDesc,
 			Handle);
+		if (IsOwnShadowActive()) {
+			auto ShdowRender = Dev->GetShadowMapRenderTarget();
+			CD3DX12_CPU_DESCRIPTOR_HANDLE ShadowHandle(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				1,
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
+			);
+			D3D12_SHADER_RESOURCE_VIEW_DESC shadowSrvDesc = {};
+			shadowSrvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+			shadowSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+			shadowSrvDesc.Texture2D.MipLevels = 1;
+			shadowSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			Dev->GetDevice()->CreateShaderResourceView(ShdowRender->GetDepthStencil().Get(), &shadowSrvDesc, ShadowHandle);
+		}
 	}
+
 
 	void SmBaseDraw::RefreshTrace() {
 		//ブレンドステートとラスタライザ差し替え
@@ -1278,22 +1485,22 @@ namespace basecross {
 			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; i++) {
 				blend_desc.RenderTarget[i] = Target;
 			}
-			m_PineLineDesc.BlendState = blend_desc;
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.BlendState = blend_desc;
 		}
 		else {
-			m_PineLineDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		}
-		m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
-		m_CullFrontPipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+		pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+		pImpl->m_Dx12DrawResources.m_CullFrontPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
 
-		m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
-		m_CullBackPipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+		pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+		pImpl->m_Dx12DrawResources.m_CullBackPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
 
 	}
 
 	void SmBaseDraw::UpdateConstantBuffer() {
-		memcpy(m_pConstantBuffer, reinterpret_cast<void**>(&m_SimpleConstants.m_ConstantBuffer),
-			sizeof(m_SimpleConstants.m_ConstantBuffer));
+		memcpy(pImpl->m_Dx12DrawResources.m_pConstantBuffer, reinterpret_cast<void**>(&pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer),
+			sizeof(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer));
 	}
 
 
@@ -1304,29 +1511,30 @@ namespace basecross {
 		if (!ShMesh) {
 			return;
 		}
-
+		//透明処理
+		RefreshTrace();
 		//コマンドリストのリセット
 		if (GetGameObject()->IsAlphaActive()) {
-			CommandList::Reset(m_CullFrontPipelineState, m_CommandList);
+			CommandList::Reset(pImpl->m_Dx12DrawResources.m_CullFrontPipelineState, pImpl->m_Dx12DrawResources.m_CommandList);
 		}
 		else {
-			CommandList::Reset(m_CullBackPipelineState, m_CommandList);
+			CommandList::Reset(pImpl->m_Dx12DrawResources.m_CullBackPipelineState, pImpl->m_Dx12DrawResources.m_CommandList);
 		}
-		ShMesh->UpdateResources<VertexPositionNormalTexture>(m_CommandList);
+		ShMesh->UpdateResources<VertexPositionNormalTexture>(pImpl->m_Dx12DrawResources.m_CommandList);
 		if (ShTex) {
-			ShTex->UpdateResources(m_CommandList);
+			ShTex->UpdateResources(pImpl->m_Dx12DrawResources.m_CommandList);
 		}
 		//描画
-		m_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-		ID3D12DescriptorHeap* ppHeaps[] = { m_DescriptorHeap.Get(), m_SamplerDescriptorHeap.Get() };
-		m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		pImpl->m_Dx12DrawResources.m_CommandList->SetGraphicsRootSignature(pImpl->m_Dx12DrawResources.m_RootSignature.Get());
+		ID3D12DescriptorHeap* ppHeaps[] = { pImpl->m_Dx12DrawResources.m_DescriptorHeap.Get(), pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap.Get() };
+		pImpl->m_Dx12DrawResources.m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-		for (size_t i = 0; i < m_GPUDescriptorHandleVec.size(); i++) {
-			m_CommandList->SetGraphicsRootDescriptorTable((UINT)i, m_GPUDescriptorHandleVec[i]);
+		for (size_t i = 0; i < pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.size(); i++) {
+			pImpl->m_Dx12DrawResources.m_CommandList->SetGraphicsRootDescriptorTable((UINT)i, pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec[i]);
 		}
 		auto Dev = App::GetApp()->GetDeviceResources();
-		m_CommandList->RSSetViewports(1, &Dev->GetViewport());
-		m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+		pImpl->m_Dx12DrawResources.m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+		pImpl->m_Dx12DrawResources.m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
 			Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
 			Dev->GetFrameIndex(),
@@ -1334,85 +1542,70 @@ namespace basecross {
 		CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
 			Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
 		);
-		m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+		pImpl->m_Dx12DrawResources.m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
-		m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		m_CommandList->IASetIndexBuffer(&ShMesh->GetIndexBufferView());
-		m_CommandList->IASetVertexBuffers(0, 1, &ShMesh->GetVertexBufferView());
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetIndexBuffer(&ShMesh->GetIndexBufferView());
+		pImpl->m_Dx12DrawResources.m_CommandList->IASetVertexBuffers(0, 1, &ShMesh->GetVertexBufferView());
 
 
-		m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
+		pImpl->m_Dx12DrawResources.m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
 		if (GetGameObject()->IsAlphaActive()) {
-			m_CommandList->SetPipelineState(m_CullBackPipelineState.Get());
-			m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
+			pImpl->m_Dx12DrawResources.m_CommandList->SetPipelineState(pImpl->m_Dx12DrawResources.m_CullBackPipelineState.Get());
+			pImpl->m_Dx12DrawResources.m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
 		}
 
 		//コマンドリストのクローズ
-		CommandList::Close(m_CommandList);
+		CommandList::Close(pImpl->m_Dx12DrawResources.m_CommandList);
 		//デバイスにコマンドリストを送る
-		Dev->InsertDrawCommandLists(m_CommandList.Get());
+		Dev->InsertDrawCommandLists(pImpl->m_Dx12DrawResources.m_CommandList.Get());
 	}
 
-	void SmBaseDraw::DrawPNTNotShadow() {
-		auto PtrStage = GetGameObject()->GetStage();
-		auto PtrMeshResource = GetMeshResource();
-		if (GetTextureResource()) {
-			m_SimpleConstants.m_ConstantBuffer.ActiveFlg.x = 1;
-			CreateShaderResourceView();
-		}
-		else {
-			m_SimpleConstants.m_ConstantBuffer.ActiveFlg.x = 0;
-		}
-		SetConstants(m_SimpleConstants);
-		//更新
-		UpdateConstantBuffer();
-		DrawObject();
-	}
 
 
 	void SmBaseDraw::CreatePNTNotShadow() {
 		//ルートシグネチャ
-		m_RootSignature = RootSignature::CreateSrvSmpCbv();
+		pImpl->m_Dx12DrawResources.m_RootSignature = RootSignature::CreateSrvSmpCbv();
 		//デスクプリタヒープ
 		auto Dev = App::GetApp()->GetDeviceResources();
 		{
-			m_DescriptorHandleIncrementSize =
+			pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize =
 				Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 			//デスクプリタヒープ
-			m_DescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
+			pImpl->m_Dx12DrawResources.m_DescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
 			//サンプラーデスクプリタヒープ
-			m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
+			pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(1);
 			//GPU側デスクプリタヒープのハンドルの配列の作成
-			m_GPUDescriptorHandleVec.clear();
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.clear();
 			CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle(
-				m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
 				0,
 				0
 			);
-			m_GPUDescriptorHandleVec.push_back(SrvHandle);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SrvHandle);
 			CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle(
-				m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
 				0,
 				0
 			);
-			m_GPUDescriptorHandleVec.push_back(SamplerHandle);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SamplerHandle);
 			CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
-				m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
 				1,
-				m_DescriptorHandleIncrementSize
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
 			);
-			m_GPUDescriptorHandleVec.push_back(CbvHandle);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(CbvHandle);
 
 		}
 		//サンプラー
 		{
-			auto SamplerDescriptorHandle = m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			auto SamplerDescriptorHandle = pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
 			DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandle);
 		}
 		//コンスタントバッファ
 		{
 			//コンスタントバッファは256バイトにアラインメント
-			UINT ConstBuffSize = (sizeof(m_SimpleConstants.m_ConstantBuffer) + 255) & ~255;
+			UINT ConstBuffSize = (sizeof(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer) + 255) & ~255;
 			//コンスタントバッファリソース（アップロードヒープ）の作成
 			ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
 				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
@@ -1420,27 +1613,28 @@ namespace basecross {
 				&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
 				D3D12_RESOURCE_STATE_GENERIC_READ,
 				nullptr,
-				IID_PPV_ARGS(&m_SimpleConstants.m_ConstantBufferUploadHeap)),
+				IID_PPV_ARGS(&pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap)),
 				L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
 				L"Dev->GetDevice()->CreateCommittedResource()",
 				L"PNTStaticDraw::CreateNotShadow()"
 			);
 			//コンスタントバッファのビューを作成
 			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-			cbvDesc.BufferLocation = m_SimpleConstants.m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+			cbvDesc.BufferLocation = pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
 			cbvDesc.SizeInBytes = ConstBuffSize;
 			//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
 			//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
 			CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
-				m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
 				1,
-				m_DescriptorHandleIncrementSize
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
 			);
 
 			Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
 			//コンスタントバッファのアップロードヒープのマップ
 			CD3DX12_RANGE readRange(0, 0);
-			ThrowIfFailed(m_SimpleConstants.m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
+			ThrowIfFailed(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->Map(0, &readRange,
+				reinterpret_cast<void**>(&pImpl->m_Dx12DrawResources.m_pConstantBuffer)),
 				L"コンスタントバッファのマップに失敗しました",
 				L"pImpl->m_ConstantBufferUploadHeap->Map()",
 				L"PNTStaticDraw::CreateNotShadow()"
@@ -1450,21 +1644,174 @@ namespace basecross {
 		//シェーダリソースビューはテクスチャセット時に作成
 		//パイプラインステートの作成
 		{
-			PipelineState::CreateDefault3D<VertexPositionNormalTexture, VSPNTStatic, PSPNTStatic>(m_RootSignature, m_PineLineDesc);
-			m_PineLineDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
-			m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
-			m_CullFrontPipelineState = PipelineState::CreateDirect(m_PineLineDesc);
-			m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
-			m_CullBackPipelineState = PipelineState::CreateDirect(m_PineLineDesc);
+			PipelineState::CreateDefault3D<VertexPositionNormalTexture, VSPNTStatic, PSPNTStatic>(pImpl->m_Dx12DrawResources.m_RootSignature, pImpl->m_Dx12DrawResources.m_PineLineDesc);
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+			pImpl->m_Dx12DrawResources.m_CullFrontPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+			pImpl->m_Dx12DrawResources.m_CullBackPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
 		}
 		//コマンドリストは裏面カリングに初期化
 		{
-			m_CommandList = CommandList::CreateDefault(m_CullBackPipelineState);
+			pImpl->m_Dx12DrawResources.m_CommandList = CommandList::CreateDefault(pImpl->m_Dx12DrawResources.m_CullBackPipelineState);
 			//コンスタントバッファ更新
 			UpdateConstantBuffer();
-			CommandList::Close(m_CommandList);
+			CommandList::Close(pImpl->m_Dx12DrawResources.m_CommandList);
 		}
 	}
+
+
+	void SmBaseDraw::CreatePNTWithShadow() {
+		//ルートシグネチャ
+		pImpl->m_Dx12DrawResources.m_RootSignature = RootSignature::CreateSrv2Smp2Cbv();
+		//デスクプリタヒープ
+		auto Dev = App::GetApp()->GetDeviceResources();
+		{
+			pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize =
+				Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			pImpl->m_Dx12DrawResources.m_SamplerDescriptorHandleIncrementSize =
+				Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+
+			//デスクプリタヒープ
+			pImpl->m_Dx12DrawResources.m_DescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 2);
+			//サンプラーデスクプリタヒープ
+			pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap = DescriptorHeap::CreateSamplerHeap(2);
+			//GPU側デスクプリタヒープのハンドルの配列の作成
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.clear();
+			CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle1(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				0,
+				0
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SrvHandle1);
+			CD3DX12_GPU_DESCRIPTOR_HANDLE SrvHandle2(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				1,
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SrvHandle2);
+
+			CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle1(
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				0,
+				0
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SamplerHandle1);
+
+			CD3DX12_GPU_DESCRIPTOR_HANDLE SamplerHandle2(
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				1,
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHandleIncrementSize
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(SamplerHandle2);
+
+			CD3DX12_GPU_DESCRIPTOR_HANDLE CbvHandle(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetGPUDescriptorHandleForHeapStart(),
+				2,
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
+			);
+			pImpl->m_Dx12DrawResources.m_GPUDescriptorHandleVec.push_back(CbvHandle);
+		}
+		//サンプラー
+		{
+			auto SamplerDescriptorHandleWithShadow1 = pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
+			DynamicSampler::CreateSampler(SamplerState::LinearClamp, SamplerDescriptorHandleWithShadow1);
+
+			CD3DX12_CPU_DESCRIPTOR_HANDLE SamplerDescriptorHandleWithShadow2{
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				1,
+				pImpl->m_Dx12DrawResources.m_SamplerDescriptorHandleIncrementSize
+			};
+			DynamicSampler::CreateSampler(SamplerState::ComparisonLinear, SamplerDescriptorHandleWithShadow2);
+		}
+		//コンスタントバッファ
+		{
+			//コンスタントバッファは256バイトにアラインメント
+			UINT ConstBuffSize = (sizeof(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer) + 255) & ~255;
+			//コンスタントバッファリソース（アップロードヒープ）の作成
+			ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap)),
+				L"コンスタントバッファ用のアップロードヒープ作成に失敗しました",
+				L"Dev->GetDevice()->CreateCommittedResource()",
+				L"PNTStaticDraw::CreateWithShadow()"
+			);
+			//コンスタントバッファのビューを作成
+			D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+			cbvDesc.BufferLocation = pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->GetGPUVirtualAddress();
+			cbvDesc.SizeInBytes = ConstBuffSize;
+			//コンスタントバッファビューを作成すべきデスクプリタヒープ上のハンドルを取得
+			//シェーダリソースがある場合コンスタントバッファはシェーダリソースビューのあとに設置する
+			CD3DX12_CPU_DESCRIPTOR_HANDLE cbvSrvHandle(
+				pImpl->m_Dx12DrawResources.m_DescriptorHeap->GetCPUDescriptorHandleForHeapStart(),
+				2,
+				pImpl->m_Dx12DrawResources.m_DescriptorHandleIncrementSize
+			);
+
+			Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+			//コンスタントバッファのアップロードヒープのマップ
+			CD3DX12_RANGE readRange(0, 0);
+			ThrowIfFailed(pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBufferUploadHeap->Map(0, &readRange,
+				reinterpret_cast<void**>(&pImpl->m_Dx12DrawResources.m_pConstantBuffer)),
+				L"コンスタントバッファのマップに失敗しました",
+				L"pImpl->m_ConstantBufferUploadHeap->Map()",
+				L"PNTStaticDraw::CreateNotShadow()"
+			);
+		}
+		//シェーダリソースビューはテクスチャセット時に作成
+		//パイプラインステートの作成
+		{
+			//シャドウ付きパイプラインステートの作成
+			PipelineState::CreateDefault3D<VertexPositionNormalTexture, VSPNTStaticShadow, PSPNTStaticShadow>(pImpl->m_Dx12DrawResources.m_RootSignature,
+				pImpl->m_Dx12DrawResources.m_PineLineDesc);
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.FillMode = D3D12_FILL_MODE::D3D12_FILL_MODE_SOLID;
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
+			pImpl->m_Dx12DrawResources.m_CullFrontPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
+			pImpl->m_Dx12DrawResources.m_PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_BACK;
+			pImpl->m_Dx12DrawResources.m_CullBackPipelineState = PipelineState::CreateDirect(pImpl->m_Dx12DrawResources.m_PineLineDesc);
+		}
+		//コマンドリストは裏面カリングに初期化
+		{
+			pImpl->m_Dx12DrawResources.m_CommandList = CommandList::CreateDefault(pImpl->m_Dx12DrawResources.m_CullBackPipelineState);
+			//コンスタントバッファ更新
+			UpdateConstantBuffer();
+			CommandList::Close(pImpl->m_Dx12DrawResources.m_CommandList);
+		}
+	}
+
+	void SmBaseDraw::DrawPNT() {
+		auto PtrStage = GetGameObject()->GetStage();
+		auto PtrMeshResource = GetMeshResource();
+		if (GetTextureResource()) {
+			pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer.ActiveFlg.x = 1;
+			CreateShaderResourceView();
+		}
+		else {
+			pImpl->m_Dx12DrawResources.m_Dx12Constants.m_ConstantBuffer.ActiveFlg.x = 0;
+		}
+		SetConstants(pImpl->m_Dx12DrawResources.m_Dx12Constants);
+		//更新
+		UpdateConstantBuffer();
+		DrawObject();
+
+	}
+
+
+
+
+	const Dx12DrawResources<SimpleConstants>& SmBaseDraw::GetSimpleDrawResources() const {
+		return pImpl->m_Dx12DrawResources;
+	}
+
+	Dx12DrawResources<SimpleConstants>& SmBaseDraw::GetSimpleDrawResources() {
+		return pImpl->m_Dx12DrawResources;
+
+	}
+
 
 
 
@@ -1480,6 +1827,24 @@ namespace basecross {
 
 	PNTStaticDraw::~PNTStaticDraw() {}
 
+	void PNTStaticDraw::SetOwnShadowActive(bool b) {
+		if (IsOwnShadowActive()) {
+			//今は影付き
+			if (!b) {
+				//PNT影無しに変更
+				CreatePNTNotShadow();
+				SmBaseDraw::SetOwnShadowActive(false);
+			}
+		}
+		else {
+			//今は影無し
+			if (b) {
+				//PNT影付きに変更
+				CreatePNTWithShadow();
+				SmBaseDraw::SetOwnShadowActive(true);
+			}
+		}
+	}
 
 
 	void PNTStaticDraw::OnCreate() {
@@ -1491,7 +1856,7 @@ namespace basecross {
 	}
 
 	void PNTStaticDraw::OnDraw() {
-		DrawPNTNotShadow();
+		DrawPNT();
 	}
 
 }

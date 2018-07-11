@@ -2027,6 +2027,23 @@ namespace bsm {
 		return affineTransformation(scaleVec, rotOrigin, Qt, transVec);
 	}
 
+	inline Mat4x4& Mat4x4::lookatLH(
+		const Flt3 & eye,
+		const Flt3 & at,
+		const Flt3 & up) {
+		*this = (Mat4x4)XMMatrixLookAtLH(eye, at,up);
+		return *this;
+	}
+
+	inline Mat4x4& Mat4x4::orthographicLH(
+		float width,
+		float height,
+		float n,
+		float f) {
+		*this = (Mat4x4)XMMatrixOrthographicLH(width, height, n, f);
+		return *this;
+	}
+
 
 	inline Mat4x4& Mat4x4::strTransformation(
 		const Flt3 & scaleVec,

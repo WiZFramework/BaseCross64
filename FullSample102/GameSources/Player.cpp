@@ -12,13 +12,40 @@ namespace basecross{
 	//	class Player : public GameObject;
 	//	用途: プレイヤー
 	//--------------------------------------------------------------------------------------
-	//構築と破棄
+	//構築
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
-		m_MaxSpeed(10.0f),	//最高速度
-		m_Decel(0.95f),	//減速値
-		m_Mass(1.0f)	//質量
+		m_Scale(0.25f)
 	{}
+
+	void Player::RotToHead(const Vec3& Velocity, float LerpFact) {
+		if (LerpFact <= 0.0f) {
+			//補間係数が0以下なら何もしない
+			return;
+		}
+		auto PtrTransform = GetComponent<Transform>();
+		//回転の更新
+		if (Velocity.length() > 0.0f) {
+			bsm::Vec3 Temp = Velocity;
+			Temp.normalize();
+			float ToAngle = atan2(Temp.x, Temp.z);
+			Quat Qt;
+			Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
+			Qt.normalize();
+			//現在の回転を取得
+			Quat NowQt = PtrTransform->GetQuaternion();
+			//現在と目標を補間
+			if (LerpFact >= 1.0f) {
+				NowQt = Qt;
+			}
+			else {
+				//クオータニオンの補間処理
+				NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
+			}
+			PtrTransform->SetQuaternion(NowQt);
+		}
+	}
+
 
 	Vec3 Player::GetMoveVector() const {
 		Vec3 Angle(0, 0, 0);
@@ -57,33 +84,30 @@ namespace basecross{
 		return Angle;
 	}
 
-	void Player::MovePlayer() {
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vec3 Angle = GetMoveVector();
-		//Collisionを取り出す
-		auto PtrColl = GetComponent<Collision>();
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		Pos += Angle * 0.1f;
-		GetComponent<Transform>()->SetPosition(Pos);
-		//回転の計算
-		if (Angle.length() > 0.0f) {
-			auto UtilPtr = GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(Angle, 1.0f);
-		}
-	}
 
 	//初期化
 	void Player::OnCreate() {
-
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
-
-		//CollisionSphere衝突判定を付ける
-		auto PtrColl = AddComponent<CollisionSphere>();
-
+		auto PtrTrans = GetComponent<Transform>();
+		PtrTrans->SetScale(Vec3(m_Scale));	//直径25センチの球体
+		PtrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
+		Vec3 FirstPos;
+		if (!bkCamera) {
+			FirstPos = Vec3(0, m_Scale * 0.5f, 0);
+		}
+		else {
+			FirstPos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
+		}
+		PtrTrans->SetPosition(FirstPos);
+		//WorldMatrixをもとにRigidbodySphereのパラメータを作成
+		PsSphereParam param(PtrTrans->GetWorldMatrix(),1.0f,false, PsMotionType::MotionTypeActive);
+		//RigidbodySphereコンポーネントを追加
+		auto PsPtr = AddComponent<RigidbodySphere>(param);
+		//自動的にTransformを設定するフラグは無し
+		PsPtr->SetAutoTransform(false);
+		//ワイアフレーム描画
+		PsPtr->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -94,15 +118,15 @@ namespace basecross{
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
-
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<PNTStaticDraw>();
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
 		PtrDraw->SetTextureResource(L"TRACE_TX");
-		SetAlphaActive(true);
 
+		//透明処理
+		SetAlphaActive(true);
 		//カメラを得る
 		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(OnGetDrawCamera());
 		if (PtrCamera) {
@@ -111,47 +135,75 @@ namespace basecross{
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
-		//ステートマシンの構築
-		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
-		//最初のステートをPlayerDefaultにリセット
-		m_StateMachine->ChangeState(PlayerDefaultState::Instance());
 	}
 
 	//更新
 	void Player::OnUpdate() {
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
-		//ステートマシン更新
-		m_StateMachine->Update();
+		auto Vec = GetMoveVector();
+		auto PtrPs = GetComponent<RigidbodySphere>();
+		auto Velo = PtrPs->GetLinearVelocity();
+		//xとzの速度を修正
+		Velo.x = Vec.x * 5.0f;
+		Velo.z = Vec.z * 5.0f;
+		//速度を設定
+		PtrPs->SetLinearVelocity(Velo);
 	}
 
+	//後更新
 	void Player::OnUpdate2() {
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		Pos.y = 0.125f;
-		GetComponent<Transform>()->SetPosition(Pos);
+		//RigidbodySphereからTransformへのパラメータの設定
+		//自動的に設定はされない設定になっているので自分で行う
+		auto PtrPs = GetComponent<RigidbodySphere>();
+		auto Ptr = GetComponent<Transform>();
+		//位置情報はそのまま設定
+		Ptr->SetPosition(PtrPs->GetPosition());
+		//回転の計算
+		Vec3 Angle = GetMoveVector();
+		if (Angle.length() > 0.0f) {
+			//補間処理を行う回転。
+			RotToHead(Angle, 0.1f);
+		}
 		//文字列の表示
 		DrawStrings();
 	}
 
-
-	void Player::OnCollisionEnter(vector<shared_ptr<GameObject>>& OtherVec) {
-		int a = 0;
+	//Aボタンハンドラ
+	void  Player::OnPushA() {
+		auto Ptr = GetComponent<Transform>();
+		if (Ptr->GetPosition().y > 0.125f) {
+			//地面についてなければジャンプしない
+			return;
+		}
+		auto PtrPs = GetComponent<RigidbodySphere>();
+		auto Velo = PtrPs->GetLinearVelocity();
+		Velo += Vec3(0, 4.0f, 0.0);
+		PtrPs->SetLinearVelocity(Velo);
 	}
 
-	void Player::OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) {
-			int a = 0;
+	//Bボタンハンドラ
+	void  Player::OnPushB() {
+		//ゲームステージ再読み込み
+		App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera()));
+		App::GetApp()->GetScene<Scene>()->SetBackupPlayerPos(GetComponent<Transform>()->GetPosition());
+		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
 	}
 
-	void Player::OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {
-		int a = 0;
+	//Xボタンハンドラ
+	void Player::OnPushX() {
 	}
-
 
 	//文字列の表示
 	void Player::DrawStrings() {
 
 		//文字列表示
-
+		wstring Mess(L"Bボタンで再読み込み\nXボタンで発射\n");
+		//オブジェクト数
+		auto ObjCount = GetStage()->GetGameObjectVec().size();
+		wstring OBJ_COUNT(L"OBJ_COUNT: ");
+		OBJ_COUNT += Util::SizeTToWStr(ObjCount);
+		OBJ_COUNT += L"\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
@@ -166,53 +218,10 @@ namespace basecross{
 		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring RididStr(L"Velocity:\t");
-/*
-		auto Velocity = GetComponent<CollisionSphere>()->GetSolverVelocity();
-		RididStr += L"X=" + Util::FloatToWStr(Velocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-*/
-
-		wstring str = FPS + PositionStr + RididStr;
+		wstring str = Mess + OBJ_COUNT + FPS + PositionStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
-	}
-
-
-	//--------------------------------------------------------------------------------------
-	///	通常ステート
-	//--------------------------------------------------------------------------------------
-
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerDefaultState)
-
-	void PlayerDefaultState::Enter(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
-		Obj->MovePlayer();
-	}
-
-	void PlayerDefaultState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	//--------------------------------------------------------------------------------------
-	///	ジャンプステート
-	//--------------------------------------------------------------------------------------
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerJumpState)
-
-	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
-	}
-
-	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {
-		Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
-	}
-
-	void PlayerJumpState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
 	}
 
 }

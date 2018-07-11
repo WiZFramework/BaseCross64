@@ -2523,6 +2523,34 @@ namespace bsm {
 
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	LookAtLHビュー行列を作成する
+		@param[in]	eye　カメラ位置
+		@param[in]	at　カメラ視点
+		@param[in]	up	カメラ向き
+		@return	*thisの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		inline Mat4x4& lookatLH(
+			const Flt3 & eye,
+			const Flt3 & at,
+			const Flt3 & up);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OrthographicLH射影行列を作成する
+		@param[in]	width　幅
+		@param[in]	height　高さ
+		@param[in]	n	手前
+		@param[in]	f	 奥
+		@return	*thisの参照
+		*/
+		//--------------------------------------------------------------------------------------
+		inline Mat4x4& orthographicLH(
+			float width,
+			float height,
+			float n,
+			float f);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	str変換(Scele,translation,rotation)を実装する
 		@param[in]	scaleVec　スケーリング
 		@param[in]	transVec	移動
