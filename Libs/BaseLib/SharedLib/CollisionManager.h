@@ -10,14 +10,6 @@
 namespace basecross {
 
 	//--------------------------------------------------------------------------------------
-	//	衝突ペア
-	//--------------------------------------------------------------------------------------
-	struct CollisionPair {
-		weak_ptr<Collision> m_Src;
-		weak_ptr<Collision> m_Dest;
-	};
-
-	//--------------------------------------------------------------------------------------
 	//	衝突判定マネージャ
 	//--------------------------------------------------------------------------------------
 	class CollisionManager : public GameObject {
@@ -26,22 +18,54 @@ namespace basecross {
 			Excute,
 			Exit
 		};
-		vector<CollisionPair> m_PairVec[2];
-		vector<CollisionPair> m_ExitPairVec;
-		UINT m_PairSwap;
-		UINT m_BeforePairSwap;
-		void CollisionKeepCheck();
-		bool CollisionCheckSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest);
-		bool CollisionCheckSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest);
-		bool CollisionCheckSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest);
-
-		bool CollisionCheck(const shared_ptr<Collision>& Src, const shared_ptr<Collision>& Dest);
-
-		bool CheckInPair(const CollisionPair& tgt,UINT swap);
-
-
 		void CollisionSub(size_t SrcIndex);
+		bool CollisionPair(const shared_ptr<CollisionSphere>& src, const shared_ptr<Collision>& dest,const bsm::Vec3& HitPoint,float& deps);
+		bool CollisionPair(const shared_ptr<CollisionCapsule>& src, const shared_ptr<Collision>& dest, const bsm::Vec3& HitPoint, float& deps);
+		bool CollisionPair(const shared_ptr<CollisionObb>& src, const shared_ptr<Collision>& dest, const bsm::Vec3& HitPoint, float& deps);
+		void CollisionPairbase(vector<CollisionHitPair>& CheckVec, vector<CollisionHitPair>& tempVec);
 		void SendCollisionMessageSub(CollMessType messtype);
+		void Solver(CollisionHitPair& SrcPair);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CollisionStateをTransformから取得
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateCollisionState();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	EnterからExcuteに移行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void EnterToExcutePair();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Excuteペアを更新する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateExcutePair();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	Enterペアを更新する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateEnterPair();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ソルバーを更新する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void UpdateSolver();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	衝突メッセージを発行する
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void SendCollisionMessage();
 	public:
 		//--------------------------------------------------------------------------------------
@@ -73,12 +97,12 @@ namespace basecross {
 		virtual void OnUpdate() override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	新しい衝突ペアを設定する。すでに衝突していた場合は何もしない
-		@param[in]	pair	新しいペア
+		@brief	衝突を設定する
+		@param[in]	pair	衝突ペア
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void AddNewCollisionPair(const CollisionPair& pair);
+		void SetEnterPair(const CollisionHitPair& pair);
 	private:
 		//Implイディオム
 		struct Impl;

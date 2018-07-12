@@ -85,7 +85,7 @@ namespace basecross{
 		virtual void OnUpdate() override;
 		virtual void OnUpdate2() override;
 		//Aƒ{ƒ^ƒ“
-		void OnPushA() {}
+		void OnPushA();
 		void MovePlayer();
 		virtual void OnCollisionEnter(vector<shared_ptr<GameObject>>& OtherVec) override;
 		virtual void OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) override;

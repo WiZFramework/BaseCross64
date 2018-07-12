@@ -16,6 +16,8 @@
 #include "../SharedLib/Action.h"
 //物理計算マネージャなど
 #include "../SharedLib/Rigidbody.h"
+//簡易物理計算コンポーネント
+#include "../SharedLib/RigidMini.h"
 //衝突判定コンポーネント
 #include "../SharedLib/Collision.h"
 //描画コンポーネント
@@ -32,6 +34,8 @@
 #include "../SharedLib/GameObject.h"
 //衝突判定マネージャ
 #include "../SharedLib/CollisionManager.h"
+//RmManagerマネージャ
+#include "../SharedLib/RmManager.h"
 //スプライトスタジオ５
 #include "../SharedLib/SpriteStudio5.h"
 

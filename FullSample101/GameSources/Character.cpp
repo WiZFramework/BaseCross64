@@ -38,21 +38,23 @@ namespace basecross{
 		auto PtrColl = AddComponent<CollisionObb>();
 		PtrColl->SetFixed(true);
 
+		//RigidMiniコンポーネント
+		auto PtrRm = AddComponent<RigidMini>();
+		PtrRm->SetShapeType(RmShapeType::Obb);
+		PtrRm->SetMotionType(RmMotionType::Fix);
+
+
 		//タグをつける
 		AddTag(L"FixedBox");
 
-		//影をつける（シャドウマップを描画する）
+		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
-
-
 
 		auto PtrDraw = AddComponent<PNTStaticDraw>();
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetTextureResource(L"SKY_TX");
-
 		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetTextureResource(L"SKY_TX");
 
 
 	}

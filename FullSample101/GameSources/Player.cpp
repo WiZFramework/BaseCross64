@@ -85,6 +85,12 @@ namespace basecross{
 		auto PtrColl = AddComponent<CollisionSphere>();
 
 
+		//RigidMiniコンポーネント
+		auto PtrRm = AddComponent<RigidMini>();
+		PtrRm->SetShapeType(RmShapeType::Sphere);
+
+
+
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
 		PtrString->SetText(L"");
@@ -100,7 +106,11 @@ namespace basecross{
 		//描画するメッシュを設定
 		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+//		PtrDraw->SetTextureResource(L"TRACE_TX");
+		PtrDraw->SetOwnShadowActive(true);
+		PtrDraw->SetTextureResource(L"SKY_TX");
+
+		//透明処理
 		SetAlphaActive(true);
 
 		//カメラを得る
@@ -128,7 +138,7 @@ namespace basecross{
 	void Player::OnUpdate2() {
 		auto Pos = GetComponent<Transform>()->GetPosition();
 		Pos.y = 0.125f;
-		GetComponent<Transform>()->SetPosition(Pos);
+	//	GetComponent<Transform>()->SetPosition(Pos);
 		//文字列の表示
 		DrawStrings();
 	}
@@ -139,13 +149,19 @@ namespace basecross{
 	}
 
 	void Player::OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) {
-			int a = 0;
+		int a = 0;
 	}
 
 	void Player::OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {
 		int a = 0;
 	}
 
+	//Aボタン
+	void  Player::OnPushA() {
+		if (GetStateMachine()->GetCurrentState() == PlayerDefaultState::Instance()) {
+//				GetStateMachine()->ChangeState(PlayerJumpState::Instance());
+		}
+	}
 
 	//文字列の表示
 	void Player::DrawStrings() {
@@ -167,12 +183,11 @@ namespace basecross{
 		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
 		wstring RididStr(L"Velocity:\t");
-/*
 		auto Velocity = GetComponent<CollisionSphere>()->GetSolverVelocity();
 		RididStr += L"X=" + Util::FloatToWStr(Velocity.x, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Y=" + Util::FloatToWStr(Velocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-*/
+
 
 		wstring str = FPS + PositionStr + RididStr;
 		//文字列をつける

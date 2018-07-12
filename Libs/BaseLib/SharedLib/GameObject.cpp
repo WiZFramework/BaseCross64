@@ -656,6 +656,8 @@ namespace basecross {
 		shared_ptr<ParticleManager> m_AddParticleManager;
 		//コリジョン管理者
 		shared_ptr<CollisionManager> m_CollisionManager;
+		//簡易物理計算管理者
+		shared_ptr<RmManager> m_RmManager;
 		//オブジェクトの配列
 		vector< shared_ptr<GameObject> > m_GameObjectVec;
 		//途中にオブジェクトが追加された場合、ターンの開始まで待つ配列
@@ -802,6 +804,11 @@ namespace basecross {
 	shared_ptr<CollisionManager> Stage::GetCollisionManager() const {
 		return pImpl->m_CollisionManager;
 	}
+
+	shared_ptr<RmManager> Stage::GetRmManager() const {
+		return pImpl->m_RmManager;
+	}
+
 
 
 
@@ -989,6 +996,8 @@ namespace basecross {
 		pImpl->m_AddParticleManager = ObjectFactory::Create<ParticleManager>(GetThis<Stage>(),true);
 		//コリジョン管理者の作成
 		pImpl->m_CollisionManager = ObjectFactory::Create<CollisionManager>(GetThis<Stage>());
+		//簡易物理計算管理者の作成
+		pImpl->m_RmManager = ObjectFactory::Create<RmManager>(GetThis<Stage>());
 		//物理計算リセット
 		pImpl->m_BasePhysics.Reset();
 	}
