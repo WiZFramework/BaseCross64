@@ -1282,6 +1282,7 @@ namespace basecross {
 		SmCb.EyePos.w = 1.0f;
 		//影用
 		if (GetOwnShadowActive()) {
+/*
 			bsm::Vec3 CalcLightDir = -1.0 * StageLight.m_Directional;
 			bsm::Vec3 LightAt = CameraPtr->GetAt();
 			bsm::Vec3 LightEye = CalcLightDir;
@@ -1296,6 +1297,28 @@ namespace basecross {
 				Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
 			SmCb.LightView = bsm::transpose(LightView);
 			SmCb.LightProjection = bsm::transpose(LightProj);
+*/
+
+			bsm::Vec3 CalcLightDir(StageLight.m_Directional * -1.0);
+			bsm::Vec3 LightAt(CameraPtr->GetAt());
+			bsm::Vec3 LightEye(CalcLightDir);
+			LightEye *= Shadowmap::GetLightHeight();
+			LightEye = LightAt + LightEye;
+			bsm::Vec4 LightEye4(LightEye, 1.0f);
+			LightEye4.w = 1.0f;
+			SmCb.LightPos = LightEye4;
+			bsm::Vec4 eyePos4(CameraPtr->GetEye(), 1.0f);
+			eyePos4.w = 1.0f;
+			SmCb.EyePos = eyePos4;
+			bsm::Mat4x4 LightView, LightProj;
+			//ライトのビューと射影を計算
+			LightView = XMMatrixLookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
+			LightProj = XMMatrixOrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
+			Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
+			SmCb.LightView = bsm::transpose(LightView);
+			SmCb.LightProjection = bsm::transpose(LightProj);
+
+
 		}
 		//ボーンの設定
 		size_t BoneSz = pImpl->m_SmDrawObject.m_LocalBonesMatrix.size();

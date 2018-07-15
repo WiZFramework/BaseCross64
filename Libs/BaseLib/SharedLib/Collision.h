@@ -13,21 +13,6 @@ namespace basecross {
 	class CollisionObb;
 	class CollisionManager;
 
-#define COLLISION_TIME_STEP 0.016f
-
-	struct CollisionState {
-		bsm::Mat4x4 m_WorldMatrix;
-		bsm::Mat4x4 m_BeforeWorldMatrix;
-		bsm::Vec3 GetPosition() const {
-			return m_WorldMatrix.transInMatrix();
-		}
-		void SetPosition(const bsm::Vec3& Pos) {
-			m_WorldMatrix._41 = Pos.x;
-			m_WorldMatrix._42 = Pos.y;
-			m_WorldMatrix._43 = Pos.z;
-		}
-	};
-
 	//--------------------------------------------------------------------------------------
 	///	 スケールが一つだった場合の計算に使用するスケール
 	//--------------------------------------------------------------------------------------
@@ -72,50 +57,12 @@ namespace basecross {
 		bool IsFixed() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	トランスフォームからステートを取得する
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetCollisionStateFromTransform();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	保存されているステートを取得する
-		@return	CollisionStateの参照
-		*/
-		//--------------------------------------------------------------------------------------
-		CollisionState& GetCollisionState();
-		const CollisionState& GetCollisionState() const;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	固定衝突オブジェクトかどうかを設定する
 		@param[in]	b	固定衝突オブジェクトならtrue
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void SetFixed(bool b);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	拘束を解く速度を得る。
-		@return	速度
-		*/
-		//--------------------------------------------------------------------------------------
-		bsm::Vec3 GetSolverVelocity() const;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	拘束を解く速度を設定する
-		@param[in]	velo	速度
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void SetSolverVelocity(const bsm::Vec3& velo);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	拘束を解く速度を加算設定する
-		@param[in]	velo	速度
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void AddSolverVelocity(const bsm::Vec3& velo);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 判定から除外するグループの取得。
@@ -202,33 +149,6 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl) {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const {}
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
 		@return	連結させたSPHERE
 		*/
@@ -254,7 +174,7 @@ namespace basecross {
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual AABB GetWrappingAABB()const = 0;
+//		virtual AABB GetWrappingAABB()const = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	中心位置を返す。仮想関数
@@ -262,15 +182,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual bsm::Vec3 GetCenterPosition()const = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 線分と自分の衝突チェック（判定するのみ）
-		@param[in]	Pos1	線分開始
-		@param[in]	Pos2	線分終了
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2) { return false; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突判定マネージャを返す
@@ -305,20 +216,6 @@ namespace basecross {
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
-	};
-
-	//--------------------------------------------------------------------------------------
-	//	struct CollisionHitPair ;
-	//	用途: 衝突ペア
-	//--------------------------------------------------------------------------------------
-	struct CollisionHitPair {
-		weak_ptr<Collision> m_Src;
-		weak_ptr<Collision> m_Dest;
-		bsm::Vec3 m_SrcNormal;
-		bsm::Vec3 m_SrcHitPoint;
-		float m_EscSpeed;
-		float m_Deps;
-		CollisionHitPair(){}
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -440,33 +337,6 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
 		@return	連結させたSPHERE
 		*/
@@ -474,20 +344,11 @@ namespace basecross {
 		virtual SPHERE GetEnclosingSphere()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 線分と自分の衝突チェック（判定するのみ）
-		@param[in]	Pos1	線分開始
-		@param[in]	Pos2	線分終了
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual AABB GetWrappingAABB()const override;
+//		virtual AABB GetWrappingAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	中心位置を返す。仮想関数
@@ -629,33 +490,6 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
 		@return	連結させたSPHERE
 		*/
@@ -663,20 +497,11 @@ namespace basecross {
 		virtual SPHERE GetEnclosingSphere()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 線分と自分の衝突チェック（判定するのみ）
-		@param[in]	Pos1	線分開始
-		@param[in]	Pos2	線分終了
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual AABB GetWrappingAABB()const override;
+//		virtual AABB GetWrappingAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	中心位置を返す。仮想関数
@@ -798,7 +623,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
+//		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -807,7 +632,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
+//		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 衝突法線を得る
@@ -816,7 +641,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
+//		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
@@ -832,14 +657,14 @@ namespace basecross {
 		@return	ヒットしてればtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
+//		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual AABB GetWrappingAABB()const override;
+//		virtual AABB GetWrappingAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	中心位置を返す。仮想関数

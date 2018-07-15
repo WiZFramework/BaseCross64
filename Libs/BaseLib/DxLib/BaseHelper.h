@@ -821,7 +821,25 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		static wstring SizeTToWStr(size_t num, NumModify Modify = NumModify::Dec) {
-			return UintToWStr((UINT)num,Modify);
+			//返す文字列
+			wstring str;
+			//書式を整えるストリーム
+			wostringstream stream;
+			//表示形式を決める
+			switch (Modify) {
+			case NumModify::Oct:
+				stream << std::oct << num;
+				break;
+			case NumModify::Hex:
+				stream << std::hex << num;
+				break;
+			case NumModify::Dec:
+			default:
+				stream << std::dec << num;
+				break;
+			}
+			str = stream.str();
+			return str;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

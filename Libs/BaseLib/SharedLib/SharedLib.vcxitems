@@ -22,8 +22,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)GameObject.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)BehaviorSteering.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)Rigidbody.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)RigidMini.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)RmManager.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SharedResources.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)SpriteStudio5.h" />
   </ItemGroup>
@@ -38,8 +36,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)Rigidbody.cpp">
       <FileType>Document</FileType>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)RigidMini.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)RmManager.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SharedResources.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)SpriteStudio5.cpp" />
   </ItemGroup>

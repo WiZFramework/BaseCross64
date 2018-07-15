@@ -31,32 +31,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct CollisionManager::Impl {
 		vector<CillisionItem> m_ItemVec;
-		vector<CollisionHitPair> m_EnterPairVec;
-		vector<CollisionHitPair> m_ExcutePairVec;
-		vector<CollisionHitPair> m_ExitPairVec;
 		Impl()
 		{}
 		~Impl() {}
-		bool CheckInPair(const CollisionHitPair& pair, const vector<CollisionHitPair>& TgtVec) const {
-			for (auto& v : TgtVec) {
-				if (v.m_Src.lock() == pair.m_Src.lock() && v.m_Dest.lock() == pair.m_Dest.lock()) {
-					return true;
-				}
-			}
-			return false;
-		}
-		//指定のコリジョンがペア配列にはいているかどうか
-		bool CheckCollisionInPair(const shared_ptr<Collision>& coll, const vector<CollisionHitPair>& TgtVec) const {
-			for (auto& v : TgtVec) {
-				if (v.m_Src.lock() == coll || v.m_Dest.lock() == coll) {
-					return true;
-				}
-			}
-			return false;
-
-		}
-
-
 	};
 
 
@@ -65,6 +42,8 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	CollisionManager::CollisionManager(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
+		m_PairSwap(0),
+		m_BeforePairSwap(1 - m_PairSwap),
 		pImpl(new Impl())
 	{}
 	CollisionManager::~CollisionManager() {}
@@ -95,281 +74,20 @@ namespace basecross {
 			if (Src.m_Collision->IsExcludeCollisionObject(v.m_Collision->GetGameObject())) {
 				continue;
 			}
-			//すでに衝突しているか
-			CollisionHitPair tempPair;
-			tempPair.m_Src = Src.m_Collision;
-			tempPair.m_Dest = v.m_Collision;
-			if (pImpl->m_ExcutePairVec.size() >= 2) {
-				int a = 0;
-			}
-			if (pImpl->CheckInPair(tempPair, pImpl->m_ExcutePairVec)) {
-				continue;
-			}
-			if (pImpl->CheckInPair(tempPair, pImpl->m_EnterPairVec)) {
-				continue;
-			}
 			//衝突判定(Destに呼んでもらう。ダブルデスパッチ呼び出し)
 			v.m_Collision->CollisionCall(Src.m_Collision);
 		}
 	}
 
 	void CollisionManager::OnUpdate() {
-		//ステップ2: EnterからExcuteに移行
-		EnterToExcutePair();
-		//ステップ3: ExcutePairの中から今は衝突してないペアを削除
-		UpdateExcutePair();
-		//ステップ1: トランスフォームからステートの取得
-		UpdateCollisionState();
-		//ステップ4: 衝突判定
-		UpdateEnterPair();
-		//ステップ5: 拘束の更新
-		UpdateSolver();
-		//ステップ6: メッセージを送る
-		SendCollisionMessage();
-	}
+		m_BeforePairSwap = m_PairSwap;
+		m_PairSwap = 1 - m_PairSwap;
+		m_PairVec[m_PairSwap].clear();
+		m_ExitPairVec.clear();
+		//キープが今も維持されているかチェック
+		//キープが外れたペアはm_ExitPairVecに追加される
+		CollisionKeepCheck();
 
-	void CollisionManager::SetEnterPair(const CollisionHitPair& pair) {
-		if (!pImpl->CheckInPair(pair, pImpl->m_EnterPairVec)) {
-			pImpl->m_EnterPairVec.push_back(pair);
-		}
-	}
-
-	bool CollisionManager::CollisionPair(const shared_ptr<CollisionSphere>& src, const shared_ptr<Collision>& dest, const bsm::Vec3& HitPoint, float& deps) {
-		auto Sp = dynamic_pointer_cast<CollisionSphere>(dest);
-		auto Cp = dynamic_pointer_cast<CollisionCapsule>(dest);
-		auto Obb = dynamic_pointer_cast<CollisionObb>(dest);
-		if (Sp) {
-			if (HitTest::SPHERE_SPHERE(src->GetSphere(), Sp->GetSphere())) {
-				return true;
-			}
-		}
-		else if (Cp) {
-			Vec3 d;
-			if (HitTest::SPHERE_CAPSULE(src->GetSphere(), Cp->GetCapsule(), d)) {
-				return true;
-			}
-		}
-		else if (Obb) {
-			Vec3 d;
-			SPHERE sp = src->GetSphere();
-			if (HitTest::SPHERE_OBB(sp, Obb->GetObb(), d)) {
-				if (bsm::length(sp.m_Center - d) <= 0.001f) {
-					deps = bsm::length(sp.m_Center - HitPoint) + sp.m_Radius;
-				}
-				else {
-					deps = abs(sp.m_Radius - bsm::length(sp.m_Center - HitPoint));
-				}
-
-
-				//最初にヒットしたポイントと球の中心の距離を測る
-//				deps = bsm::length(d - HitPoint);
-//				deps = bsm::length(src->GetSphere().m_Center - HitPoint);
-				//最近接点と球の中心の距離を測る
-//				deps = abs(bsm::length(src->GetSphere().m_Center - d) - src->GetSphere().m_Radius);
-//				deps /= COLLISION_TIME_STEP;
-//				deps *= 20.0f;
-				return true;
-			}
-		}
-		return false;
-	}
-	bool CollisionManager::CollisionPair(const shared_ptr<CollisionCapsule>& src, const shared_ptr<Collision>& dest, const bsm::Vec3& HitPoint, float& deps) {
-		auto Sp = dynamic_pointer_cast<CollisionSphere>(dest);
-		auto Cp = dynamic_pointer_cast<CollisionCapsule>(dest);
-		auto Obb = dynamic_pointer_cast<CollisionObb>(dest);
-		if (Sp) {
-			Vec3 d;
-			if (HitTest::SPHERE_CAPSULE(Sp->GetSphere(), src->GetCapsule(), d)) {
-				return true;
-			}
-		}
-		else if (Cp) {
-			Vec3 d1, d2;
-			if (HitTest::CAPSULE_CAPSULE(src->GetCapsule(), Cp->GetCapsule(), d1, d2)) {
-				return true;
-			}
-		}
-		else if (Obb) {
-			Vec3 d;
-			if (HitTest::CAPSULE_OBB(src->GetCapsule(), Obb->GetObb(), d)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool CollisionManager::CollisionPair(const shared_ptr<CollisionObb>& src, const shared_ptr<Collision>& dest, const bsm::Vec3& HitPoint, float& deps) {
-		auto Sp = dynamic_pointer_cast<CollisionSphere>(dest);
-		auto Cp = dynamic_pointer_cast<CollisionCapsule>(dest);
-		auto Obb = dynamic_pointer_cast<CollisionObb>(dest);
-		if (Sp) {
-			Vec3 d;
-			if (HitTest::SPHERE_OBB(Sp->GetSphere(), src->GetObb(), d)) {
-				return true;
-			}
-		}
-		else if (Cp) {
-			Vec3 d;
-			if (HitTest::CAPSULE_OBB(Cp->GetCapsule(), src->GetObb(), d)) {
-				return true;
-			}
-		}
-		else if (Obb) {
-			if (HitTest::OBB_OBB(src->GetObb(), Obb->GetObb())) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-
-	void CollisionManager::CollisionPairbase(vector<CollisionHitPair>& CheckVec, vector<CollisionHitPair>& tempVec) {
-		for (auto& v : CheckVec) {
-			auto SrcP = v.m_Src.lock();
-			auto DestP = v.m_Dest.lock();
-			if ((!SrcP) || (!DestP)) {
-				continue;
-			}
-			if (pImpl->CheckInPair(v, tempVec)) {
-				continue;
-			}
-			auto Sp = dynamic_pointer_cast<CollisionSphere>(SrcP);
-			auto Cp = dynamic_pointer_cast<CollisionCapsule>(SrcP);
-			auto Obb = dynamic_pointer_cast<CollisionObb>(SrcP);
-			float deps;
-			if (Sp) {
-				if (CollisionPair(Sp, DestP,v.m_SrcHitPoint, deps)) {
-					v.m_EscSpeed = deps;
-					tempVec.push_back(v);
-				}
-				else {
-					SrcP->SetSolverVelocity(Vec3(0.0f));
-					pImpl->m_ExitPairVec.push_back(v);
-				}
-			}
-			else if (Cp) {
-				if (CollisionPair(Cp, DestP, v.m_SrcHitPoint, deps)) {
-					tempVec.push_back(v);
-				}
-				else {
-					SrcP->SetSolverVelocity(Vec3(0.0f));
-					pImpl->m_ExitPairVec.push_back(v);
-				}
-			}
-			else if (Obb) {
-				if (CollisionPair(Obb, DestP, v.m_SrcHitPoint, deps)) {
-					tempVec.push_back(v);
-				}
-				else {
-					SrcP->SetSolverVelocity(Vec3(0.0f));
-					pImpl->m_ExitPairVec.push_back(v);
-				}
-			}
-		}
-	}
-
-	void CollisionManager::Solver(CollisionHitPair& SrcPair) {
-		auto SrcSh = SrcPair.m_Src.lock();
-		if (SrcSh) {
-			for (auto& v : pImpl->m_ExcutePairVec) {
-				auto TestSrcSh = v.m_Src.lock();
-				if (TestSrcSh && SrcSh == TestSrcSh) {
-					CollisionState& state = SrcSh->GetCollisionState();
-					auto Pos = state.GetPosition();
-					Pos += SrcPair.m_SrcNormal * SrcPair.m_Deps;
-					SrcPair.m_Deps *= 0.1f;
-					if (SrcPair.m_Deps <= 0.001f) {
-						SrcPair.m_Deps = 0.001f;
-					}
-					state.SetPosition(Pos);
-				}
-			}
-			//Transform更新用にもう一度ループ
-			for (auto& v : pImpl->m_ExcutePairVec) {
-				auto TestSrcSh = v.m_Src.lock();
-				if (TestSrcSh && SrcSh == TestSrcSh) {
-					CollisionState& state = SrcSh->GetCollisionState();
-					auto Pos = state.GetPosition();
-					auto Trans = SrcSh->GetGameObject()->GetComponent<Transform>();
-					Trans->SetWorldPosition(Pos);
-				}
-			}
-		}
-
-
-/*
-		auto SrcSh = SrcPair.m_Src.lock();
-		if (SrcSh) {
-			//Srcが主体のペアを探し出し、拘束を解く法線を作成する
-			bsm::Vec3 AllNormal;
-			float Speed = 0.0f;
-			int count = 0;
-			for (auto& v : pImpl->m_ExcutePairVec) {
-				auto TestSrcSh = v.m_Src.lock();
-				if (SrcSh && SrcSh == TestSrcSh) {
-					AllNormal += v.m_SrcNormal;
-					Speed += v.m_EscSpeed;
-					count++;
-				}
-			}
-			if (count > 0) {
-				if (count >= 2) {
-					int a = 0;
-				}
-		//		Speed /= (float)count;
-				AllNormal.normalize();
-//				auto Velo = SrcSh->GetSolverVelocity();
-				auto Velo = AllNormal * Speed;
-				SrcSh->SetSolverVelocity(Velo);
-//				Velo = SrcSh->GetSolverVelocity();
-				auto Trans = SrcSh->GetGameObject()->GetComponent<Transform>();
-				auto Pos = Trans->GetWorldPosition();
-				Pos = Pos + Velo *COLLISION_TIME_STEP;
-				Trans->SetWorldPosition(Pos);
-			}
-		}
-*/
-	}
-
-
-	void CollisionManager::UpdateCollisionState() {
-		auto& ObjVec = GetStage()->GetGameObjectVec();
-		for (auto& v : ObjVec) {
-			if (v->IsUpdateActive()) {
-				auto Col = v->GetComponent<Collision>(false);
-				if (Col && Col->IsUpdateActive()) {
-					if (!pImpl->CheckCollisionInPair(Col, pImpl->m_ExcutePairVec)) {
-						Col->SetCollisionStateFromTransform();
-					}
-				}
-			}
-		}
-	}
-
-
-	void CollisionManager::EnterToExcutePair() {
-		for (auto& v : pImpl->m_EnterPairVec) {
-			pImpl->m_ExcutePairVec.push_back(v);
-		}
-		//Enterをクリア
-		pImpl->m_EnterPairVec.clear();
-	}
-
-
-	void CollisionManager::UpdateExcutePair() {
-		//Exitをクリア
-		pImpl->m_ExitPairVec.clear();
-		vector<CollisionHitPair> TempVec(pImpl->m_ExcutePairVec.size());
-		TempVec.clear();
-		//Excuteのペアが今も衝突しているかチェック
-		//衝突していなければExitPairに回る
-		CollisionPairbase(pImpl->m_ExcutePairVec, TempVec);
-		pImpl->m_ExcutePairVec.resize(TempVec.size());
-		pImpl->m_ExcutePairVec = TempVec;
-	}
-
-	void CollisionManager::UpdateEnterPair() {
-		//中間的なItemVecをクリア
 		pImpl->m_ItemVec.clear();
 		auto& ObjVec = GetStage()->GetGameObjectVec();
 		for (auto& v : ObjVec) {
@@ -392,49 +110,204 @@ namespace basecross {
 				}
 			}
 		}
+
+
+		auto func = [&](CillisionItem& Left, CillisionItem& Right)->bool {
+			auto PtrLeftVelo = Left.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
+			auto PtrRightVelo = Right.m_Collision->GetGameObject()->GetComponent<Transform>()->GetVelocity();
+			auto LeftLen = bsm::length(PtrLeftVelo);
+			auto RightLen = bsm::length(PtrRightVelo);
+
+			return (LeftLen < RightLen);
+		};
+
+		std::sort(pImpl->m_ItemVec.begin(), pImpl->m_ItemVec.end(), func);
+
+
 		for (size_t i = 0; i < pImpl->m_ItemVec.size(); i++) {
 			if (!pImpl->m_ItemVec[i].m_Collision->IsFixed()) {
 				CollisionSub(i);
 			}
 		}
+
+		SendCollisionMessage();
 	}
 
-	void CollisionManager::UpdateSolver() {
-		//これより拘束を解く
-		for (auto& v : pImpl->m_ExcutePairVec) {
-			auto SrcSh = v.m_Src.lock();
-			if (SrcSh) {
-				Solver(v);
-			}
-		}
 
-/*
-		//これより拘束を解く
-		shared_ptr<Collision> tempCol = nullptr;
-		for (auto& v : pImpl->m_ExcutePairVec) {
-			auto SrcSh = v.m_Src.lock();
-			if (SrcSh && (SrcSh != tempCol)) {
-				tempCol = SrcSh;
-				Solver(v);
+	bool CollisionManager::CheckInPair(const CollisionPair& tgt, UINT swap) {
+		auto ShTgtSrc = tgt.m_Src.lock();
+		auto ShTgtDest = tgt.m_Dest.lock();
+		if ((!ShTgtSrc) || (!ShTgtDest)) {
+			return false;
+		}
+		for (auto& v : m_PairVec[swap]) {
+			auto ShChkSrc = v.m_Src.lock();
+			auto ShChkDest = v.m_Dest.lock();
+			if (ShChkSrc && ShChkDest) {
+				if (ShTgtSrc == ShChkSrc && ShTgtDest == ShChkDest) {
+					return true;
+				}
 			}
 		}
-*/
+		return false;
 	}
+
+	bool CollisionManager::CollisionCheckSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest) {
+		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
+		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
+		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
+		auto SrcSp = Src->GetSphere();
+		if (ShDestSp) {
+			auto DestSp = ShDestSp->GetSphere();
+			if (HitTest::SPHERE_SPHERE(SrcSp, DestSp)) {
+				return true;
+			}
+		}
+		else if (ShDestCap) {
+			auto DestCap = ShDestCap->GetCapsule();
+			bsm::Vec3 d;
+			if (HitTest::SPHERE_CAPSULE(SrcSp, DestCap,d)) {
+				return true;
+			}
+		}
+		else if (ShDestObb) {
+			auto DestObb = ShDestObb->GetObb();
+			bsm::Vec3 d;
+			if (HitTest::SPHERE_OBB(SrcSp, DestObb, d)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool CollisionManager::CollisionCheckSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest) {
+		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
+		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
+		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
+		auto SrcCap = Src->GetCapsule();
+		if (ShDestSp) {
+			bsm::Vec3 d;
+			auto DestSp = ShDestSp->GetSphere();
+			if (HitTest::SPHERE_CAPSULE(DestSp, SrcCap,d)) {
+				return true;
+			}
+		}
+		else if (ShDestCap) {
+			auto DestCap = ShDestCap->GetCapsule();
+			bsm::Vec3 d1,d2;
+			if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, d1,d2)) {
+				return true;
+			}
+		}
+		else if (ShDestObb) {
+			auto DestObb = ShDestObb->GetObb();
+			bsm::Vec3 d;
+			if (HitTest::CAPSULE_OBB(SrcCap, DestObb, d)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	bool CollisionManager::CollisionCheckSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest) {
+		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
+		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
+		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
+		auto SrcObb = Src->GetObb();
+		if (ShDestSp) {
+			bsm::Vec3 d;
+			auto DestSp = ShDestSp->GetSphere();
+			if (HitTest::SPHERE_OBB(DestSp, SrcObb,d)) {
+				return true;
+			}
+		}
+		else if (ShDestCap) {
+			auto DestCap = ShDestCap->GetCapsule();
+			bsm::Vec3 d;
+			if (HitTest::CAPSULE_OBB(DestCap, SrcObb, d)) {
+				return true;
+			}
+		}
+		else if (ShDestObb) {
+			auto DestObb = ShDestObb->GetObb();
+			if (HitTest::OBB_OBB(SrcObb, DestObb)) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+
+	bool CollisionManager::CollisionCheck(const shared_ptr<Collision>& Src, const shared_ptr<Collision>& Dest) {
+		auto ShSrcSp = dynamic_pointer_cast<CollisionSphere>(Src);
+		auto ShSrcCap = dynamic_pointer_cast<CollisionCapsule>(Src);
+		auto ShSrcObb = dynamic_pointer_cast<CollisionObb>(Src);
+		if (ShSrcSp) {
+			return CollisionCheckSub(ShSrcSp, Dest);
+		}
+		else if (ShSrcCap) {
+			return CollisionCheckSub(ShSrcCap, Dest);
+		}
+		else if (ShSrcObb) {
+			return CollisionCheckSub(ShSrcObb, Dest);
+		}
+		return false;
+	}
+
+
+	void CollisionManager::CollisionKeepCheck() {
+		//テンポラリをキープ用配列と同じ大きさで確保
+		vector<CollisionPair> TmpPairVec(m_PairVec[m_BeforePairSwap].size());
+		//いったんクリア
+		TmpPairVec.clear();
+
+		for (auto& v : m_PairVec[m_BeforePairSwap]) {
+			auto ShTgtSrc = v.m_Src.lock();
+			auto ShTgtDest = v.m_Dest.lock();
+			if ((!ShTgtSrc) || (!ShTgtDest)) {
+				continue;
+			}
+			if (CollisionCheck(ShTgtSrc, ShTgtDest)) {
+				//衝突している
+				TmpPairVec.push_back(v);
+			}
+			else {
+				//すでに衝突していない
+				m_ExitPairVec.push_back(v);
+			}
+		}
+		m_PairVec[m_BeforePairSwap].resize(TmpPairVec.size());
+		m_PairVec[m_BeforePairSwap] = TmpPairVec;
+	}
+
+
+	void CollisionManager::AddNewCollisionPair(const CollisionPair& pair) {
+		if (CheckInPair(pair, m_BeforePairSwap)) {
+			//すでにキープ用の配列にある
+			return;
+		}
+		m_PairVec[m_PairSwap].push_back(pair);
+	}
+
+
+
+
 
 
 	void CollisionManager::SendCollisionMessageSub(CollMessType messtype) {
-		vector<CollisionHitPair>& tgt = pImpl->m_ExitPairVec;
+		vector<CollisionPair>& tgt = m_ExitPairVec;
 		switch (messtype) {
 		case CollMessType::Enter:
-			tgt = pImpl->m_EnterPairVec;
+			tgt = m_PairVec[m_PairSwap];
 			break;
 		case CollMessType::Excute:
-			tgt = pImpl->m_ExcutePairVec;
+			tgt = m_PairVec[m_BeforePairSwap];
 			break;
 		case CollMessType::Exit:
-			tgt = pImpl->m_ExitPairVec;
+			tgt = m_ExitPairVec;
 			break;
 		}
+
 
 		set<shared_ptr<Collision>> SrcSet;
 		for (auto& v : tgt) {
