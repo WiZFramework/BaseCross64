@@ -207,6 +207,33 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	球体コリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	カプセルコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	Obbコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal) = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief 描画処理。デフォルトは何も行わない
 		@return	なし
 		*/
@@ -356,6 +383,33 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual bsm::Vec3 GetCenterPosition()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	球体コリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override{}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	カプセルコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	Obbコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -509,6 +563,33 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual bsm::Vec3 GetCenterPosition()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	球体コリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	カプセルコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	Obbコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -672,6 +753,33 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual bsm::Vec3 GetCenterPosition()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	球体コリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	カプセルコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	相手からエスケープする
+		@param[in]	Other	Obbコリジョン
+		@param[in]	SrcHitNormal	衝突法線
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる

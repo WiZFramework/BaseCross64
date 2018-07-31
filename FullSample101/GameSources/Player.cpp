@@ -15,9 +15,7 @@ namespace basecross{
 	//構築と破棄
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
-		m_MaxSpeed(10.0f),	//最高速度
-		m_Decel(0.95f),	//減速値
-		m_Mass(1.0f)	//質量
+		m_Velocity(0)
 	{}
 
 	Vec3 Player::GetMoveVector() const {
@@ -60,11 +58,11 @@ namespace basecross{
 	void Player::MovePlayer() {
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		Vec3 Angle = GetMoveVector();
-		//Collisionを取り出す
-		auto PtrColl = GetComponent<Collision>();
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		Pos += Angle * 0.1f;
-		GetComponent<Transform>()->SetPosition(Pos);
+		if (Angle.length() > 0.0f) {
+			auto Pos = GetComponent<Transform>()->GetPosition();
+			Pos += Angle * ElapsedTime * 4.0f;
+			GetComponent<Transform>()->SetPosition(Pos);
+		}
 		//回転の計算
 		if (Angle.length() > 0.0f) {
 			auto UtilPtr = GetBehavior<UtilBehavior>();
@@ -83,6 +81,8 @@ namespace basecross{
 
 		//CollisionSphere衝突判定を付ける
 		auto PtrColl = AddComponent<CollisionSphere>();
+		//重力をつける
+		auto PtrGra = AddComponent<Gravity>();
 
 
 		//文字列をつける
@@ -111,28 +111,25 @@ namespace basecross{
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
-		//ステートマシンの構築
-		m_StateMachine.reset(new StateMachine<Player>(GetThis<Player>()));
-		//最初のステートをPlayerDefaultにリセット
-		m_StateMachine->ChangeState(PlayerDefaultState::Instance());
 	}
 
 	//更新
 	void Player::OnUpdate() {
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
-		//ステートマシン更新
-		m_StateMachine->Update();
+		MovePlayer();
 	}
 
 	void Player::OnUpdate2() {
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		Pos.y = 0.125f;
-		GetComponent<Transform>()->SetPosition(Pos);
 		//文字列の表示
 		DrawStrings();
 	}
 
+	//Aボタン
+	void Player::OnPushA() {
+		auto Grav = GetComponent<Gravity>();
+		Grav->StartJump(Vec3(0,4.0f,0));
+	}
 
 	void Player::OnCollisionEnter(vector<shared_ptr<GameObject>>& OtherVec) {
 		int a = 0;
@@ -151,7 +148,6 @@ namespace basecross{
 	void Player::DrawStrings() {
 
 		//文字列表示
-
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring FPS(L"FPS: ");
 		FPS += Util::UintToWStr(fps);
@@ -166,18 +162,6 @@ namespace basecross{
 		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
 		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring CollStr(L"Collision: \n");
-		auto CollMng = GetStage()->GetCollisionManager();
-		auto& Vec = CollMng->GetPairVec();
-		if (Vec.size() == 0) {
-			CollStr += L"NoCollision";
-		}
-		for (auto& v : Vec) {
-			CollStr += Util::SizeTToWStr((size_t)v.m_Src.lock().get()) + L",\t";
-			CollStr += Util::SizeTToWStr((size_t)v.m_Dest.lock().get()) + L",\t";
-		}
-		CollStr += L"\n";
-
 
 
 		wstring RididStr(L"Velocity:\t");
@@ -188,46 +172,19 @@ namespace basecross{
 		RididStr += L"Z=" + Util::FloatToWStr(Velocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 */
 
-		wstring str = FPS + PositionStr + CollStr;
+		wstring GravStr(L"GravityVelocoty:\t");
+		auto GravVelocity = GetComponent<Gravity>()->GetGravityVelocity();
+		GravStr += L"X=" + Util::FloatToWStr(GravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Y=" + Util::FloatToWStr(GravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		GravStr += L"Z=" + Util::FloatToWStr(GravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+
+		wstring str = FPS + PositionStr + GravStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);
 	}
 
-
-	//--------------------------------------------------------------------------------------
-	///	通常ステート
-	//--------------------------------------------------------------------------------------
-
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerDefaultState)
-
-	void PlayerDefaultState::Enter(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	void PlayerDefaultState::Execute(const shared_ptr<Player>& Obj) {
-		Obj->MovePlayer();
-	}
-
-	void PlayerDefaultState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
-
-	//--------------------------------------------------------------------------------------
-	///	ジャンプステート
-	//--------------------------------------------------------------------------------------
-	IMPLEMENT_SINGLETON_INSTANCE(PlayerJumpState)
-
-	void PlayerJumpState::Enter(const shared_ptr<Player>& Obj) {
-	}
-
-	void PlayerJumpState::Execute(const shared_ptr<Player>& Obj) {
-		Obj->GetStateMachine()->ChangeState(PlayerDefaultState::Instance());
-	}
-
-	void PlayerJumpState::Exit(const shared_ptr<Player>& Obj) {
-		//何もしない
-	}
 
 }
 //end basecross

@@ -1117,7 +1117,7 @@ namespace basecross{
 			m_framesPerSecond(0),
 			m_framesThisSecond(0),
 			m_qpcSecondCounter(0),
-			m_isFixedTimeStep(true),
+			m_isFixedTimeStep(false),
 			m_targetElapsedTicks(TicksPerSecond / 60)
 		{
 			if (!QueryPerformanceFrequency(&m_qpcFrequency))

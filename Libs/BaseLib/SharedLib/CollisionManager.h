@@ -9,40 +9,32 @@
 
 namespace basecross {
 
-	//--------------------------------------------------------------------------------------
-	//	衝突ペア
-	//--------------------------------------------------------------------------------------
 	struct CollisionPair {
 		weak_ptr<Collision> m_Src;
 		weak_ptr<Collision> m_Dest;
+		bsm::Vec3 m_SrcHitNormal;
+		CollisionPair():
+			m_SrcHitNormal(0)
+		{}
 	};
 
 	//--------------------------------------------------------------------------------------
 	//	衝突判定マネージャ
 	//--------------------------------------------------------------------------------------
 	class CollisionManager : public GameObject {
-		enum class CollMessType {
-			Enter,
-			Excute,
-			Exit
-		};
-		vector<CollisionPair> m_PairVec[2];
-		vector<CollisionPair> m_ExitPairVec;
-		UINT m_PairSwap;
-		UINT m_BeforePairSwap;
-		void CollisionKeepCheck();
-		bool CollisionCheckSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest);
-		bool CollisionCheckSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest);
-		bool CollisionCheckSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest);
+		vector<CollisionPair> m_CollisionPairVec[2];
+		//計算に使う配列
+		vector<CollisionPair> m_TempVec;
 
-		bool CollisionCheck(const shared_ptr<Collision>& Src, const shared_ptr<Collision>& Dest);
-
-		bool CheckInPair(const CollisionPair& tgt,UINT swap);
-
-
-		void CollisionSub(size_t SrcIndex);
-		void SendCollisionMessageSub(CollMessType messtype);
-		void SendCollisionMessage();
+		UINT m_NewIndex;
+		UINT m_KeepIndex;
+		void EscapePair(CollisionPair& Pair);
+		bool SimpleCollisionPair(const CollisionPair& Pair);
+		bool SimpleCollisionPairSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest);
+		bool SimpleCollisionPairSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest);
+		bool SimpleCollisionPairSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest);
+		void SetNewCollision();
+		void SetNewCollisionSub(const shared_ptr<Collision>& Src);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -59,6 +51,50 @@ namespace basecross {
 		virtual ~CollisionManager();
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief ペアがあるかどうか
+		@param[in]	Src	ソース
+		@param[in]	Dest	デステネーション
+		@param[in]	IsKeep	キープペアかどうか
+		@return	ペアがあればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsInPair(const shared_ptr<Collision>& Src, const shared_ptr<Collision>& Dest, bool IsKeep) {
+			UINT Index = m_NewIndex;
+			if (IsKeep) {
+				Index = m_KeepIndex;
+			}
+			for (auto& v : m_CollisionPairVec[Index]) {
+				if (v.m_Src.lock() == Src && v.m_Dest.lock() == Dest) {
+					return true;
+				}
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief そのCollisionがキープ中かどうかどうか
+		@param[in]	Coll	調べるコリジョン
+		@return	キープ中ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsInKeep(const shared_ptr<Collision>& Coll) {
+			for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+				if (v.m_Src.lock() == Coll || v.m_Dest.lock() == Coll) {
+					return true;
+				}
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 新規の衝突ペアの設定
+		@param[in]	NewPair	新しいペア
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void InsertNewPair(const CollisionPair& NewPair);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief 初期化
 		@return	なし
 		*/
@@ -71,43 +107,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnUpdate() override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	新しい衝突ペアを設定する。すでに衝突していた場合は何もしない
-		@param[in]	pair	新しいペア
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		void AddNewCollisionPair(const CollisionPair& pair);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	現在の衝突ペアの配列を得る(const)
-		@return	現在の衝突ペアの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<CollisionPair> GetPairVec() const {
-			return m_PairVec[m_PairSwap];
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	1つ前の衝突ペアの配列を得る(const)
-		@return	1つ前の衝突ペアの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<CollisionPair> GetBeforePairVec() const {
-			return m_PairVec[m_BeforePairSwap];
-		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	衝突終了のペアの配列を得る(const)
-		@return	衝突終了のペアの配列
-		*/
-		//--------------------------------------------------------------------------------------
-		const vector<CollisionPair> GetExitPairVec() const {
-			return m_ExitPairVec;
-		}
-
 	private:
 		//Implイディオム
 		struct Impl;

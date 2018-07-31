@@ -46,6 +46,7 @@ namespace basecross {
 		pImpl->m_Fixed = b;
 	}
 
+
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
 		auto shptr = pImpl->m_ExcludeCollisionGroup.lock();
 		if (shptr) {
@@ -240,7 +241,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -269,7 +270,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -298,7 +299,16 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			SPHERE SrcChkSphere = SrcBeforSphere;
+			SrcChkSphere.m_Center += SrcVelocity * HitTime;
+			OBB DestChkObb = DestBeforeObb;
+			DestChkObb.m_Center += DestVelocity * HitTime;
+			bsm::Vec3 ret;
+			HitTest::SPHERE_OBB(SrcChkSphere, DestChkObb, ret);
+			pair.m_SrcHitNormal = SrcChkSphere.m_Center - ret;
+			pair.m_SrcHitNormal.normalize();
+			//衝突した瞬間で止める
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -314,6 +324,23 @@ namespace basecross {
 		SPHERE SrcSphere = GetSphere();
 		return SrcSphere.m_Center;
 	}
+
+	void CollisionSphere::EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal) {
+		SPHERE SrcSphere = GetSphere();
+		OBB DestObb = Other->GetObb();
+		bsm::Vec3 Ret;
+		bool Ishit = HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret);
+		if (Ishit) {
+			bsm::Vec3 span = SrcSphere.m_Center - Ret;
+			span.normalize();
+			span *= SrcSphere.m_Radius;
+			span += Ret;
+			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+			//エスケープはリセット
+			PtrTransform->ResetWorldPosition(span);
+		}
+	}
+
 
 	void CollisionSphere::OnDraw() {
 		GenericDraw Draw;
@@ -467,7 +494,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -495,7 +522,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -523,7 +550,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -654,7 +681,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -684,7 +711,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
@@ -714,7 +741,7 @@ namespace basecross {
 			CollisionPair pair;
 			pair.m_Src = GetThis<Collision>();
 			pair.m_Dest = DestColl;
-			GetCollisionManager()->AddNewCollisionPair(pair);
+			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
 
