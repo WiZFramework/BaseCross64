@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１１．チュートリアル</h2>
+<h3>１１０１．コリジョンを使った３Ｄの配置</h3>
+　このサンプルは<b>FullSample101</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1101a.png" width="80%"/>
+<p>図1101a</p>
+<p>&nbsp;</p>
+　このサンプルから<b>XBoxコントローラ</b>が必須になります。<br />
+<h4>コリジョンとは</h4>
+　<b>コリジョン（Collision）</b>とは<b>衝突判定</b>のことです。<b>BaseCross</b>では<b>球体、カプセル、OBB（直方体）</b>と<b>矩形、三角形の集合</b>の形状のコリジョンを持ってました。<br />
+　また<b>Rigidbodyコンポーネント</b>や<b>Gravity行動</b>を結びつけることにより、簡易的な物理処理を行っていました。<br />
+　<b>BaseCross</b>ではこのほかに<b>PsBodyコンポーネント</b>という<b>完全な物理処理</b>を行うコンポーネントを持っていました。<br />
+　<b>BaseCross</b>ではいささか複雑になっていた各オブジェクトの役割を<b>BaseCross64</b>では仕様をスッキリさせました。<br />
+　具体的には
+まず以下の表を見てください。<br/>
+<br />
+<table>
+<tr>
+<th width="10%">クラス名</th>
+<th width="45%">BaseCrossでの実装</th>
+<th width="45%">BaseCross64での実装</th>
+</tr>
+<tr>
+<td>Collision</td>
+<td>衝突判定。Rigidbodyと相互関係がある</td>
+<td>衝突判定。判定と衝突した相手からのエスケープのみ行う</td>
+</tr>
+<tr>
+<td>Gravity</td>
+<td>重力。Behavior（行動）として実装。Rigidbodyと相互関係がある</td>
+<td>重力。コンポーネントとして実装。Collisionと相互関係がある。</td>
+</tr>
+<tr>
+<td>Rigidbody</td>
+<td>簡易物理演算。コンポーネントとして実装。CollisionおよびGravityと相互関係がある</td>
+<td>物理エンジンとして実装。コンポーネントとして実装</td>
+</tr>
+<tr>
+<td>PsBody</td>
+<td>物理エンジンとして実装。コンポーネントとして実装</td>
+<td>廃止</td>
+</tr>
+</table>
+<br />
+　このように、<b>CollisionとGravityを使って</b>簡易的な衝突判定とエスケープ、そして重力を実装するか、<b>Rigidbody</b>を使って、完全な物理処理を実装するか、の2択になります。<br />
+　また<b>Rigidbody</b>を使って、完全な物理処理を実装したうえで、<b>Collision</b>により、衝突情報を取得するような実装にするか（これについては、チュートリアルではなく、のちのサンプルで紹介します）も可能です。<br />
+<h4>コリジョンによる３Ｄ空間の実装</h4>
+　このサンプルに配置されているオブジェクトは以下の通りです。
+<h4>プレイヤー</h4>
+　プレイヤーは<b>player.h/cpp</b>に実装されています。<br />
+　プレイヤーはコントローラで動かすことができます。Aボタンでジャンプします。<br />
+　チュートリアルですので、要点だけ説明します。以下は、プレイヤーの<b>OnCreate()関数</b>です。プレイヤーオブジェクトが構築されるタイミングで呼ばれます。
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+
+    //初期位置などの設定
+    auto Ptr = AddComponent&lt;Transform>();
+    Ptr->SetScale(0.25f, 0.25f, 0.25f); //直径25センチの球体
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(0, 0.125f, 0);
+
+    <span class="red">//CollisionSphere衝突判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    //重力をつける
+    auto PtrGra = AddComponent&lt;Gravity>();</span>
+
+
+    //文字列をつける
+    auto PtrString = AddComponent&lt;StringSprite>();
+    PtrString->SetText(L"");
+    PtrString->SetTextRect(Rect2D&lt;float>(16.0f, 16.0f, 640.0f, 480.0f));
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画するメッシュを設定
+    PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    PtrDraw->SetFogEnabled(true);
+    //描画するテクスチャを設定
+    PtrDraw->SetTextureResource(L"TRACE_TX");
+    SetAlphaActive(true);
+
+    //カメラを得る
+    auto PtrCamera = dynamic_pointer_cast&lt;MyCamera>(OnGetDrawCamera());
+    if (PtrCamera) {
+        //MyCameraである
+        //MyCameraに注目するオブジェクト（プレイヤー）の設定
+        PtrCamera->SetTargetObject(GetThis&lt;GameObject>());
+        PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
+    }
+}
+</pre>
+</div>
+　赤くなっているところがこの項のポイントです。<br />
+　プレイヤーは、コントローラの操作によって移動したりジャンプしてるわけですが、<b>CollisionSphereコンポーネント（球体のコリジョン）</b>を持ち、重力に影響します。<br />
+　この記述で、ほかのコリジョンを持っているオブジェクトと衝突判定を行い、必要であれば、お互いの領域からエスケープ（相手の領域から脱出する）実装をします。<br />
+　コンポーネントの実装方法や仕組みについては、のちのサンプルで説明しますので、今の段階ではこう覚えておいた方がいいでしょう。
+<h4>追いかけるオブジェクト</h4>
+　プレイヤーに移動に合わせ、常に追いかけてくるオブジェクトがあります。この実装は<b>Character.h/cpp</b>にあります。<br />
+　
+<div class="box1">
+<pre>
+void SeekObject::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetPosition(m_StartPos);
+    PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
+    PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+
+    //オブジェクトのグループを得る
+    auto Group = GetStage()->GetSharedObjectGroup(L"SeekGroup");
+    //グループに自分自身を追加
+    Group->IntoGroup(GetThis&lt;SeekObject>());
+    <span class="red">//Obbの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionObb>();
+    //重力をつける
+    auto PtrGra = AddComponent&lt;Gravity>();</span>
+    //分離行動をつける
+    auto PtrSep = GetBehavior&lt;SeparationSteering>();
+    PtrSep->SetGameObjectGroup(Group);
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetTextureResource(L"TRACE_TX");
+    //透明処理をする
+    SetAlphaActive(true);
+
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;SeekObject>(GetThis&lt;SeekObject>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(FarState::Instance());
+}
+</pre>
+</div>
+　プレイヤー同様赤くなっている部分がポイントです。<b>CollisionObbコンポーネント</b>をもち、重力<b>Gravityコンポーネント</b>を実装します。<br />
+　このオブジェクトは<b>プレイヤーを追いかける</b>という機能を実装するために<b>SeparationSteering（分離）、SeekSteering（追跡）、ArriveSteering（到着）</b>の<b>行動</b>が実装されていますが、それらの説明は、のちのサンプルで行います。<br />
+<h4>動かすことができる箱</h4>
+　このサンプルの右手斜め前方向に<b>壁模様の箱</b>があります。これは<b>Character.h/cpp</b>にある<b>MoveBoxクラス</b>です。以下はその構築用のソースです。
+<div class="box1">
+<pre>
+void MoveBox::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetRotation(m_Rotation);
+    PtrTransform->SetPosition(m_Position);
+    <span class="red">//OBB衝突j判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionObb>();
+    //重力をつける
+    auto PtrGra = AddComponent&lt;Gravity>();</span>
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+    //描画処理
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetTextureResource(L"WALL_TX");
+    PtrDraw->SetOwnShadowActive(true);
+}
+</pre>
+</div>
+　このオブジェクトも<b>SeekObject</b>と同じように、<b>CollisionObb衝突判定</b>と<b>Gravity</b>のコンポーネントを実装してあります。<br />
+　このオブジェクトは自分で動くことはないですが、<b>プレイヤー</b>や<b>SeekObject</b>にぶつかる（小突かれる）ことによって場所を変えます。この動きは、もっぱら<b>当たった相手から離れる（エスケープする）</b>ことによって動きます。
+<h4>動かない箱</h4>
+　このステージには<b>動かない箱</b>がいくつかあります。代表的なのは、<b>ステージの床</b>です。これがないと、プレイヤーやSekObjectが重力の影響ですぐに落ちてしまいます。<br/>
+　このほかには、左右の前方にあるいくつか組み合わさった箱です。これらにはプレイヤーがぶつかったり、ジャンプで登ったり、あるいは<b>SeekObject</b>がプレイヤーの後についてきて一緒に登ったりします。<br />
+　以下はその構築コードです。
+<div class="box1">
+<pre>
+void FixedBox::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(m_Scale);
+    PtrTransform->SetRotation(m_Rotation);
+    PtrTransform->SetPosition(m_Position);
+    <span class="red">//OBB衝突j判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionObb>();
+    PtrColl->SetFixed(true);</span>
+    //タグをつける
+    AddTag(L"FixedBox");
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetTextureResource(L"SKY_TX");
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetOwnShadowActive(true);
+
+}
+</pre>
+</div>
+　このように<b>CollisionObb衝突判定</b>のみ付けます。重力の影響は受けないので<b>Gravity</b>は付けません。<br />
+　動くことはないのでコリジョンに、<b>PtrColl->SetFixed(true);</b>という属性を付けます。<br />
+　<b>PtrColl->SetFixed(true);</b>というのは<b>動かない</b>という属性ではありません。例えばこのボックスが行ったり来たりの運動をしている場合でも、例えばプレイヤーがぶつかっても<b>その影響は受けない</b>という意味です。<br />
+　そのあたりの<b>属性</b>に対する説明も、のちのサンプルで説明します。
+<h4>まとめ</h4>
+　このように、このサンプルにはプレイヤー含め<b>4種類</b>のクラスが実装されています。<br />
+　同じクラスのオブジェクトは、C++のインスタンス機能により複数作成することができます。<br />
+<br />
+　このサンプルは<b>コリジョンと重力</b>のみで世界を表現しています。<br />
+　正確な物理計算をしているわけではないので、例えば<b>MoveBox</b>は小突かれて<b>移動</b>しても<b>回転</b>をするこちはありません。<br />
+　しかし、多くのゲームの場合、<b>正確な物理計算</b>を必要とするものではありません。例えば横スクロールの３Ｄ世界の場合は、かえって物理計算が負担になる場合もあります。<br />
+　また、<b>物理法則に合わない</b>表現をしたい場合があります。ゲームの世界は<b>それっぽく見える</b>ことが重要で、<b>物理法則</b>が重要でない場合もおいです。<br />
+　また計算の負荷も間違いなく<b>物理世界</b>を表現するほうが負荷が大きくなります。<br />
+<br />
+　次項では、<b>物理計算を使った３Ｄの世界</b>を紹介します。このサンプルとの違いを確認しましょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="11_00.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="11_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

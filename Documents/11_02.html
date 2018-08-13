@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１１．チュートリアル</h2>
+<h3>１１０２．物理計算を使った３Ｄの配置</h3>
+　このサンプルは<b>FullSample102</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1102a.png" width="80%"/>
+<p>図1102a</p>
+<p>&nbsp;</p>
+　このサンプルも<b>XBoxコントローラ</b>が必須になります。<br />
+<h4>Rigidbodyコンポーネント</h4>
+　前項の<b>BaseCrossとの比較表</b>にも説明しましたように、<b>BaseCross64</b>では<b>Rigidbodyコンポーネント</b>はすなわち<b>物理計算をするコンポーネント</b>です。<br />
+　この項では<b>Rigidbodyコンポーネント</b>の基本的な使い方、を説明します。
+<h4>プレイヤー</h4>
+　まずプレイヤーからです。<br />
+　プレイヤーは<b>Player.h/cpp</b>に実装があります。以下は、構築用関数である<b>Player::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+//初期化
+void Player::OnCreate() {
+    //初期位置などの設定
+    auto PtrTrans = GetComponent&lt;Transform>();
+    PtrTrans->SetScale(Vec3(m_Scale));  //直径25センチの球体
+    PtrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+    auto bkCamera = App::GetApp()->GetScene&lt;Scene>()->GetBackupCamera();
+    Vec3 FirstPos;
+    if (!bkCamera) {
+        FirstPos = Vec3(0, m_Scale * 0.5f, 0);
+    }
+    else {
+        FirstPos = App::GetApp()->GetScene&lt;Scene>()->GetBackupPlayerPos();
+    }
+    PtrTrans->SetPosition(FirstPos);
+    <span class="red">//WorldMatrixをもとにRigidbodySphereのパラメータを作成
+    PsSphereParam param(PtrTrans->GetWorldMatrix(),1.0f,false, PsMotionType::MotionTypeActive);
+    //RigidbodySphereコンポーネントを追加
+    auto PsPtr = AddComponent&lt;RigidbodySphere>(param);
+    //自動的にTransformを設定するフラグは無し
+    PsPtr->SetAutoTransform(false);</span>
+
+    //文字列をつける
+    auto PtrString = AddComponent&lt;StringSprite>();
+    PtrString->SetText(L"");
+    PtrString->SetTextRect(Rect2D&lt;float>(16.0f, 16.0f, 640.0f, 480.0f));
+
+    //影をつける（シャドウマップを描画する）
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+    //描画コンポーネントの設定
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画するメッシュを設定
+    PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    //描画するテクスチャを設定
+    PtrDraw->SetTextureResource(L"TRACE_TX");
+
+    //透明処理
+    SetAlphaActive(true);
+    //カメラを得る
+    auto PtrCamera = dynamic_pointer_cast&lt;MyCamera>(OnGetDrawCamera());
+    if (PtrCamera) {
+        //MyCameraである
+        //MyCameraに注目するオブジェクト（プレイヤー）の設定
+        PtrCamera->SetTargetObject(GetThis&lt;GameObject>());
+        PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
+    }
+}
+</pre>
+</div>
+　ここで<b>Rigidbodyコンポーネント</b>の実装に使っている<b>PsSphereParam</b>というのは構造体です。以下の様な内容になります。(見やすいように一部インライン化してます)
+<div class="box1">
+<pre>
+struct PsSphereParam : public PsParam {
+    float m_Radius;
+    PsSphereParam() :
+        m_Radius(1.0f)
+    {}
+    PsSphereParam(const bsm::Mat4x4& mat,
+        float mass, bool UseSleep, PsMotionType mtype){
+        //basecrossのスケーリングは直径基準なので、半径基準にする
+        m_Radius = mat.scaleInMatrix().y * 0.5f;
+        m_Mass = mass;
+        //慣性テンソルの計算
+        m_Inertia = BasePhysics::CalcInertiaSphere(m_Radius, m_Mass);
+        m_UseSleep = UseSleep;
+        m_MotionType = mtype;
+        m_Quat = mat.quatInMatrix();
+        m_Pos = mat.transInMatrix();
+    }
+};
+</pre>
+</div>
+　PsSphereParamのコンストラクタは親クラスのメンバも直接設定しています。親クラスの<b>PsParam</b>は以下のようになります。
+<div class="box1">
+<pre>
+struct PsParam {
+    PsMotionType m_MotionType;
+    bsm::Quat m_Quat;
+    bsm::Vec3 m_Pos;
+    bsm::Vec3 m_LinearVelocity;
+    bsm::Vec3 m_AngularVelocity;
+    bool m_UseSleep;
+    float m_Mass;
+    //慣性テンソル
+    bsm::Mat3x3 m_Inertia;
+    float m_Restitution;
+    float  m_Friction;
+    //衝突判定制御
+    uint32_t m_ContactFilterSelf;
+    uint32_t m_ContactFilterTarget;
+    //オフセット値
+    bsm::Quat m_OffsetOrientation;
+    bsm::Vec3 m_OffsetPosition;
+    PsParam() :
+        m_Quat(),
+        m_Pos(0),
+        m_LinearVelocity(0),
+        m_AngularVelocity(0),
+        m_UseSleep(true),
+        m_Mass(0.0f),
+        m_Inertia(),
+        m_Restitution(0.2f),
+        m_Friction(0.6f),
+        m_ContactFilterSelf(0xffffffff),
+        m_ContactFilterTarget(0xffffffff),
+        m_OffsetOrientation(),
+        m_OffsetPosition(0.0f)
+    {
+        m_Quat.identity();
+        m_OffsetOrientation.identity();
+    }
+};
+</pre>
+</div>
+　このように、物理計算するためには多くのパラメータを必要としますが、ほとんどはデフォルト値です。<br />
+　サンプルのプレイヤーは
+<div class="box1">
+<pre>
+    PsSphereParam param(PtrTrans->GetWorldMatrix(),1.0f,false, PsMotionType::MotionTypeActive);
+</pre>
+</div>
+　のように<b>ワールド行列</b>を使って初期化しています。<br />
+　続く
+<div class="box1">
+<pre>
+    //自動的にTransformを設定するフラグは無し
+    PsPtr->SetAutoTransform(false);
+</pre>
+</div>
+　と属性を変更しています。この属性は、物理計算結果を<b>自動的にTransformを設定するフラグ</b>です。デフォルトは<b>true</b>になっています。<br />
+　プレイヤーの場合は、コントローラに合わせて位置や回転が目まぐるしく変化します。この値を<b>物理計算</b>に加えなければいけないため<b>false</b>にします。<br />
+<br />
+　プレイヤーの更新処理は<b>Player::OnUpdate()</b>で行います。
+<div class="box1">
+<pre>
+void Player::OnUpdate() {
+    //コントローラチェックして入力があればコマンド呼び出し
+    m_InputHandler.PushHandle(GetThis&lt;Player>());
+    auto Vec = GetMoveVector();
+    auto PtrPs = GetComponent&lt;RigidbodySphere>();
+    auto Velo = PtrPs->GetLinearVelocity();
+    //xとzの速度を修正
+    Velo.x = Vec.x * 5.0f;
+    Velo.z = Vec.z * 5.0f;
+    //速度を設定
+    PtrPs->SetLinearVelocity(Velo);
+}
+</pre>
+</div>
+　ここでは<b>GetMoveVector()</b>により、コントローラから移動方向（移動速度）を取得して、現在の速度の<b>X、Z方向</b>のみ修正します。<br />
+　修正した値は、そのまま<b>RigidbodySphere（球体のRigidbody）</b>に戻します。<br />
+　<b>Rigidbodyコンポーネント</b>は<b>OnUpdate()とOnUpdate2()の間</b>に物理的な計算をします。ですので、その結果を<b>Transform</b>に設定するのは、<b>Player::OnUpdate2()</b>で行います。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    //RigidbodySphereからTransformへのパラメータの設定
+    //自動的に設定はされない設定になっているので自分で行う
+    auto PtrPs = GetComponent&lt;RigidbodySphere>();
+    auto Ptr = GetComponent&lt;Transform>();
+    <span class="red">//位置情報はそのまま設定
+    Ptr->SetPosition(PtrPs->GetPosition());</span>
+    //回転の計算
+    Vec3 Angle = GetMoveVector();
+    if (Angle.length() > 0.0f) {
+        //補間処理を行う回転。
+        RotToHead(Angle, 0.1f);
+    }
+    //文字列の表示
+    DrawStrings();
+}
+</pre>
+</div>
+　このように<b>Rigidbodyコンポーネント</b>が持ってる位置情報を<b>Transformコンポーネント</b>に実装します。<br />
+　回転については、進行方向を見るようにしたいので<b>RotToHead(Angle, 0.1f);</b>呼び出しで行います。
+<div class="box1">
+<pre>
+void Player::RotToHead(const Vec3& Velocity, float LerpFact) {
+    if (LerpFact &lt;= 0.0f) {
+        //補間係数が0以下なら何もしない
+        return;
+    }
+    auto PtrTransform = GetComponent&lt;Transform>();
+    //回転の更新
+    if (Velocity.length() > 0.0f) {
+        bsm::Vec3 Temp = Velocity;
+        Temp.normalize();
+        float ToAngle = atan2(Temp.x, Temp.z);
+        Quat Qt;
+        Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
+        Qt.normalize();
+        //現在の回転を取得
+        Quat NowQt = PtrTransform->GetQuaternion();
+        //現在と目標を補間
+        if (LerpFact >= 1.0f) {
+            NowQt = Qt;
+        }
+        else {
+            //クオータニオンの補間処理
+            NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
+        }
+        PtrTransform->SetQuaternion(NowQt);
+    }
+}
+</pre>
+</div>
+　このコードを見ればわかるように、<b>Rigidbodyコンポーネント</b>が持ってる回転角度は完全に無視しています。<b>Rigidbodyコンポーネント</b>の計算では、球体が移動する場合<b>進行方向に回転</b>します。しかしそれではプレイヤーには不似合いなので、無視しています。<br />
+　このように、初期化時に設定した
+<div class="box1">
+<pre>
+    //自動的にTransformを設定するフラグは無し
+    PsPtr->SetAutoTransform(false);
+</pre>
+</div>
+　により、物理計算のいいとこどり、の実装が可能になります。
+<h4>アクティブなオブジェクト</h4>
+　このサンプルでは、いくつかの<b>動かすことができる</b>オブジェクトがあります。<b>Character.h/cpp</b>に記述があります。<br />
+　起動時に上から降ってくるオブジェクトです。落ちる場所や、当たる位置に応じて、自動的に回転や跳ね返りをします。<br />
+　形状も<b>箱</b>と<b>球</b>があります。<b>箱</b>は<b>ActivePsBox</b>で<b>球</b>は<b>ActivePsSphere</b>です。どちらも処理はあまり変わりませんので、<b>ActivePsBox</b>について説明します。<br />
+　<b>ActivePsBox</b>の初期化（構築）処理は<b> ActivePsBox::OnCreate()</b>です。
+<div class="box1">
+<pre>
+void ActivePsBox::OnCreate() {
+    auto PtrTrans = GetComponent&lt;Transform>();
+
+    PtrTrans->SetScale(m_Scale);
+    PtrTrans->SetQuaternion(m_Qt);
+    PtrTrans->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetTextureResource(L"SKY_TX");
+    <span class="red">//物理計算ボックス
+    PsBoxParam param(PtrTrans->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
+    auto PsPtr = AddComponent&lt;RigidbodyBox>(param);</span>
+
+</pre>
+</div>
+　赤くなっているところが<b>RigidbodyBox（箱型のRigidbody）</b>を実装しているところです。<br />
+　このオブジェクトは、自分で動くわけではないので<b>ActivePsBox::OnUpdate()</b>などは記述する必要がありません。配置すれば勝手に他の物理オブジェクトと相互作用します。<br />
+　もちろんプレイヤーが体当たりすれば動きます。<b>ActivePsSphere</b>も<b>ActivePsSphere::OnCreate()</b>のみ記述されます（コンストラクタ、デストラクタは記述が必要）。
+<h4>動かないオブジェクト</h4>
+　動かないオブジェクトは<b>FixedPsBox</b>です。<b>Character.h/cpp</b>に記述があります。<br />
+　<b>FixedPsBox</b>はゲーム盤（床）と前方中央にある箱です。<b>ActivePsBox</b>などが落ちてくる場所にあります。<br />
+　こちらも<b>初期化処理</b>のみ記述すれば実装できます。以下は<b> FixedPsBox::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void FixedPsBox::OnCreate() {
+
+    auto PtrTrans = GetComponent&lt;Transform>();
+
+    PtrTrans->SetScale(m_Scale);
+    PtrTrans->SetQuaternion(m_Qt);
+    PtrTrans->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    PtrDraw->SetOwnShadowActive(true);
+    PtrDraw->SetTextureResource(L"SKY_TX");
+    <span class="red">//物理計算ボックス
+    PsBoxParam param(PtrTrans->GetWorldMatrix(), 0.0f, true, PsMotionType::MotionTypeFixed);
+    auto PsPtr = AddComponent&lt;RigidbodyBox>(param);</span>
+}
+</pre>
+</div>
+　赤くなっているところが<b>動かない箱</b>の初期化です。この記述のみでほかの物理オブジェクトと相互作用します。
+<h4>まとめ</h4>
+　<b>Rigidbodyコンポーネント</b>を使うことにより、<b>勝手に物理的な動き</b>をするようになります。<br />
+　ここで注意したいのは、<b>物理オブジェクトを配置</b>しただけで<b>ゲームを作ったような気になる</b>という点です。<br />
+　<b>ゲーム</b>は<b>物理シミュレーション</b>ではありません。<b>物理計算</b>はあくまで、<b>たんなる道具</b>にほかなりません。<br />
+　その道具が<b>ユーザーが楽しく遊ぶための</b>手段として有効であればどんどん使うべきですが、無理やり使っても、あまりいいことはないことを覚えておきましょう。<br />
+<br />
+　また<b>Rigidbodyコンポーネント</b>はここで紹介した以外でもいろんな機能がありますし、もっといろんな形状を作成することができます。それらについては、のちのサンプルで紹介したいと思います。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="11_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

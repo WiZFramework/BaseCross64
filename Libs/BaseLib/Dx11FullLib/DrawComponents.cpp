@@ -35,6 +35,9 @@ namespace basecross {
 	//PCStatic
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPCStatic, App::GetApp()->GetShadersPath() + L"VSPCStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPCStatic, App::GetApp()->GetShadersPath() + L"PSPCStatic.cso")
+	//PNStatic
+	IMPLEMENT_DX11_VERTEX_SHADER(VSPNStatic, App::GetApp()->GetShadersPath() + L"VSPNStatic.cso")
+	IMPLEMENT_DX11_PIXEL_SHADER(PSPNStatic, App::GetApp()->GetShadersPath() + L"PSPNStatic.cso")
 	//PTStatic
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStatic, App::GetApp()->GetShadersPath() + L"VSPTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPTStatic, App::GetApp()->GetShadersPath() + L"PSPTStatic.cso")
@@ -247,7 +250,7 @@ namespace basecross {
 		~Impl() {}
 	};
 
-	float Shadowmap::Impl::m_LightHeight(20.0f);
+	float Shadowmap::Impl::m_LightHeight(100.0f);
 	float Shadowmap::Impl::m_LightNear(1.0f);
 	float Shadowmap::Impl::m_LightFar(200.0f);
 	float Shadowmap::Impl::m_ViewWidth(32.0f);
@@ -1836,6 +1839,46 @@ namespace basecross {
 		Dev->InitializeStates();
 
 	}
+
+	//--------------------------------------------------------------------------------------
+	///	PNStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PNStaticDraw::PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		SmBaseDraw(GameObjectPtr)
+	{}
+
+	PNStaticDraw::~PNStaticDraw() {}
+
+	void PNStaticDraw::OnCreate() {}
+
+	void PNStaticDraw::OnDraw() {
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			DrawStatic<VSPNStatic, PSPNStatic>(PtrMeshResource->GetMashData());
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				DrawStatic<VSPNStatic, PSPNStatic>(vec[i]);
+			}
+		}
+		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->InitializeStates();
+
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	PTStatic描画コンポーネント

@@ -18,6 +18,10 @@ namespace basecross {
 		void CreatePlate();
 		//固定のボックスの作成
 		void CreateFixedBox();
+		//移動するボックスの作成
+		void CreateMoveBox();
+		//追いかけるオブジェクトの作成
+		void CreateSeekObject();
 		//プレイヤーの作成
 		void CreatePlayer();
 	public:

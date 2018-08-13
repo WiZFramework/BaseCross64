@@ -21,10 +21,10 @@ namespace basecross {
 		//ƒrƒ…[‚ÌƒJƒƒ‰‚ÌÝ’è
 		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
 		if (!bkCamera) {
-			auto PtrLookAtCamera = ObjectFactory::Create<LookAtCamera>(10.0f);
-			PtrView->SetCamera(PtrLookAtCamera);
-			PtrLookAtCamera->SetEye(Vec3(0.0f, 5.0f, -20.0f));
-			PtrLookAtCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+			auto PtrMyCamera = ObjectFactory::Create<MyCamera>(10.0f);
+			PtrView->SetCamera(PtrMyCamera);
+			PtrMyCamera->SetEye(Vec3(0.0f, 5.0f, -20.0f));
+			PtrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		}
 		else {
 			PtrView->SetCamera(bkCamera);

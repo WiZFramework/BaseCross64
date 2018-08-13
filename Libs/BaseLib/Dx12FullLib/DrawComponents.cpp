@@ -11,6 +11,10 @@
 namespace basecross {
 
 	IMPLEMENT_DX12SHADER(VSShadowmap, App::GetApp()->GetShadersPath() + L"VSShadowmap.cso")
+
+	IMPLEMENT_DX12SHADER(VSPNStatic, App::GetApp()->GetShadersPath() + L"VSPNStatic.cso")
+	IMPLEMENT_DX12SHADER(PSPNStatic, App::GetApp()->GetShadersPath() + L"PSPNStatic.cso")
+
 		
 	IMPLEMENT_DX12SHADER(VSPNTStatic, App::GetApp()->GetShadersPath() + L"VSPNTStatic.cso")
 	IMPLEMENT_DX12SHADER(PSPNTStatic, App::GetApp()->GetShadersPath() + L"PSPNTStatic.cso")
@@ -508,7 +512,7 @@ namespace basecross {
 		~Impl() {}
 	};
 
-	float Shadowmap::Impl::m_LightHeight(20.0f);
+	float Shadowmap::Impl::m_LightHeight(100.0f);
 	float Shadowmap::Impl::m_LightNear(1.0f);
 	float Shadowmap::Impl::m_LightFar(200.0f);
 	float Shadowmap::Impl::m_ViewWidth(32.0f);
@@ -1561,6 +1565,11 @@ namespace basecross {
 		Dev->InsertDrawCommandLists(pImpl->m_Dx12DrawResources.m_CommandList.Get());
 	}
 
+	void SmBaseDraw::CreatePNNotShadow() {
+		//未実装
+		
+
+	}
 
 
 	void SmBaseDraw::CreatePNTNotShadow() {
@@ -1783,6 +1792,11 @@ namespace basecross {
 		}
 	}
 
+	void SmBaseDraw::DrawPN() {
+
+	}
+
+
 	void SmBaseDraw::DrawPNT() {
 		auto PtrStage = GetGameObject()->GetStage();
 		auto PtrMeshResource = GetMeshResource();
@@ -1814,6 +1828,27 @@ namespace basecross {
 
 
 
+	//--------------------------------------------------------------------------------------
+	///	PNStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PNStaticDraw::PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		SmBaseDraw(GameObjectPtr)
+	{
+	}
+
+	PNStaticDraw::~PNStaticDraw() {}
+
+	void PNStaticDraw::OnCreate() {
+		//ライティングのみだと極端になるので調整
+		SetEmissive(bsm::Col4(0.5f, 0.5f, 0.5f, 0.0f));
+		SetDiffuse(bsm::Col4(0.6f, 0.6f, 0.6f, 1.0f));
+		//PN影無しに初期化
+		CreatePNNotShadow();
+	}
+
+	void PNStaticDraw::OnDraw() {
+		DrawPN();
+	}
 
 
 

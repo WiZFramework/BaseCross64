@@ -24,12 +24,6 @@ namespace basecross{
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
 		strTexture = DataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
-		strTexture = DataDir + L"spark.png";
-		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
-		strTexture = DataDir + L"fire.png";
-		App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
-		strTexture = DataDir + L"number.png";
-		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 
 	}
 

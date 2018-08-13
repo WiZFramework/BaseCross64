@@ -7,11 +7,13 @@
 #include "stdafx.h"
 
 namespace basecross{
+
+	class MyCamera;
 	//--------------------------------------------------------------------------------------
 	///	ÉQÅ[ÉÄÉVÅ[Éì
 	//--------------------------------------------------------------------------------------
 	class Scene : public SceneBase {
-		shared_ptr<LookAtCamera> m_BackupCamera;
+		shared_ptr<MyCamera> m_BackupCamera;
 		Vec3 m_BackupPlayerPos;
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -48,10 +50,10 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		virtual void OnEvent(const shared_ptr<Event>& event) override;
 
-		shared_ptr<LookAtCamera> GetBackupCamera() const {
+		shared_ptr<MyCamera> GetBackupCamera() const {
 			return m_BackupCamera;
 		}
-		void SetBackupCamera(const shared_ptr<LookAtCamera>& camara) {
+		void SetBackupCamera(const shared_ptr<MyCamera>& camara) {
 			m_BackupCamera = camara;
 		}
 

@@ -106,8 +106,6 @@ namespace basecross{
 		auto PsPtr = AddComponent<RigidbodySphere>(param);
 		//自動的にTransformを設定するフラグは無し
 		PsPtr->SetAutoTransform(false);
-		//ワイアフレーム描画
-		PsPtr->SetDrawActive(true);
 
 		//文字列をつける
 		auto PtrString = AddComponent<StringSprite>();
@@ -128,10 +126,10 @@ namespace basecross{
 		//透明処理
 		SetAlphaActive(true);
 		//カメラを得る
-		auto PtrCamera = dynamic_pointer_cast<LookAtCamera>(OnGetDrawCamera());
+		auto PtrCamera = dynamic_pointer_cast<MyCamera>(OnGetDrawCamera());
 		if (PtrCamera) {
-			//LookAtCameraである
-			//LookAtCameraに注目するオブジェクト（プレイヤー）の設定
+			//MyCameraである
+			//MyCameraに注目するオブジェクト（プレイヤー）の設定
 			PtrCamera->SetTargetObject(GetThis<GameObject>());
 			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
@@ -185,20 +183,16 @@ namespace basecross{
 	//Bボタンハンドラ
 	void  Player::OnPushB() {
 		//ゲームステージ再読み込み
-		App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<LookAtCamera>(GetStage()->GetView()->GetTargetCamera()));
+		App::GetApp()->GetScene<Scene>()->SetBackupCamera(dynamic_pointer_cast<MyCamera>(GetStage()->GetView()->GetTargetCamera()));
 		App::GetApp()->GetScene<Scene>()->SetBackupPlayerPos(GetComponent<Transform>()->GetPosition());
 		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
-	}
-
-	//Xボタンハンドラ
-	void Player::OnPushX() {
 	}
 
 	//文字列の表示
 	void Player::DrawStrings() {
 
 		//文字列表示
-		wstring Mess(L"Bボタンで再読み込み\nXボタンで発射\n");
+		wstring Mess(L"Bボタンで再読み込み\n");
 		//オブジェクト数
 		auto ObjCount = GetStage()->GetGameObjectVec().size();
 		wstring OBJ_COUNT(L"OBJ_COUNT: ");

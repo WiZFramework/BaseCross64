@@ -45,7 +45,6 @@ namespace basecross{
 		//物理計算ボックス
 		PsBoxParam param(PtrTrans->GetWorldMatrix(), 0.0f, true, PsMotionType::MotionTypeFixed);
 		auto PsPtr = AddComponent<RigidbodyBox>(param);
-		PsPtr->SetDrawActive(true);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -84,7 +83,6 @@ namespace basecross{
 		//物理計算ボックス
 		PsBoxParam param(PtrTrans->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
 		auto PsPtr = AddComponent<RigidbodyBox>(param);
-		PsPtr->SetDrawActive(true);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -123,17 +121,9 @@ namespace basecross{
 		PtrDraw->SetTextureResource(L"SKY_TX");
 
 		//物理計算球体
-		PsSphereParam param;
-		//DEFAULT_SPHEREのスケーリングは直径基準なので、半径にする
-		param.m_Radius = m_Scale * 0.5f;
-		param.m_Mass = 1.0f;
-		//慣性テンソルの計算
-		param.m_Inertia = BasePhysics::CalcInertiaSphere(param.m_Radius, param.m_Mass);
-		param.m_MotionType = PsMotionType::MotionTypeActive;
-		param.m_Quat = m_Qt;
-		param.m_Pos = m_Position;
+		//WorldMatrixをもとにRigidbodySphereのパラメータを作成
+		PsSphereParam param(PtrTransform->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
 		auto PsPtr = AddComponent<RigidbodySphere>(param);
-		PsPtr->SetDrawActive(true);
 	}
 
 

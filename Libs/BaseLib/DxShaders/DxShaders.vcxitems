@@ -129,6 +129,9 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)PSPCTStatic.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)PSPNStatic.hlsl">
+      <ShaderType>Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)PSPNTStatic.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
@@ -160,6 +163,9 @@
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)VSPCTStaticInstance.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)VSPNStatic.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)VSPNTBone.hlsl">

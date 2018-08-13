@@ -391,7 +391,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override{}
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	相手からエスケープする
@@ -509,7 +509,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		CAPSULE GetBeforeCapsule() const;
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
@@ -663,7 +662,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		OBB GetBeforeObb() const;
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
@@ -761,7 +759,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override {}
+		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	相手からエスケープする
@@ -779,7 +777,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override {}
+		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる

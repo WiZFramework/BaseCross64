@@ -2243,7 +2243,9 @@ namespace bsm {
 		return result;
 	}
 
-
+	inline float angleBetweenNormals(const Flt3 & norm11, const Flt3 & norm2) {
+		return ((Flt3)XMVector3AngleBetweenNormals(norm11, norm2)).x;
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	ユーティリティ関数群Flt4

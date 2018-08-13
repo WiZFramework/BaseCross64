@@ -31,20 +31,43 @@ namespace basecross {
 	CollisionManager::~CollisionManager() {}
 
 	void CollisionManager::EscapePair(CollisionPair& Pair) {
+
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto SrcSh = Pair.m_Src.lock();
 		auto DestSh = Pair.m_Dest.lock();
-		auto DestSp = dynamic_pointer_cast<CollisionSphere>(DestSh);
-		auto DestCap = dynamic_pointer_cast<CollisionCapsule>(DestSh);
-		auto DestObb = dynamic_pointer_cast<CollisionObb>(DestSh);
-		if (DestSp) {
-			SrcSh->EscapeCollision(DestSp, Pair.m_SrcHitNormal);
-		}
-		else if (DestCap) {
-			SrcSh->EscapeCollision(DestCap, Pair.m_SrcHitNormal);
-		}
-		else if (DestObb) {
-			SrcSh->EscapeCollision(DestObb, Pair.m_SrcHitNormal);
+		if (SrcSh && DestSh) {
+			auto SrcSp = dynamic_pointer_cast<CollisionSphere>(SrcSh);
+			auto SrcCap = dynamic_pointer_cast<CollisionCapsule>(SrcSh);
+			auto SrcObb = dynamic_pointer_cast<CollisionObb>(SrcSh);
+			auto DestSp = dynamic_pointer_cast<CollisionSphere>(DestSh);
+			auto DestCap = dynamic_pointer_cast<CollisionCapsule>(DestSh);
+			auto DestObb = dynamic_pointer_cast<CollisionObb>(DestSh);
+			if (!SrcSh->IsFixed()) {
+				if (DestSp) {
+					SrcSh->EscapeCollision(DestSp, Pair.m_SrcHitNormal);
+					if (DestSp->IsFixed()) {
+						Pair.m_SrcRegardFixed = true;
+					}
+				}
+				else if (DestCap) {
+					SrcSh->EscapeCollision(DestCap, Pair.m_SrcHitNormal);
+					if (DestCap->IsFixed()) {
+						Pair.m_SrcRegardFixed = true;
+					}
+				}
+				else if (DestObb) {
+					SrcSh->EscapeCollision(DestObb, Pair.m_SrcHitNormal);
+					auto SrcPos = SrcSh->GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
+					auto DestPos = DestSh->GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
+
+					if (SrcSh->GetGameObject()->FindTag(L"Player") && SrcPos.z > 3.0f && DestPos.z > 3.0f) {
+						int a = 0;
+					}
+					if (DestObb->IsFixed()) {
+						Pair.m_SrcRegardFixed = true;
+					}
+				}
+			}
 		}
 	}
 
@@ -136,21 +159,38 @@ namespace basecross {
 
 
 
-	bool CollisionManager::SimpleCollisionPair(const CollisionPair& Pair) {
+	bool CollisionManager::SimpleCollisionPair(CollisionPair& Pair) {
 		auto Src = Pair.m_Src.lock();
 		auto Dest = Pair.m_Dest.lock();
 		if (Src && Dest) {
+			float Speed = bsm::length(
+				Src->GetGameObject()->GetComponent<Transform>()->GetVelocity()
+				- Dest->GetGameObject()->GetComponent<Transform>()->GetVelocity()
+			);
+
 			auto ShSrcSp = dynamic_pointer_cast<CollisionSphere>(Src);
 			auto ShSrcCap = dynamic_pointer_cast<CollisionCapsule>(Src);
 			auto ShSrcObb = dynamic_pointer_cast<CollisionObb>(Src);
 			if (ShSrcSp) {
-				return SimpleCollisionPairSub(ShSrcSp, Dest);
+				auto b = SimpleCollisionPairSub(ShSrcSp, Dest);
+				if (b) {
+					Pair.m_EscapeSpeed = Speed;
+				}
+				return b;
 			}
 			else if (ShSrcCap) {
-				return SimpleCollisionPairSub(ShSrcCap, Dest);
+				auto b = SimpleCollisionPairSub(ShSrcCap, Dest);
+				if (b) {
+					Pair.m_EscapeSpeed = Speed;
+				}
+				return b;
 			}
 			else if (ShSrcObb) {
-				return SimpleCollisionPairSub(ShSrcObb, Dest);
+				auto b =  SimpleCollisionPairSub(ShSrcObb, Dest);
+				if (b) {
+					Pair.m_EscapeSpeed = Speed;
+				}
+				return b;
 			}
 			return false;
 		}
@@ -200,6 +240,7 @@ namespace basecross {
 
 
 	void CollisionManager::OnUpdate() {
+
 		//keepのチェック
 		m_TempVec.clear();
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
@@ -215,13 +256,21 @@ namespace basecross {
 		//キープされているペアのSrcにもしGravityがセットされていたら0にする
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
 			auto ShSrc = v.m_Src.lock();
+			auto ShDest = v.m_Dest.lock();
+
 			if (ShSrc) {
 				auto Gr = ShSrc->GetGameObject()->GetComponent<Gravity>(false);
 				if (Gr) {
-					Gr->SetGravityVerocityZero();
+					auto f = bsm::angleBetweenNormals(v.m_SrcHitNormal, Vec3(0, 1, 0));
+					if (abs(f) < XM_PIDIV4) {
+						Gr->SetGravityVerocityZero();
+					}
 				}
 			}
 		}
+
+
+
 
 		//新規のペア配列のクリア
 		m_CollisionPairVec[m_NewIndex].clear();
@@ -231,10 +280,41 @@ namespace basecross {
 		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
 			m_CollisionPairVec[m_KeepIndex].push_back(v);
 		}
-		////キープされているペアのエスケープ
-		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
-			EscapePair(v);
+
+
+
+		//キープ配列のソート
+		//--------------------------------------------------------
+		auto func = [](CollisionPair& Left, CollisionPair& Right)->bool {
+			auto ShLeftDest = Left.m_Dest.lock();
+			auto ShRightDest = Right.m_Dest.lock();
+			if (!ShLeftDest->IsFixed() && !ShRightDest->IsFixed()) {
+				auto LeftMove = bsm::length(ShLeftDest->GetGameObject()->GetComponent<Transform>()->GetVelocity());
+				auto RightMove = bsm::length(ShRightDest->GetGameObject()->GetComponent<Transform>()->GetVelocity());
+				if (LeftMove > RightMove) {
+					return true;
+				}
+			}
+			return false;
+		};
+
+		std::sort(m_CollisionPairVec[m_KeepIndex].begin(), m_CollisionPairVec[m_KeepIndex].end(), func);
+
+		for (size_t i = 0; i < m_CollisionPairVec[m_KeepIndex].size(); i++) {
+			m_CollisionPairVec[m_KeepIndex][i].m_SrcRegardFixed = false;
 		}
+
+
+		int count = 0;
+		do {
+			////キープされているペアのエスケープ
+			for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+				EscapePair(v);
+			}
+			std::reverse(begin(m_CollisionPairVec[m_KeepIndex]), end(m_CollisionPairVec[m_KeepIndex]));
+			count++;
+
+		} while (count < 10);
 
 
 	}

@@ -24,7 +24,7 @@
 #include "StringComponents.h"
 //行動クラス
 #include "../SharedLib/Behavior.h"
-//行動クラス(Rigidbody関連)
+//操舵コンポーネントクラス
 #include "../SharedLib/BehaviorSteering.h"
 //ゲームオブジェクト、ステージなど
 #include "../SharedLib/GameObject.h"

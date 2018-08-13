@@ -13,8 +13,12 @@ namespace basecross {
 		weak_ptr<Collision> m_Src;
 		weak_ptr<Collision> m_Dest;
 		bsm::Vec3 m_SrcHitNormal;
+		float m_EscapeSpeed;
+		bool m_SrcRegardFixed;
 		CollisionPair():
-			m_SrcHitNormal(0)
+			m_SrcHitNormal(0),
+			m_EscapeSpeed(0),
+			m_SrcRegardFixed(false)
 		{}
 	};
 
@@ -25,11 +29,11 @@ namespace basecross {
 		vector<CollisionPair> m_CollisionPairVec[2];
 		//計算に使う配列
 		vector<CollisionPair> m_TempVec;
-
 		UINT m_NewIndex;
 		UINT m_KeepIndex;
 		void EscapePair(CollisionPair& Pair);
-		bool SimpleCollisionPair(const CollisionPair& Pair);
+
+		bool SimpleCollisionPair(CollisionPair& Pair);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest);
@@ -64,9 +68,17 @@ namespace basecross {
 				Index = m_KeepIndex;
 			}
 			for (auto& v : m_CollisionPairVec[Index]) {
-				if (v.m_Src.lock() == Src && v.m_Dest.lock() == Dest) {
+				auto ShSrc = v.m_Src.lock();
+				auto ShDest = v.m_Dest.lock();
+				if (ShSrc == Src && ShDest == Dest) {
+					//ペアが逆は不可
 					return true;
 				}
+				//if ((ShSrc == Src && ShDest == Dest) || (ShSrc == Dest && ShDest == Src)) {
+				//	//ペアが逆でも可
+				//	return true;
+				//}
+
 			}
 			return false;
 		}
