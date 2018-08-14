@@ -27,29 +27,6 @@ namespace basecross {
 	}
 
 
-	//プレートの作成
-	void GameStage::CreatePlate() {
-		//ステージへのゲームオブジェクトの追加
-		auto Ptr = AddGameObject<GameObject>();
-		auto PtrTrans = Ptr->GetComponent<Transform>();
-		Quat Qt;
-		Qt.rotationRollPitchYawFromVector(Vec3(XM_PIDIV2, 0, 0));
-		PtrTrans->SetScale(50.0f, 50.0f, 1.0f);
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(0.0f, 0.0f, 0.0f);
-
-		//描画コンポーネントの追加
-		auto DrawComp = Ptr->AddComponent<PNTStaticDraw>();
-		//描画コンポーネントに形状（メッシュ）を設定
-		DrawComp->SetMeshResource(L"DEFAULT_SQUARE");
-		//自分に影が映りこむようにする
-		DrawComp->SetOwnShadowActive(true);
-
-		//描画コンポーネントテクスチャの設定
-		DrawComp->SetTextureResource(L"SKY_TX");
-	}
-
-
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化

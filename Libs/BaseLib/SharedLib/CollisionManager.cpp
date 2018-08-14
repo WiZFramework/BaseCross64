@@ -242,16 +242,20 @@ namespace basecross {
 	void CollisionManager::OnUpdate() {
 
 		//keepのチェック
-		m_TempVec.clear();
+		m_TempKeepVec.clear();
+		m_TempExitVec.clear();
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
 			if (SimpleCollisionPair(v)) {
 				//まだ衝突している
-				m_TempVec.push_back(v);
+				m_TempKeepVec.push_back(v);
+			}
+			else {
+				m_TempExitVec.push_back(v);
 			}
 		}
 		//テンポラリの内容をkeepペアにコピー
-		m_CollisionPairVec[m_KeepIndex].resize(m_TempVec.size());
-		m_CollisionPairVec[m_KeepIndex] = m_TempVec;
+		m_CollisionPairVec[m_KeepIndex].resize(m_TempKeepVec.size());
+		m_CollisionPairVec[m_KeepIndex] = m_TempKeepVec;
 
 		//キープされているペアのSrcにもしGravityがセットされていたら0にする
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
@@ -315,6 +319,50 @@ namespace basecross {
 			count++;
 
 		} while (count < 10);
+
+		//衝突メッセージの送信
+		//Exit
+		for (auto& v : m_TempExitVec) {
+			auto ShSrc = v.m_Src.lock();
+			auto ShDest = v.m_Dest.lock();
+			if (ShSrc && ShDest) {
+				auto ShSrcObj = ShSrc->GetGameObject();
+				auto ShDestObj = ShDest->GetGameObject();
+				if (ShSrcObj && ShDestObj) {
+					ShSrcObj->OnCollisionExit(ShDestObj);
+				}
+			}
+		}
+		//キープ
+		for (auto& v : m_TempKeepVec) {
+			auto ShSrc = v.m_Src.lock();
+			auto ShDest = v.m_Dest.lock();
+			if (ShSrc && ShDest) {
+				auto ShSrcObj = ShSrc->GetGameObject();
+				auto ShDestObj = ShDest->GetGameObject();
+				if (ShSrcObj && ShDestObj) {
+					ShSrcObj->OnCollisionExcute(ShDestObj);
+				}
+			}
+		}
+		//新規
+		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
+			auto ShSrc = v.m_Src.lock();
+			auto ShDest = v.m_Dest.lock();
+			if (ShSrc && ShDest) {
+				auto ShSrcObj = ShSrc->GetGameObject();
+				auto ShDestObj = ShDest->GetGameObject();
+				if (ShSrcObj && ShDestObj) {
+					ShSrcObj->OnCollisionEnter(ShDestObj);
+				}
+			}
+		}
+
+
+//		virtual void OnCollisionEnter(shared_ptr<GameObject>& Other) {}
+//		virtual void OnCollisionExcute(shared_ptr<GameObject>& Other) {}
+//		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) {}
+
 
 
 	}

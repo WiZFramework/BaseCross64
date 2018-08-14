@@ -1247,7 +1247,7 @@ namespace basecross {
 			Dev->EndDefaultDraw();
 		}
 		//子供ステージの描画
-		for (auto PtrChileStage : pImpl->m_ChildStageVec) {
+		for (auto PtrChileStage : GetChileStageVec()) {
 			PtrChileStage->RenderStage();
 		}
 	}

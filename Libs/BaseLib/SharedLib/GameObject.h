@@ -592,28 +592,28 @@ namespace basecross {
 		virtual void OnUpdate()override {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	衝突発生時時のイベント（デフォルトは何もしない）
-		@param[in]	OtherVec	新しく衝突した相手の配列
+		@brief	衝突発生時時のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
+		@param[in]	Other	新しく衝突した相手
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnCollisionEnter(vector<shared_ptr<GameObject>>& OtherVec) {}
+		virtual void OnCollisionEnter(shared_ptr<GameObject>& Other) {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	衝突し続ける相手があった場合のイベント（デフォルトは何もしない）
+		@brief	衝突し続ける相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
 		@param[in]	OtherVec	衝突し続けた相手の配列
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnCollisionExcute(vector<shared_ptr<GameObject>>& OtherVec) {}
+		virtual void OnCollisionExcute(shared_ptr<GameObject>& Other) {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	衝突を抜けた相手があった場合のイベント（デフォルトは何もしない）
+		@brief	衝突を抜けた相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
 		@param[in]	OtherVec	衝突を抜けた相手の配列
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void OnCollisionExit(vector<shared_ptr<GameObject>>& OtherVec) {}
+		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	描画前準備（デフォルトは何もしない）

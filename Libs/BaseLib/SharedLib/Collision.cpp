@@ -18,8 +18,11 @@ namespace basecross {
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
 		//判定から除外するタグ
 		set<wstring> m_ExcludeCollisionTags;
+		//衝突後の処理
+		AfterCollision m_AfterCollision;
 		Impl() :
-			m_Fixed(false)
+			m_Fixed(false),
+			m_AfterCollision(AfterCollision::Auto)
 		{
 		}
 		~Impl() {}
@@ -46,6 +49,12 @@ namespace basecross {
 		pImpl->m_Fixed = b;
 	}
 
+	AfterCollision Collision::GetAfterCollision() const {
+		return pImpl->m_AfterCollision;
+	}
+	void Collision::SetAfterCollision(AfterCollision a) {
+		pImpl->m_AfterCollision = a;
+	}
 
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
 		auto shptr = pImpl->m_ExcludeCollisionGroup.lock();
@@ -250,7 +259,6 @@ namespace basecross {
 			pair.m_SrcHitNormal = SrcChkSphere.m_Center - DestChkSphere.m_Center;
 			pair.m_SrcHitNormal.normalize();
 			pair.m_EscapeSpeed = bsm::length(SpanVelocity);
-			//衝突した瞬間で止める
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -337,9 +345,13 @@ namespace basecross {
 	}
 
 	void CollisionSphere::EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) {
+		if (GetAfterCollision() == AfterCollision::None) {
+			return;
+		}
 		SPHERE SrcSphere = GetSphere();
 		SPHERE DestSphere = Other->GetSphere();
-		if (HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
+		bool IsHit = HitTest::SPHERE_SPHERE(SrcSphere, DestSphere);
+		if (IsHit) {
 			bsm::Vec3 Normal = SrcSphere.m_Center - DestSphere.m_Center;
 			Normal.normalize();
 			float Span = SrcSphere.m_Radius + DestSphere.m_Radius;
@@ -353,21 +365,19 @@ namespace basecross {
 
 
 	void CollisionSphere::EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal) {
+		if (GetAfterCollision() == AfterCollision::None) {
+			return;
+		}
 		SPHERE SrcSphere = GetSphere();
 		OBB DestObb = Other->GetObb();
 		bsm::Vec3 Ret;
 		bool Ishit = HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret);
 		if (Ishit) {
-//			bsm::Vec3 span = SrcHitNormal;
 			bsm::Vec3 span = SrcSphere.m_Center - Ret;
 			if (span.length() <= 0.0f) {
 				span = SrcHitNormal;
 			}
 			span.normalize();
-			auto N = bsm::angleBetweenNormals(span, SrcHitNormal);
-			if (abs(N) > 1.0f) {
-//				span *= -1.0f;
-			}
 			span *= SrcSphere.m_Radius;
 			span += Ret;
 			auto PtrTransform = GetGameObject()->GetComponent<Transform>();
@@ -822,6 +832,9 @@ namespace basecross {
 	}
 
 	void CollisionObb::EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) {
+		if (GetAfterCollision() == AfterCollision::None) {
+			return;
+		}
 		OBB SrcObb = GetObb();
 		SPHERE DestSphere = Other->GetSphere();
 		bsm::Vec3 Ret;
@@ -842,6 +855,9 @@ namespace basecross {
 	}
 
 	void CollisionObb::EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal) {
+		if (GetAfterCollision() == AfterCollision::None) {
+			return;
+		}
 		OBB SrcObb = GetObb();
 		OBB DestObb = Other->GetObb();
 		bool Ishit = HitTest::OBB_OBB(SrcObb, DestObb);
@@ -869,7 +885,6 @@ namespace basecross {
 			//エスケープはリセット
 			PtrTransform->ResetWorldPosition(Center);
 		}
-
 	}
 
 

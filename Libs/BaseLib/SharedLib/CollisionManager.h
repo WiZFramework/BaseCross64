@@ -28,7 +28,8 @@ namespace basecross {
 	class CollisionManager : public GameObject {
 		vector<CollisionPair> m_CollisionPairVec[2];
 		//ŒvŽZ‚ÉŽg‚¤”z—ñ
-		vector<CollisionPair> m_TempVec;
+		vector<CollisionPair> m_TempKeepVec;
+		vector<CollisionPair> m_TempExitVec;
 		UINT m_NewIndex;
 		UINT m_KeepIndex;
 		void EscapePair(CollisionPair& Pair);
