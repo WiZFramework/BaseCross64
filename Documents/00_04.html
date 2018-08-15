@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【０】BaseCross64概要</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０４．コンポーネントと行動</h3>
+<h4>コンポーネントと行動（Behavior）の違い</h4>
+　<b>GameObject</b>には<b>コンポーネント</b>と<b>行動（Behavior）</b>を設置することができます。<br />
+　<b>コンポーネント</b>は、一般的にはそのオブジェクトに<b>永続的に影響を与える</b>（時により無効にすることができるが）オブジェクトであり、<b>行動（Behavior）</b>は、<b>影響を受けたり受けなかったりできる</b>オブジェクトと考えることができます。<br />
+　たとえば<b>CollisionSphere</b>という球体の衝突判定コンポーネントがあります。これは、一般的に常に実装されるものであり、場合によっては<b>SetUpdateActive(false)</b>によって無効にもできます。<br />
+　<b>行動</b>の例としては<b>SeekSteering</b>があります。目標に向かって追いかける<b>行動</b>ですが、ある条件下ででのみ<b>Execute()</b>（実行する）という方法で装着します。つまり<b>装着した行動を実行して</b>はじめて、影響を受ける形になります。<br />
+<h4>コンポーネント</h4>
+　<b>コンポーネント</b>は<b>Update系コンポーネント</b>と<b>Draw系コンポーネント</b>があります。<br />
+<div class="box1">
+<pre>
+AddComponent&lt;コンポーネント名>(引数(必要なら));
+</pre>
+</div>
+　という書式で装着できます。主に<b>OnCreate()仮想関数</b>で実装します。<br />
+　ただし<b>Transformコンポーネント</b>だけは、すべてのGameObjectがデフォルトで装着されます。ですので<b>Transformコンポーネント</b>は<b>AddComponent</b>は必要ありません。<br />
+　実装したコンポーネントは
+<div class="box1">
+<pre>
+GetComponent&lt;コンポーネント名>();
+</pre>
+</div>
+　で取得できます。<br />
+　前述しましたが<b>Transformコンポーネント</b>だけは、いきなり<b>GetComponent&lt;Transform>();</b>を呼び出せます。<br />
+<br />
+　<b>Draw系コンポーネント</b>は頂点定義やシェーダによって別々のコンポーネントがあり、数も多いのでここで紹介するのは荷が重いので、<b>描画処理</b>の説明のところで説明します。<br />
+　ここでは<b>Update系コンポーネント</b>について説明します。以下はライブラリが持っている主な<b>Update系コンポーネント</b>です。<br />
+<table>
+<tr>
+<th width="20%">コンポーネント名</th>
+<th width="40%">用途</th>
+<th>備考</th>
+</tr>
+<tr>
+<td>Transform</td>
+<td>オブジェクトのスケーリング、回転、位置、及びワールド行列を所持する</td>
+<td>必ず実装される</td>
+</tr>
+<tr>
+<td>Gravity</td>
+<td>重力を管理する</td>
+<td>Rigidbodyとは共存できない</td>
+</tr>
+<tr>
+<td>CollisionSphere</td>
+<td>球体の衝突判定</td>
+<td>AfterCollisionがNone以外の場合は、Rigidbodyとは共存できない</td>
+</tr>
+<tr>
+<td>CollisionObb</td>
+<td>ボックスの衝突判定</td>
+<td>AfterCollisionがNone以外の場合は、Rigidbodyとは共存できない</td>
+</tr>
+<tr>
+<td>CollisionCapsule</td>
+<td>カプセルの衝突判定</td>
+<td>AfterCollisionがNone以外の場合は、Rigidbodyとは共存できない</td>
+</tr>
+<tr>
+<td>Rigidbody</td>
+<td>物理計算</td>
+<td>GravityあるいはAfterCollisionがNone以外のCollisionとは共存できない</td>
+</tr>
+<tr>
+<td class="nobottom">StringSprite()</td>
+<td class="nobottom">デバッグ用文字列</td>
+<td class="nobottom"></td>
+</tr>
+</table>
+<br/>
+　これらはライブラリに含まれる<b>コンポーネント</b>ですが、<b>コンポーネント</b>は自作することができます。<b>Update系コンポーネント</b>の場合は<b>Component</b>の派生クラスをとして作成するとよいでしょう。<br />
+　<b>Draw系コンポーネント</b>の場合は<b>DrawComponent</b>の派生クラスとして作成するとよいでしょう。<br />
+<h4>行動（Behavior）</h4>
+　ライブラリに含まれる<b>行動（Behavior）</b>には以下の表のようなものがあります。<b>行動</b>を実装する場合は
+<div class="box1">
+<pre>
+auto Ptr = GetBehavior&lt;行動名>();
+</pre>
+</div>
+　で行動のポインタを取得し
+<div class="box1">
+<pre>
+Ptr->Execute(引数);
+</pre>
+</div>
+　で<b>行動を実装</b>します（一部例外もあります）。この場合の<b>引数</b>は行動によってまちまちです。<b>Execute()関数</b>が呼ばれるまで、その行動の影響は受けません。<br />
+　以下がライブラリ中の主な<b>行動</b>です。
+<br />
+<table>
+<tr>
+<th width="20%">行動名</th>
+<th width="40%">用途</th>
+<th>備考</th>
+</tr>
+<tr>
+<td>SeekSteering</td>
+<td>目標を追いかける</td>
+<td></td>
+</tr>
+<tr>
+<td>ArriveSteering</td>
+<td>目標に到着する</td>
+<td></td>
+</tr>
+
+<tr>
+<td>WallAvoidanceSteering</td>
+<td>壁を回避する</td>
+<td></td>
+</tr>
+
+<tr>
+<td>ObstacleAvoidanceSteering</td>
+<td>障害物を回避する</td>
+<td></td>
+</tr>
+
+<tr>
+<td>FollowPathSteering</td>
+<td>経路追従</td>
+<td></td>
+</tr>
+
+<tr>
+<td>AlignmentSteering</td>
+<td>整列</td>
+<td></td>
+</tr>
+
+<tr>
+<td>CohesionSteering</td>
+<td>結合</td>
+<td></td>
+</tr>
+<tr>
+<td class="nobottom">SeparationSteering</td>
+<td class="nobottom">分離（お互い離れる）</td>
+<td class="nobottom"></td>
+</tr>
+</table>
+<br/>
+　<b>行動</b>も自作できます。自作する場合は<b>Behavior</b>の派生クラスを作るとよいでしょう。<br />
+　その場合<b>Excute()関数</b>を作成しておくと、コードに統一が取れると思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="00_05.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

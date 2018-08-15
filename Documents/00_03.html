@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【０】BaseCross64概要</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<br/>
+<h3>０３．ゲームオブジェクトの構造</h3>
+　ステージに配置されるオブジェクトは<b>GameObjectクラス</b>か、その派生クラスを作成して配置します。<br />
+　<b>GameObjectクラス</b>のインスタンスを配置した場合、<b>OnUpdate()関数</b>などを記述すrことはできません。ですのでほとんどの場合<b>派生クラスを作成</b>してそのインスタンスを配置する形になります。<br />
+　この項では<b>GameObjectクラス</b>はどういうクラスで、どういうことができるのかを述べます。<br />
+　また、その構成上重要な<b>コンポーネント</b>については次項以降に述べます。<br />
+<br />
+<h4>GameObjectクラス</h4>
+　<b>GameObjectクラス</b>は派生クラスから様々な機能を使用できるよう設計されています。<br />
+　<b>GameObjectクラス</b>は、配置しただけでは何もしません。<b>コンポーネント</b>を追加し、そのコンポーネントのパラメータなどを設定してはじめて<b>ステージ上に表示</b>あるいは<b>動く</b>ようになります。<br />
+　まず、コンポーネント以外の機能や設定について述べます。<br />
+<br />
+<h4>GameObjectの仮想関数</h4>
+　<b>GameObjectクラス</b>には以下の仮想関数があり、ステージあるいはほかのフレームワークから呼び出されます。以下に主な仮想関数名と呼ばれるタイミング、そして多重定義する場合の注意をまとめました。<br />
+<br />
+<table>
+<tr>
+<th width="20%">仮想関数名</th>
+<th width="55%">呼ばれるタイミング</th>
+<th>使用上の注意</th>
+</tr>
+<tr>
+<td>OnPreCreate()</td>
+<td>コンストラクタの直後</td>
+<td>必ず親クラスのOnPreCreate()を呼ぶ</td>
+</tr>
+<tr>
+<td>OnCreate()</td>
+<td>OnPreCreate()の直後</td>
+<td>通常はここで必要な初期化処理を行う</td>
+</tr>
+<tr>
+<td>OnEvent()</td>
+<td>イベントが発生した時</td>
+<td></td>
+</tr>
+<tr>
+<td>OnUpdate()</td>
+<td>各ターンの、最初の更新処理</td>
+<td>親クラスのShapeInterfaceで宣言</td>
+</tr>
+<tr>
+<td>OnCollisionEnter()</td>
+<td>衝突判定実装時でかつ<b>Fix</b>でない場合に、何かに衝突始めた時</td>
+<td></td>
+</tr>
+<tr>
+<td>OnCollisionExcute()</td>
+<td>衝突判定実装時でかつ<b>Fix</b>でない場合に、何かに衝突し続けているとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnCollisionExit()</td>
+<td>衝突判定実装時でかつ<b>Fix</b>でない場合に、何かとの衝突状態が抜けたとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnUpdate2()</td>
+<td>各ターンの、最後の更新処理</td>
+<td>親クラスのShapeInterfaceで宣言</td>
+</tr>
+<tr>
+<td>OnPreDraw()</td>
+<td>描画処理の直前</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGetDrawCamera()</td>
+<td>描画用の独自カメラを必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGetDrawLight()</td>
+<td>描画用の独自ライトを必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnGet2DDrawProjMatrix()</td>
+<td>２Ｄ描画用の独自射影行列を必要とするとき</td>
+<td></td>
+</tr>
+<tr>
+<td>OnDraw()</td>
+<td>描画時</td>
+<td>通常は描画コンポーネントに描画を任せる。<br/>親クラスのShapeInterfaceで宣言</td>
+</tr>
+<tr>
+<td class="nobottom">OnDestroy()</td>
+<td class="nobottom">破棄されるとき</td>
+<td class="nobottom">親クラスのShapeInterfaceで宣言</td>
+</tr>
+</table>
+　各仮想関数は、派生クラスで多重定義することで使用できますが、この表にはパラメータは乗ってませんが、<b>パラメータを必要とする</b>あるいは<b>戻り値が必要</b>な仮想関数もあるので注意しましょう。<br />
+　また、仮想関数ではあるけど多重定義をするのは一般的でないものは上記表には入ってません。ほかの仮想関数については直接コードを参照ください。
+<br/>
+<h4>GameObjectのアクセサ</h4>
+　<b>GameObject</b>では、多くのパラメータ設定は<b>コンポーネント</b>で行うので、直接の設定は少ないのですが、あります。以下に主に使うパラメータ設定と取得（アクセサ）を述べます。<br/>
+<br />
+<table>
+<tr>
+<th>関数名</th>
+<th>用途</th>
+</tr>
+<tr>
+<td>
+bool IsUpdateActive() const;、
+bool GetUpdateActive() const;
+</td>
+<td>
+更新処理が有効かどうかを得る
+</td>
+</tr>
+
+<tr>
+<td>
+void SetUpdateActive(bool b);
+</td>
+<td>
+更新処理が有効かどうかを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+bool IsDrawActive() const;、
+bool GetDrawActive() const;
+</td>
+<td>
+描画処理が有効かどうかを得る
+</td>
+</tr>
+<tr>
+<td>
+void SetDrawActive(bool b);
+</td>
+<td>
+描画処理が有効かどうかを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+bool IsAlphaActive() const;、
+bool GetAlphaActive() const;
+</td>
+<td>
+透明処理するかどうかを得る
+</td>
+</tr>
+
+<tr>
+<td>
+void SetAlphaActive(bool b);
+</td>
+<td>
+透明処理するかどうかを設定する
+</td>
+</tr>
+<tr>
+<td>
+bool IsSpriteDraw() const;、
+bool GetSpriteDraw() const;
+</td>
+<td>
+２Ｄとして描画するかどうかを得る
+</td>
+</tr>
+<tr>
+<td>
+void SetSpriteDraw(bool b);
+</td>
+<td>
+２Ｄとして描画するかどうかを設定する
+</td>
+</tr>
+<tr>
+<td>
+int GetDrawLayer() const;
+</td>
+<td>
+描画レイヤーを得る
+</td>
+</tr>
+<tr>
+<td>
+void  SetDrawLayer(int l);
+</td>
+<td>
+描画レイヤーを設定する
+</td>
+</tr>
+
+<tr>
+<td>
+bool FindTag(const wstring& tagstr) const;
+</td>
+<td>
+指定のタグを探す
+</td>
+</tr>
+<tr>
+<td>
+void  AddTag(const wstring& tagstr);
+</td>
+<td>
+タグを追加する
+</td>
+</tr>
+<tr>
+<td class="nobottom">
+shared_ptr<Stage> GetStage(bool ExceptionActive = true) const;
+</td>
+<td class="nobottom">
+ステージを得る
+</td>
+</tr>
+</table>
+<br />
+　更新処理や描画処理は有効無効を設定できます。ステージの項でも説明しましたが、配置されているオブジェクトを<b>削除</b>でゲーム上から消す代わりに<b>更新と描画を無効にする</b>という方法で処理したほうが効率的な場合があります。（これはそのオブジェクトの追加と削除が頻繁に行われる場合です）。<br />
+　また、<b>描画レイヤー</b>の設定は、重なったオブジェクト同士の<b>透明処理</b>がうまくいかないときに使用します。通常は<b>透明でないもの</b>を先に描画し、透明なものをあとに描画します。そして透明なもの同士は、カメラから見て遠い順に描画します。しかし、位置関係によっては<b>透明処理</b>がうまくいかないこともあります。そんな場合は、<b>描画レイヤー</b>を設定します。<br />
+　<b>描画レイヤー</b>が低い値だと、先に描画されます。デフォルトは<b>0</b>です。ですから<b>-1</b>にすればほかの<b>0</b>のオブジェクトより先に描画されます。同じ描画レイヤー同士では<b>カメラから見て遠い順</b>ということになります。<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="00_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="00_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

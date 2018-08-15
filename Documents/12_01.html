@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０１．コンポーネントとステートと行動</h3>
+　このサンプルは<b>FullSample201</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1201a.png" width="80%"/>
+<p>図1201a</p>
+<p>&nbsp;</p>
+　チュートリアル001（FullSample101）と似ている感じですが、ちょっと違います。<br />
+　コントローラでプレイヤーを動かして、<b>追いかけるオブジェクト</b>に体当たりすると、相手がジャンプします。<br />
+　これは<b>追いかけるオブジェクト</b>に<b>プレイヤーと衝突した時の処理</b>を実装したわけですが、ここ項では、衝突判定と衝突イベント、ステートとステートマシン、コンポーネントと行動、など、<b>更新処理（UpDate系と呼んでいます）</b>の処理を説明したいと思います。<br />
+<br/>
+　このサンプルには<b>プレイヤー</b>と<b>追いかけるオブジェクト</b>という、2種類のクラスの<b>Update系処理</b>が実装されています。<br />
+<h4>プレイヤー</h4>
+　まず<b>プレイヤー</b>から説明します。このサンプルは<b>FullSample101</b>を修正して作成したので、プレイヤーについてはほとんど同じですが、<b>FullSample101</b>の項では説明しきれなかった部分も合わせて説明します。<br />
+　ダブって説明もあるかと思いますが、ご容赦ください。<br />
+<br />
+　まず全体的な説明ですが、<b>BaseCross64</b>の基本的な構造として、<b>オブジェクトはステージに配置される</b>という原則があります。<b>BaseCross64</b>では<b>ステージ</b>と呼んでいますが、他のフレームワークでは<b>シーン</b>というかもしれません。<br />
+　<b>BaseCross64</b>では<b>シーン</b>というのは<b>ステージを管理するオブジェクト</b>となります。(詳しくは<b>【０】BaseCross64概要</b>を参照ください)<br />
+<h4>プレイヤーのステージへの追加</h4>
+　<b>プレイヤーのステージへの追加</b>は<b>GameStageクラス</b>の<b>GameStage::CreatePlayer()関数</b>で行います。以下がコードです。<div class="box1">
+<pre>
+//プレイヤーの作成
+void GameStage::CreatePlayer() {
+    //プレーヤーの作成
+    auto PlayerPtr = <span class="red">AddGameObject&lt;Player>();</span>
+    //シェア配列にプレイヤーを追加
+    SetSharedGameObject(L"Player", PlayerPtr);
+    PlayerPtr->AddTag(L"Player");
+}
+</pre>
+</div>
+　<b>AddGameObjectテンプレート関数</b>は可変長引数になっていて、上記の記述は、<b>Playerクラス</b>は、<b>独自の引数無し</b>で構築されるのがわかります。<br />
+　このような記述は、<b>Playerクラス</b>の<b>コンストラクタ</b>で確認できます。以下は<b>Playerクラス</b>の<b>コンストラクタ</b>です。<div class="box1">
+<pre>
+Player::Player(const shared_ptr&lt;Stage>& StagePtr) :
+    GameObject(StagePtr),
+    m_Velocity(0)
+{}
+</pre>
+</div>
+　第1引数の<b>const shared_ptr&lt;Stage>& StagePtr</b>が存在するのがわかります。つまり、ステージの<b>AddGameObjectテンプレート関数</b>は、第1引数は必ず<b>const shared_ptr&lt;Stage>& StagePtr</b>を渡します。このことはライブラリ中、<b>AddGameObjectテンプレート関数</b>を確認するとわかります。以下が<b>Stage::AddGameObject()テンプレート関数</b>のソースです。
+<div class="box1">
+<pre>
+template&lt;typename T, typename... Ts>
+shared_ptr&lt;T> AddGameObject(Ts&&... params) {
+    try {
+        auto Ptr = ObjectFactory::Create&lt;T>(<span class="red">GetThis&lt;Stage>()</span>, params...);
+        PushBackGameObject(Ptr);
+        return Ptr;
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　第1引数に<b>自分自身のshared_ptr</b>を渡してます。<b>第2引数以降</b>は<b>params...</b>となっているのでそのまま渡されます。<br />
+　この仕様は例えば<b>SeekObjectクラス</b>の<b>コンストラクタ</b>を確認するとわかります。以下です。
+<div class="box1">
+<pre>
+SeekObject::SeekObject(const shared_ptr&lt;Stage>& StagePtr, <span class="red">const Vec3& StartPos</span>) :
+    GameObject(StagePtr),
+    m_StartPos(StartPos),
+    m_StateChangeSize(5.0f),
+    m_Force(0),
+    m_Velocity(0)
+{
+}
+</pre>
+</div>
+　これを、GamaStage上に配置しているのは<b>GameStage::CreateSeekObject()関数</b>です。
+<div class="box1">
+<pre>
+//追いかけるオブジェクトの作成
+void GameStage::CreateSeekObject() {
+    //オブジェクトのグループを作成する
+    auto Group = CreateSharedObjectGroup(L"SeekGroup");
+    //配列の初期化
+    vector&lt;Vec3> Vec = {
+    { 0, 0.125f, 10.0f },
+    { 10.0f, 0.125f, 0.0f },
+    { -10.0f, 0.125f, 0.0f },
+    { 0, 0.125f, -10.0f },
+    };
+
+    //オブジェクトの作成
+    for (auto& v : Vec) {
+        AddGameObject&lt;SeekObject>(<span class="red">v</span>);
+    }
+}
+</pre>
+</div>
+　<b>AddGameObjectテンプレート関数</b>に<b>初期位置情報</b>を渡しているのがわかります。<br />
+<br />
+　ちょっと脱線しましたが、このように<b>AddGameObjectテンプレート関数</b>の仕組みを理解すると、コンストラクタに引数を必要とするオブジェクトが簡単に作成できるのがわかります。
+<h4>プレイヤーの初期化</h4>
+　<b>プレイヤーの初期化</b>は<b>Player::OnCreate()</b>で行います。<b>AddGameObjectテンプレート関数</b>でステージ上に配置するとフレームワークから呼び出されます。
+<div class="box1">
+<pre>
+void Player::OnCreate() {
+
+    //初期位置などの設定
+    <span class="red">auto Ptr = GetComponent&lt;Transform>();</span>
+    Ptr->SetScale(0.25f, 0.25f, 0.25f); //直径25センチの球体
+    Ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    Ptr->SetPosition(0, 0.125f, 0);
+
+    <span class="red">//CollisionSphere衝突判定を付ける
+    auto PtrColl = AddComponent&lt;CollisionSphere>();
+    //重力をつける
+    auto PtrGra = AddComponent&lt;Gravity>();</span>
+
+    //文字列をつける
+    <span class="red">auto PtrString = AddComponent&lt;StringSprite>();</span>
+    PtrString->SetText(L"");
+    PtrString->SetTextRect(Rect2D&lt;float>(16.0f, 16.0f, 640.0f, 480.0f));
+
+    //中略
+
+    //カメラを得る
+    auto PtrCamera = dynamic_pointer_cast&lt;MyCamera>(OnGetDrawCamera());
+    if (PtrCamera) {
+        //MyCameraである
+        //MyCameraに注目するオブジェクト（プレイヤー）の設定
+        PtrCamera->SetTargetObject(GetThis&lt;GameObject>());
+        PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
+    }
+}
+</pre>
+</div>
+　更新処理に関係がある部分のみ抜粋しています。<br />
+　プレイヤーは<b>Transform、CollisionSphere、Gravity</b>の3つのコンポーネントを実装します。<br />
+　<b>Transform</b>はいきなり<b>GetComponent&lt;Transform>();</b>と取得できます。<br />
+<h4>プレイヤーの更新</h4>
+　プレイヤーは<b>コントローラの動き</b>に従って移動します。これはカメラである<b>MyCameraクラス</b>と密接に関係します。<br />
+　カメラは<b>MyCamera.h/cpp</b>に記述があります。<br />
+　<b>MyCameraクラス</b>の動きを詳しく読むとわかると思いますが、このカメラはコントローラのスティックの動きによって、動的に<b>カメラ位置（Eye）</b>と<b>カメラの視点（At）</b>を決定します。<br />
+　プレイヤーはこの値を取得して、<b>移動する方向</b>を決定します。カメラの方向を<b>まっすぐ進む</b>としてそこからスティックの向きを加算します。そうするとプレイヤーの向かう方向が決定します。以下の図を参照ください。
+<p>&nbsp;</p>
+<img src="img/1201b.png" width="60%"/>
+<p>図1201b</p>
+<p>&nbsp;</p>
+　これを実装しているのが<b>Vec3 Player::GetMoveVector()const関数</b>です。
+<div class="box1">
+<pre>
+Vec3 Player::GetMoveVector() const {
+    Vec3 Angle(0, 0, 0);
+    //コントローラの取得
+    auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+    if (CntlVec[0].bConnected) {
+        if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
+            float MoveLength = 0;   //動いた時のスピード
+            auto PtrTransform = GetComponent&lt;Transform>();
+            auto PtrCamera = OnGetDrawCamera();
+            //進行方向の向きを計算
+            Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
+            Front.y = 0;
+            Front.normalize();
+            //進行方向向きからの角度を算出
+            float FrontAngle = atan2(Front.z, Front.x);
+            //コントローラの向き計算
+            float MoveX = CntlVec[0].fThumbLX;
+            float MoveZ = CntlVec[0].fThumbLY;
+            Vec2 MoveVec(MoveX, MoveZ);
+            float MoveSize = MoveVec.length();
+            //コントローラの向きから角度を計算
+            float CntlAngle = atan2(-MoveX, MoveZ);
+            //トータルの角度を算出
+            float TotalAngle = FrontAngle + CntlAngle;
+            //角度からベクトルを作成
+            Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+            //正規化する
+            Angle.normalize();
+            //移動サイズを設定。
+            Angle *= MoveSize;
+            //Y軸は変化させない
+            Angle.y = 0;
+        }
+    }
+    return Angle;
+}
+</pre>
+</div>
+　この関数は、<b>Player::MovePlayer()</b>から呼ばれます。
+<div class="box1">
+<pre>
+void Player::MovePlayer() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    Vec3 Angle = GetMoveVector();
+    if (Angle.length() > 0.0f) {
+        auto Pos = GetComponent&lt;Transform>()->GetPosition();
+        Pos += Angle * ElapsedTime * m_Speed;
+        GetComponent&lt;Transform>()->SetPosition(Pos);
+        //回転の計算
+        auto UtilPtr = GetBehavior&lt;UtilBehavior>();
+        UtilPtr->RotToHead(Angle, 1.0f);
+    }
+}
+</pre>
+</div>
+　<b>GetMoveVector()関数</b>はここからしか呼ばれないので、<b>Player::MovePlayer()</b>内にロジックを記述しても問題はないのですが、関数に小分けにすることで、処理を明確にできます。こういったロジックを記述する関数は、<b>20行以内</b>くらいに書くようにするとコードがすっきりします。<br />
+　<b>Player::MovePlayer()関数</b>はさらに<b>Player::OnUpdate()関数</b>から呼ばれます。<br />
+　この関数はフレームワークから毎ターン呼び出される関数です。多重定義して実装します。
+<div class="box1">
+<pre>
+//更新
+void Player::OnUpdate() {
+    //コントローラチェックして入力があればコマンド呼び出し
+    m_InputHandler.PushHandle(GetThis&lt;Player>());
+    MovePlayer();
+}
+</pre>
+</div>
+　ここで、コントローラーからの<b>ボタンのプッシュ</b>を検証するハンドラ関数を呼んでいます。この関数はテンプレート関数で以下のようになっています。<b>ProjectBehavior.h</b>に記述があります。
+<div class="box1">
+<pre>
+template&lt;typename T>
+struct InputHandler {
+    void PushHandle(const shared_ptr&lt;T>& Obj) {
+        //コントローラの取得
+        auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+        if (CntlVec[0].bConnected) {
+            //Aボタン
+            if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+                Obj->OnPushA();
+            }
+        }
+    }
+};
+</pre>
+</div>
+　ここではAボタンが押された瞬間かどうかを検証して、その場合は、指定されたオブジェクトの<b>OnPushA()関数</b>を呼び出します。<br />
+　このように、イベントハンドラ的に記述すると、可読性が高くなります。<br />
+　また、このハンドラを使用するオブジェクトは<b>OnPushA()関数</b>を持たなければいけません。逆に言えば、例えば敵キャラであっても、<b>OnPushA()関数</b>を実装すれば、コントローラのAボタンに対応するコードを記述することができます。<br />
+　もし、このハンドラを使用しようとするオブジェクトが<b>OnPushA()関数</b>を持たなければ<b>コンパイルエラー</b>になります。<br />
+　こういった、テンプレート処理で記述する手法を<b>ジェネリックプログラミング</b>といいます。<br />
+<br />
+　さて<b>OnPushA()関数</b>の中身ですが以下のようになっています。
+<div class="box1">
+<pre>
+void Player::OnPushA() {
+    auto Grav = GetComponent&lt;Gravity>();
+    Grav->StartJump(Vec3(0,4.0f,0));
+}
+</pre>
+</div>
+　ここでは<b>Gravityコンポーネント</b>を取得して、<b>StartJump()メンバ関数</b>を呼び出しています。その名の通り、ジャンプさせる関数です。プレイヤーは<b>Aボタン</b>でジャンプします。<br />
+<br />
+　<b>Player::OnUpdate()</b>では、コントローラのハンドラ処理をしたあと、先ほど紹介した<b>MovePlayer()関数</b>を呼び出します。<br />
+<h4>プレイヤーの更新２</h4>
+　フレームワークは<b>更新処理用の関数</b>として、もう一つ<b>OnUpdate2()関数</b>を呼び出します。<b>OnUpdate()関数</b>との違いは、この2つの関数の間に、コンポーネントの処理や衝突判定などの処理が入ることです。つまり<b>OnUpdate2()関数</b>は、様々な自動処理の後に呼ばれるということです。必要であれば<b>OnUpdate2()関数</b>を多重定義して実装します。<br />
+　ここでは、デバッグ用の文字列を表示しています。
+<div class="box1">
+<pre>
+void Player::OnUpdate2() {
+    //文字列の表示
+    DrawStrings();
+}
+</pre>
+</div>
+　デバッグ用の文字列は、オブジェクトが思うように動かないときに、数々のパラメータがどういう値を持ってるかなど調べるのに役立ちます。ここで呼び出している<b>DrawStrings()関数</b>では、以下のように、FPS値やプレイヤーの位置、重力加速度を取得して表示しています。必要がなくなれば、<b>DrawStrings()関数呼び出し</b>をコメントにすればいい形です。
+<div class="box1">
+<pre>
+void Player::DrawStrings() {
+
+    //文字列表示
+    auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
+    wstring FPS(L"FPS: ");
+    FPS += Util::UintToWStr(fps);
+    FPS += L"\nElapsedTime: ";
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    FPS += Util::FloatToWStr(ElapsedTime);
+    FPS += L"\n";
+
+    auto Pos = GetComponent&lt;Transform>()->GetPosition();
+    wstring PositionStr(L"Position:\t");
+    PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+    PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+    PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+
+    wstring GravStr(L"GravityVelocoty:\t");
+    auto GravVelocity = GetComponent&lt;Gravity>()->GetGravityVelocity();
+    GravStr += L"X=" + Util::FloatToWStr(GravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+    GravStr += L"Y=" + Util::FloatToWStr(GravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+    GravStr += L"Z=" + Util::FloatToWStr(GravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+    wstring str = FPS + PositionStr + GravStr;
+    //文字列コンポーネントの取得
+    auto PtrString = GetComponent&lt;StringSprite>();
+    PtrString->SetText(str);
+}
+</pre>
+</div>
+<br/>
+<h4>追いかけるオブジェクト</h4>
+　プレイヤーを追いかけるオブジェクトは<b>SeekObject</b>です。<b>Character.h/cpp</b>に記述があります。<br />
+<h4>SeekObjectのコンストラクタ</h4>
+　<b>SeekObjectのコンストラクタ</b>は、ステージのほかに<b>開始位置</b>を渡します。以下の様な形です。
+<div class="box1">
+<pre>
+SeekObject::SeekObject(const shared_ptr&lt;Stage>& StagePtr, const Vec3& StartPos) :
+    GameObject(StagePtr),
+    m_StartPos(StartPos),
+    m_StateChangeSize(5.0f),
+    m_Force(0),
+    m_Velocity(0)
+{
+}
+</pre>
+</div>
+　<b>SeekObject</b>には<b>m_StartPos</b>のほかに<b>m_Force（力）</b>と<b>m_Velocity（速度）</b>という2つのベクトル（Vec3）を持っています。<br />
+　<b>m_StateChangeSize</b>は<b>ステート</b>が切り替わる値です。<br/>
+　この<b>SeekObject</b>の構築は<b>GamaStage</b>で行います。<b>GameStage::CreateSeekObject()</b>です。
+<div class="box1">
+<pre>
+void GameStage::CreateSeekObject() {
+    //オブジェクトのグループを作成する
+    auto Group = CreateSharedObjectGroup(L"SeekGroup");
+    //配列の初期化
+    vector&lt;Vec3> Vec = {
+    { 0, 0.125f, 10.0f },
+    { 10.0f, 0.125f, 0.0f },
+    { -10.0f, 0.125f, 0.0f },
+    { 0, 0.125f, -10.0f },
+    };
+
+    //オブジェクトの作成
+    for (auto& v : Vec) {
+        AddGameObject&lt;SeekObject>(v);
+    }
+}
+</pre>
+</div>
+　この関数を呼び出しているのは<b>GameStage::OnCreate()</b>です。<br />
+<h4>SeekObjectの初期化</h4>
+　初期化は<b>SeekObject::OnCreate()</b>です。
+<div class="box1">
+<pre>
+void SeekObject::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetPosition(m_StartPos);
+    PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
+    PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+
+    //オブジェクトのグループを得る
+    auto Group = GetStage()->GetSharedObjectGroup(L"SeekGroup");
+    //グループに自分自身を追加
+    Group->IntoGroup(GetThis&lt;SeekObject>());
+    //Obbの衝突判定をつける
+    auto PtrColl = AddComponent&lt;CollisionObb>();
+    //重力をつける
+    auto PtrGra = AddComponent&lt;Gravity>();
+    //分離行動をつける
+    auto PtrSep = GetBehavior&lt;SeparationSteering>();
+    PtrSep->SetGameObjectGroup(Group);
+
+    //中略
+
+    <span class="red">//ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;SeekObject>(GetThis&lt;SeekObject>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(SeekFarState::Instance());</span>
+}
+</pre>
+</div>
+　ここではプレイヤーと同じように<b>衝突判定</b>と<b>重力</b>を実装しています。<br />
+　プレイヤーと違うところは<b>ステートマシンの構築</b>を行っているところです（赤くなっています）。<br />
+<h4>ステートマシンとは</h4>
+　ゲーム上のオブジェクトは<b>状態</b>というのを持っています。<br />
+　<b>逃げてる状態</b>とか<b>戦う状態</b>とか<b>瀕死の状態</b>とかです。今回のプレイヤーは<b>状態</b>は持ってませんが、複雑な処理になれば、持つ必要が出てきます。<br />
+　<b>SeekObject</b>に関して言えば、常にプレイヤーを追いかけているわけですが<b>プレイヤーから一定間隔以上離れている状態（FarState）</b>と<b>プレイヤーから一定間隔より近い状態（NearState）</b>があります。<br />
+　この<b>状態</b>を<b>ステート</b>といいます。そして<b>ステート</b>を管理するオブジェクトを<b>ステートマシン</b>といいます。<br />
+　それぞれのステートごとに、<b>SeekObject</b>の実装が変わります。すなわち、<b>ステートにより、行う行動が変わる</b>というわけです。<br />
+　それを、以下の表に表します。<br/>
+<br />
+<table>
+<tr>
+<th width="40%">ステート名</th>
+<th width="60%">行動</th>
+</tr>
+<tr>
+<td>SeekFarState</td>
+<td>
+スピードを出してプレイヤーを追いかける。<br />
+お互いはくっつかないようにする。<br />
+移動方向に頭を向ける
+</td>
+</tr>
+<tr>
+<td class="nobottom">SeekNearState</td>
+<td class="nobottom">プレイヤーに近づく（到着する）<br />
+お互いはくっつかないようにする<br />
+移動方向に頭を向ける
+</td>
+</tr>
+</table>
+<br/>
+　ステートマシンには、最初のステートを<b>SeekFarState</b>に設定します。
+<h4>ステートの実装</h4>
+　<b>ステート</b>は以下のように宣言します。<b>SeekFarState</b>を例にとります。
+<div class="box1">
+<pre>
+class SeekFarState : public ObjState&lt;SeekObject>
+{
+    SeekFarState() {}
+public:
+    static shared_ptr&lt;SeekFarState> Instance();
+    virtual void Enter(const shared_ptr&lt;SeekObject>& Obj)override;
+    virtual void Execute(const shared_ptr&lt;SeekObject>& Obj)override;
+    virtual void Exit(const shared_ptr&lt;SeekObject>& Obj)override;
+};
+</pre>
+</div>
+　<b>ObjStateテンプレートクラス</b>を親クラスに持つ派生クラスとして作ります。<br />
+　メンバ関数として<b>Instance()、Enter()、Execute()、Exit()</b>を作成します。<br />
+　<b>Instance()</b>はこのステートを参照するときに使います。static関数として作成します。<b>ステート</b>は<b>シングルトン</b>として作成します。<b>シングルトン</b>とは、プログラム中<b>1つのインスタンスしか作れない</b>クラスです。<br />
+　<b>Enter()</b>はこのステートに入ったときに呼ばれる関数です。一回だけ呼ばれます。<br />
+　<b>Execute()</b>はこのステーに入っている間、毎ターン呼ばれる関数です。<br />
+　<b>Exit()</b>はこのステートから出る（ステートマシンのChangeState()関数が呼ばれてステートを抜ける）時に呼ばれます。<br />
+　これらの関数をの呼び出しを行うのが<b>ステートマシン</b>です。<br />
+　以下は<b>SeekFarState</b>の実体です。
+<div class="box1">
+<pre>
+shared_ptr&lt;SeekFarState> SeekFarState::Instance() {
+    static shared_ptr&lt;SeekFarState> instance(new SeekFarState);
+    return instance;
+}
+void SeekFarState::Enter(const shared_ptr&lt;SeekObject>& Obj) {
+}
+void SeekFarState::Execute(const shared_ptr&lt;SeekObject>& Obj) {
+    auto PtrSeek = Obj->GetBehavior&lt;SeekSteering>();
+    auto PtrSep = Obj->GetBehavior&lt;SeparationSteering>();
+    auto Force = Obj->GetForce();
+    Force = PtrSeek->Execute(Force, Obj->GetVelocity(), Obj->GetTargetPos());
+    Force += PtrSep->Execute(Force);
+    Obj->SetForce(Force);
+    Obj->ApplyForce();
+    float f = bsm::length(Obj->GetComponent&lt;Transform>()->GetPosition() - Obj->GetTargetPos());
+    if (f &lt; Obj->GetStateChangeSize()) {
+        Obj->GetStateMachine()->ChangeState(SeekNearState::Instance());
+    }
+}
+
+void SeekFarState::Exit(const shared_ptr&lt;SeekObject>& Obj) {
+}
+</pre>
+</div>
+　このように<b>SeekFarState::Enter()</b>と<b>SeekFarState::Exit()</b>は<b>空関数</b>なのがわかります。このステートは<b>入ったとき</b>や<b>出るとき</b>は何もしません。<br />
+　<b>Enter()、Execute()、Exit()</b>は引数に<b>SeekObjectのインスタンス</b>が渡されますのでそのメンバ関数にアクセスできます。<br />
+　ここでの処理は、表にあるように
+<div class="box1">
+<pre>
+１、スピードを出してプレイヤーを追いかける。
+２、お互いはくっつかないようにする。
+３、移動方向に頭を向ける
+</pre>
+</div>
+　を実装します。１と２は<b>SeekFarState::Execute</b>で実装します。<br />
+　<b>SeekSteering行動</b>や<b>SeparationSteering行動</b>は<b>Execute関数</b>で<b>フォース</b>を返します。つまりは、SeekObjectに<b>力</b>を加えるわけです。それが
+<div class="box1">
+<pre>
+    Force = PtrSeek->Execute(Force, Obj->GetVelocity(), Obj->GetTargetPos());
+    Force += PtrSep->Execute(Force);
+    Obj->SetForce(Force);
+    Obj->ApplyForce();
+</pre>
+</div>
+　というわけです。<b>SetForceおよびApplyForceの違い</b>は、前者は<b>m_Forceのアクセサ</b>であり、後者は<b>Transformへの反映</b>です。<br />
+　<b>SeekFarState::Execute</b>では、処理の結果、プレイヤーと距離が一定の長さより短くなったら<b>SeekNearState</b>に変更します。<br />
+　<b>SeekNearState</b>での処理は、<b>SeekSteering</b>が<b>ArriveSteering</b>に代わる形です。<br />
+<h4>SeekObjectの更新処理</h4>
+　このように<b>ステート</b>の実装が終わったら<b>SeekObject::OnUpdate()</b>を実装します。
+<div class="box1">
+<pre>
+void SeekObject::OnUpdate() {
+    m_Force = Vec3(0);
+    <span class="red">//ステートマシンのUpdateを行う
+    //この中でステートの切り替えが行われる
+    m_StateMachine->Update();</span>
+    auto PtrUtil = GetBehavior&lt;UtilBehavior>();
+    PtrUtil->RotToHead(1.0f);
+}
+</pre>
+</div>
+　このように、基本的にステートマシンの<b>Update()</b>さえ呼べば、ステートの切り替えなどは<b>ステートマシン</b>がやってくれます。<br />
+　ここでは<b>共通処理</b>として<b>３、移動方向に頭を向ける</b>を実装しています。<b>UtilBehavior</b>という行動クラスを呼び出していますが、このクラスは汎用的に使用きる行動クラスです。<b>RotToHead()関数</b>は、<b>頭を進行方向に向ける</b>関数です。<br />
+　ここで気を付けたいのは、毎ターン<b>m_Force = Vec3(0);</b>とフォースを初期化しているところです。フォースとのターンで影響を与える力を計算するわけですから、この処理が必要となります。<br />
+　それに対して<b>m_Velocity</b>は毎ターン変化はしますが、初期化されるわけではありません。<br />
+<h4>SeekObjectのイベント処理</h4>
+　<b>SeekObject</b>は<b>プレイヤーと衝突した時</b>にジャンプするようになってます。その処理は<b>SeekObject::OnCollisionEnter()関数</b>で行います。この関数は自身が衝突判定を持っていて、なおかつ<b>Fixed</b>でない場合に呼び出されます。
+<div class="box1">
+<pre>
+void SeekObject::OnCollisionEnter(shared_ptr&lt;GameObject>& Other) {
+    if (Other->FindTag(L"Player")) {
+        auto Grav = GetComponent&lt;Gravity>();
+        Grav->StartJump(Vec3(0, 4.0f, 0));
+    }
+}
+</pre>
+</div>
+　ここでは衝突した相手が<b>L"Player"というタグ</b>を持っていたら、ジャンプするように記述しています。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

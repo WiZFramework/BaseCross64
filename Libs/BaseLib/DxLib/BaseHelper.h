@@ -2069,15 +2069,6 @@ namespace basecross{
 		virtual void WakeUp(const shared_ptr<T>& Obj) {}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	イベントが発行されたときに呼ぶ
-		@param[in]	Message	メッセージ文字列
-		@param[in]	pContext	汎用的なポインタ
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnEvent(const wstring& Message,void* pContext) {}
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	ステート名を得る
 		@param[in]	ステート名
 		@return	なし
@@ -2118,7 +2109,7 @@ namespace basecross{
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~StateMachine(){}
+		virtual ~StateMachine() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カレントステートを設定する
@@ -2155,7 +2146,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		shared_ptr< ObjState<T> >  GetPreviousState()const {
-			auto shptr = m_pPreviousState.lock();
+			auto shptr = m_PreviousState.lock();
 			if (shptr){
 				return shptr;
 			}
@@ -2218,7 +2209,7 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		void RevertToPreviousState(){
-			ChangeState(m_pPreviousState);
+			ChangeState(m_PreviousState);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2235,7 +2226,6 @@ namespace basecross{
 			return typeid(shptr) == typeid(st);
 		}
 	};
-
 
 
 
@@ -2397,11 +2387,10 @@ namespace basecross{
 		void Update2() {
 			auto ow_shptr = m_Owner.lock();
 			if (ow_shptr && !m_StateStack.empty()) {
-				m_BehaviorStack.top()->Execute2(ow_shptr);
+				m_StateStack.top()->Execute2(ow_shptr);
 			}
 		}
 	};
-
 
 	//各シングルトンインスタンス作成マクロ
 #define DECLARE_SINGLETON_INSTANCE(InsType)	static shared_ptr<InsType> Instance();
