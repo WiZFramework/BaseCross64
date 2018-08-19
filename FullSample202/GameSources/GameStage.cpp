@@ -26,10 +26,10 @@ namespace basecross {
 		PtrMultiLight->SetDefaultLighting();
 	}
 
-
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
+
 		vector< vector<Vec3> > Vec = {
 			{
 				Vec3(50.0f, 1.0f, 50.0f),
@@ -62,6 +62,7 @@ namespace basecross {
 				Vec3(-0.5f, 0.0f, -0.5f),
 				Vec3(-10.0f, 0.25f, 10.0f)
 			},
+
 		};
 		//オブジェクトの作成
 		for (auto v : Vec) {
@@ -74,9 +75,9 @@ namespace basecross {
 		//配列の初期化
 		vector< vector<Vec3> > Vec = {
 			{
-				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.5f, 1.0f, 1.0f),
 				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(5.0f, 1.0f, 5.0f)
+				Vec3(-2.0f, 0.5f, 5.0f)
 			},
 		};
 		//オブジェクトの作成
@@ -106,7 +107,6 @@ namespace basecross {
 	}
 
 
-
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
 		//プレーヤーの作成
@@ -115,9 +115,6 @@ namespace basecross {
 		SetSharedGameObject(L"Player", PlayerPtr);
 		PlayerPtr->AddTag(L"Player");
 	}
-
-
-
 
 	void GameStage::OnCreate() {
 		try {

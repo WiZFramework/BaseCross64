@@ -110,17 +110,17 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	EasingçsìÆÉNÉâÉX
 	//--------------------------------------------------------------------------------------
-	EasingBehavior::EasingBehavior(const shared_ptr<GameObject>& GameObjectPtr):
+	Easing::Easing(const shared_ptr<GameObject>& GameObjectPtr):
 		Behavior(GameObjectPtr)
 	{}
-	EasingBehavior::~EasingBehavior() {}
+	Easing::~Easing() {}
 
-	bsm::Vec3 EasingBehavior::Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime) {
+	bsm::Vec3 Easing::Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime) {
 		auto SpanVec = End - Start;
 		return EasingBase<bsm::Vec3>::Linear(TgtTime, Start, SpanVec, AllTime);
 	}
 
-	bsm::Vec3 EasingBehavior::EaseIn(EasingType type, 
+	bsm::Vec3 Easing::EaseIn(EasingType type,
 		const bsm::Vec3& Start, const bsm::Vec3& End, 
 		float TgtTime, float AllTime)
 	{
@@ -175,7 +175,7 @@ namespace basecross {
 		return Start;
 	}
 
-	bsm::Vec3 EasingBehavior::EaseOut(EasingType type,
+	bsm::Vec3 Easing::EaseOut(EasingType type,
 		const bsm::Vec3& Start, const bsm::Vec3& End,
 		float TgtTime, float AllTime)
 	{
@@ -230,7 +230,7 @@ namespace basecross {
 		return Start;
 	}
 
-	bsm::Vec3 EasingBehavior::EaseInOut(EasingType type,
+	bsm::Vec3 Easing::EaseInOut(EasingType type,
 		const bsm::Vec3& Start, const bsm::Vec3& End,
 		float TgtTime, float AllTime)
 	{

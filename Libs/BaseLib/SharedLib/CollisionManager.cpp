@@ -295,17 +295,16 @@ namespace basecross {
 				EscapePair(v);
 			}
 		}
-		//動きのないもの順にする（リバースを掛ける）
-		std::reverse(m_CollisionPairVec[m_KeepIndex].begin(), m_CollisionPairVec[m_KeepIndex].end());
 
 		m_RecursiveCount = 0;
 		//Fixedに衝突している
-		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
-			auto TgtSrcSh = v.m_Src.lock();
-			auto TgtDestSh = v.m_Dest.lock();
+		//逆順に検証
+		for (auto it = m_CollisionPairVec[m_KeepIndex].rbegin(); it != m_CollisionPairVec[m_KeepIndex].rend(); it++) {
+			auto TgtSrcSh = it->m_Src.lock();
+			auto TgtDestSh = it->m_Dest.lock();
 			if (TgtDestSh->IsFixed()) {
 				//再帰呼び出し
-				EscapeFromDest(v);
+				EscapeFromDest(*it);
 			}
 		}
 
