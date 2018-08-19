@@ -10,6 +10,193 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
+	///	Easing 親クラス
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EasingBase {
+	protected:
+		EasingBase() {}
+		virtual ~EasingBase() {}
+	public:
+		static T Linear(float t, T b, T c, float d) {
+			return c * t / d + b;
+		}
+		virtual T EaseIn(float t, T b, T c, float d) = 0;
+		virtual T EaseOut(float t, T b, T c, float d) = 0;
+		virtual T EaseInOut(float t, T b, T c, float d) = 0;
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Quadratic Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseQuad : public EasingBase<T> {
+	public:
+		EaseQuad():EasingBase() {}
+		virtual ~EaseQuad() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			t /= d;
+			return c * t*t + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			t /= d;
+			return -c * t*(t - 2) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2;
+			if (t < 1) return c / 2 * t*t + b;
+			t--;
+			return -c / 2 * (t*(t - 2) - 1) + b;
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Cubic Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseCubic : public EasingBase<T> {
+	public:
+		EaseCubic() :EasingBase() {}
+		virtual ~EaseCubic() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			t /= d;
+			return c * t*t*t + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			t /= d;
+			t--;
+			return c * (t*t*t + 1) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2;
+			if (t < 1) return c / 2 * t*t*t + b;
+			t -= 2;
+			return c / 2 * (t*t*t + 2) + b;
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Quartic Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseQuart : public EasingBase<T> {
+	public:
+		EaseQuart() :EasingBase() {}
+		virtual ~EaseQuart() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			t /= d;
+			return c * t*t*t*t + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			t /= d;
+			t--;
+			return -c * (t*t*t*t - 1) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2;
+			if (t < 1) return c / 2 * t*t*t*t + b;
+			t -= 2;
+			return -c / 2 * (t*t*t*t - 2) + b;
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	Quintic Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseQuint : public EasingBase<T> {
+	public:
+		EaseQuint() :EasingBase() {}
+		virtual ~EaseQuint() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			t /= d;
+			return c * t*t*t*t*t + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			t /= d;
+			t--;
+			return c * (t*t*t*t*t + 1) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2;
+			if (t < 1) return c / 2 * t*t*t*t*t + b;
+			t -= 2;
+			return c / 2 * (t*t*t*t*t + 2) + b;
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
+	///	Sin Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseSin : public EasingBase<T> {
+	public:
+		EaseSin() :EasingBase() {}
+		virtual ~EaseSin() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			return -c * cos(t / d * (XM_PIDIV2)) + c + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			return c * sin(t / d * (XM_PIDIV2)) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			return -c / 2 * (cos(XM_PI*t / d) - 1) + b;
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Exponential Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseExpo : public EasingBase<T> {
+	public:
+		EaseExpo() :EasingBase() {}
+		virtual ~EaseExpo() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			return c * (float)std::pow(2.0f, 10.0f * (t / d - 1.0f)) + b;
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			return c * (-1.0f * (float)std::pow(2.0f, -10.0f * t / d) + 1.0f) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2.0f;
+			if (t < 1.0f) return c / 2.0f * (float)std::pow(2.0f, 10.0f * (t - 1.0f)) + b;
+			t--;
+			return c / 2.0f * (-1.0f * (float)std::pow(2.0f, -10.0f * t) + 2.0f) + b;
+		}
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Circular Easing
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class EaseCirc : public EasingBase<T> {
+	public:
+		EaseCirc() :EasingBase() {}
+		virtual ~EaseCirc() {}
+		virtual T EaseIn(float t, T b, T c, float d)override {
+			t /= d;
+			return -c * (std::sqrt(1 - t * t) - 1) + b;
+
+		}
+		virtual T EaseOut(float t, T b, T c, float d)override {
+			t /= d;
+			t--;
+			return c * std::sqrt(1 - t * t) + b;
+		}
+		virtual T EaseInOut(float t, T b, T c, float d)override {
+			t /= d / 2;
+			if (t < 1) return -c / 2 * (std::sqrt(1 - t * t) - 1) + b;
+			t -= 2;
+			return c / 2 * (std::sqrt(1 - t * t) + 1) + b;
+		}
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	Lerp 補間処理計算構造体
 	//--------------------------------------------------------------------------------------
 	struct Lerp{
@@ -66,6 +253,7 @@ namespace basecross{
 			return Start * (1.0f - cal_rate) + End * cal_rate;
 		}
 	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	XZポイント(Z方向プラスの点)
@@ -2897,9 +3085,6 @@ namespace basecross{
 			}
 			return CollisionTestCapsuleAabb(SrcCapsule, SrcVelocity, DestAabb, mid, EndTime, HitTime);
 		}
-
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カプセルとObbの衝突判定
@@ -2923,10 +3108,21 @@ namespace basecross{
 			float HitTime;
 			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
 			if (CollisionTestSphereObb(StartSp, Velocity,obb, 0,1.0f, HitTime)){
+				SPHERE HitSp = StartSp;
+				bsm::Vec3 TempRet;
+				if (SPHERE_OBB(StartSp, obb, TempRet) && SPHERE_OBB(EndSp, obb, TempRet)) {
+					//スタート位置とエンド位置で両方ヒットしてたら、面で衝突している
+					HitSp.m_Center = cp.GetCenter();
+				}
+				else {
+					HitSp.m_Center += Velocity * HitTime;
+				}
+				SPHERE_OBB(HitSp, obb, retvec);
 				return true;
 			}
 			return false;
 		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カプセルと動かないObbの衝突判定

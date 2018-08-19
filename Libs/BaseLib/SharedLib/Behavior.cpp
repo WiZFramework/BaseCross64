@@ -107,6 +107,183 @@ namespace basecross {
 		return GetGameObject()->GetStage();
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	Easing行動クラス
+	//--------------------------------------------------------------------------------------
+	EasingBehavior::EasingBehavior(const shared_ptr<GameObject>& GameObjectPtr):
+		Behavior(GameObjectPtr)
+	{}
+	EasingBehavior::~EasingBehavior() {}
+
+	bsm::Vec3 EasingBehavior::Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime) {
+		auto SpanVec = End - Start;
+		return EasingBase<bsm::Vec3>::Linear(TgtTime, Start, SpanVec, AllTime);
+	}
+
+	bsm::Vec3 EasingBehavior::EaseIn(EasingType type, 
+		const bsm::Vec3& Start, const bsm::Vec3& End, 
+		float TgtTime, float AllTime)
+	{
+		auto SpanVec = End - Start;
+		switch (type) {
+			case EasingType::Quadratic: 
+			{
+				EaseQuad<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic: 
+			{
+				EaseCubic<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<Vec3> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+		}
+		//エラーの場合はスタートを戻す
+		return Start;
+	}
+
+	bsm::Vec3 EasingBehavior::EaseOut(EasingType type,
+		const bsm::Vec3& Start, const bsm::Vec3& End,
+		float TgtTime, float AllTime)
+	{
+		auto SpanVec = End - Start;
+		switch (type) {
+		case EasingType::Quadratic:
+		{
+			EaseQuad<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Cubic:
+		{
+			EaseCubic<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Quartic:
+		{
+			EaseQuart<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Quintic:
+		{
+			EaseQuint<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Sinusoidal:
+		{
+			EaseSin<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+		}
+		break;
+		case EasingType::Exponential:
+		{
+			EaseExpo<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+		}
+		break;
+		case EasingType::Circular:
+		{
+			EaseCirc<Vec3> es;
+			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		}
+		//エラーの場合はスタートを戻す
+		return Start;
+	}
+
+	bsm::Vec3 EasingBehavior::EaseInOut(EasingType type,
+		const bsm::Vec3& Start, const bsm::Vec3& End,
+		float TgtTime, float AllTime)
+	{
+		auto SpanVec = End - Start;
+		switch (type) {
+		case EasingType::Quadratic:
+		{
+			EaseQuad<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Cubic:
+		{
+			EaseCubic<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Quartic:
+		{
+			EaseQuart<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Quintic:
+		{
+			EaseQuint<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		case EasingType::Sinusoidal:
+		{
+			EaseSin<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+		}
+		break;
+		case EasingType::Exponential:
+		{
+			EaseExpo<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+		}
+		break;
+		case EasingType::Circular:
+		{
+			EaseCirc<Vec3> es;
+			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+		}
+		break;
+		}
+		//エラーの場合はスタートを戻す
+		return Start;
+	}
 
 
 

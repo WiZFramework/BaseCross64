@@ -11,6 +11,7 @@ namespace basecross {
 	class CollisionSphere;
 	class CollisionCapsule;
 	class CollisionObb;
+	struct CollisionPair;
 	class CollisionManager;
 
 	//--------------------------------------------------------------------------------------
@@ -97,10 +98,19 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 判定から除外するグループの設定。
+		@param[in]	Group	グループのポインタ
 		@return	 なし
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetExcludeCollisionGroup(const shared_ptr<GameObjectGroup>& Group);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 判定から除外するグループの設定。
+		@param[in]	GroupStr	グループ名
+		@return	 なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetExcludeCollisionGroup(const wstring& GroupStr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	判定から除外するタグが存在するかどうかを得る
@@ -231,31 +241,12 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	球体コリジョン
-		@param[in]	SrcHitNormal	衝突法線
+		@brief	ペアのSrcをエスケープする
+		@param[in]	Pair	ペア
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	カプセルコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	Obbコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal) = 0;
+		virtual void EscapeCollisionPair(CollisionPair& Pair) = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。デフォルトは何も行わない
@@ -409,31 +400,12 @@ namespace basecross {
 		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	球体コリジョン
-		@param[in]	SrcHitNormal	衝突法線
+		@brief	ペアのSrcをエスケープする
+		@param[in]	Pair	ペア
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	カプセルコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	Obbコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override;
+		virtual void EscapeCollisionPair(CollisionPair& Pair) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -588,31 +560,12 @@ namespace basecross {
 		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	球体コリジョン
-		@param[in]	SrcHitNormal	衝突法線
+		@brief	ペアのSrcをエスケープする
+		@param[in]	Pair	ペア
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	カプセルコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	Obbコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override {}
+		virtual void EscapeCollisionPair(CollisionPair& Pair) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -720,47 +673,11 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-//		virtual void GetHitNormal(const shared_ptr<CollisionSphere>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-//		virtual void GetHitNormal(const shared_ptr<CollisionCapsule>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 衝突法線を得る
-		@param[in]	DestColl	相手のCollision
-		@param[out]	Ret	戻す法線の参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-//		virtual void GetHitNormal(const shared_ptr<CollisionObb>& DestColl, bsm::Vec3& Ret) const override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief 1つ前と現在の連結させたSPHEREを得る
 		@return	連結させたSPHERE
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual SPHERE GetEnclosingSphere()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 線分と自分の衝突チェック（判定するのみ）
-		@param[in]	Pos1	線分開始
-		@param[in]	Pos2	線分終了
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-//		virtual bool HitTestWithSegment(const bsm::Vec3& Pos1, const bsm::Vec3& Pos2)override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
@@ -777,31 +694,12 @@ namespace basecross {
 		virtual bsm::Vec3 GetCenterPosition()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	球体コリジョン
-		@param[in]	SrcHitNormal	衝突法線
+		@brief	ペアのSrcをエスケープする
+		@param[in]	Pair	ペア
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionSphere>& Other, bsm::Vec3& SrcHitNormal) override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	カプセルコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionCapsule>& Other, bsm::Vec3& SrcHitNormal) override {}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	相手からエスケープする
-		@param[in]	Other	Obbコリジョン
-		@param[in]	SrcHitNormal	衝突法線
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void EscapeCollision(const shared_ptr<CollisionObb>& Other, bsm::Vec3& SrcHitNormal)override;
+		virtual void EscapeCollisionPair(CollisionPair& Pair) override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる

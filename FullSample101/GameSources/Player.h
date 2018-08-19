@@ -45,6 +45,7 @@ namespace basecross{
 		//Aƒ{ƒ^ƒ“
 		void OnPushA();
 		void MovePlayer();
+
 	};
 
 

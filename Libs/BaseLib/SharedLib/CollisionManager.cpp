@@ -26,51 +26,44 @@ namespace basecross {
 		GameObject(StagePtr),
 		m_NewIndex(0),
 		m_KeepIndex(1),
+		m_RecursiveCount(0),
 		pImpl(new Impl())
 	{}
 	CollisionManager::~CollisionManager() {}
 
 	void CollisionManager::EscapePair(CollisionPair& Pair) {
-
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		auto SrcSh = Pair.m_Src.lock();
 		auto DestSh = Pair.m_Dest.lock();
 		if (SrcSh && DestSh) {
-			auto SrcSp = dynamic_pointer_cast<CollisionSphere>(SrcSh);
-			auto SrcCap = dynamic_pointer_cast<CollisionCapsule>(SrcSh);
-			auto SrcObb = dynamic_pointer_cast<CollisionObb>(SrcSh);
-			auto DestSp = dynamic_pointer_cast<CollisionSphere>(DestSh);
-			auto DestCap = dynamic_pointer_cast<CollisionCapsule>(DestSh);
-			auto DestObb = dynamic_pointer_cast<CollisionObb>(DestSh);
 			if (!SrcSh->IsFixed()) {
-				if (DestSp) {
-					SrcSh->EscapeCollision(DestSp, Pair.m_SrcHitNormal);
-					if (DestSp->IsFixed()) {
-						Pair.m_SrcRegardFixed = true;
-					}
-				}
-				else if (DestCap) {
-					SrcSh->EscapeCollision(DestCap, Pair.m_SrcHitNormal);
-					if (DestCap->IsFixed()) {
-						Pair.m_SrcRegardFixed = true;
-					}
-				}
-				else if (DestObb) {
-					SrcSh->EscapeCollision(DestObb, Pair.m_SrcHitNormal);
-					auto SrcPos = SrcSh->GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
-					auto DestPos = DestSh->GetGameObject()->GetComponent<Transform>()->GetWorldPosition();
-
-					if (SrcSh->GetGameObject()->FindTag(L"Player") && SrcPos.z > 3.0f && DestPos.z > 3.0f) {
-						int a = 0;
-					}
-					if (DestObb->IsFixed()) {
-						Pair.m_SrcRegardFixed = true;
-					}
-				}
+				SrcSh->EscapeCollisionPair(Pair);
 			}
 		}
 	}
 
+	void CollisionManager::EscapeFromDest(CollisionPair& Pair) {
+		if (m_RecursiveCount > 5) {
+			//再帰が深くなったら今回のターンでは、これ以上行わない
+			return;
+		}
+		m_RecursiveCount++;
+		EscapePair(Pair);
+		auto SrcSh = Pair.m_Src.lock();
+		auto DestSh = Pair.m_Dest.lock();
+		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+			auto TgtSrcSh = v.m_Src.lock();
+			auto TgtDestSh = v.m_Dest.lock();
+			if ((SrcSh == TgtSrcSh && DestSh == TgtDestSh) || (SrcSh == TgtDestSh && DestSh == TgtSrcSh)) {
+				continue;
+			}
+			if (SrcSh == TgtDestSh) {
+				EscapeFromDest(v);
+				break;
+			}
+		}
+		m_RecursiveCount--;
+	}
 
 	bool CollisionManager::SimpleCollisionPairSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest) {
 		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
@@ -158,70 +151,65 @@ namespace basecross {
 	}
 
 
-
 	bool CollisionManager::SimpleCollisionPair(CollisionPair& Pair) {
 		auto Src = Pair.m_Src.lock();
 		auto Dest = Pair.m_Dest.lock();
 		if (Src && Dest) {
-			float Speed = bsm::length(
-				Src->GetGameObject()->GetComponent<Transform>()->GetVelocity()
-				- Dest->GetGameObject()->GetComponent<Transform>()->GetVelocity()
-			);
-
 			auto ShSrcSp = dynamic_pointer_cast<CollisionSphere>(Src);
 			auto ShSrcCap = dynamic_pointer_cast<CollisionCapsule>(Src);
 			auto ShSrcObb = dynamic_pointer_cast<CollisionObb>(Src);
 			if (ShSrcSp) {
-				auto b = SimpleCollisionPairSub(ShSrcSp, Dest);
-				if (b) {
-					Pair.m_EscapeSpeed = Speed;
-				}
-				return b;
+				return SimpleCollisionPairSub(ShSrcSp, Dest);
 			}
 			else if (ShSrcCap) {
-				auto b = SimpleCollisionPairSub(ShSrcCap, Dest);
-				if (b) {
-					Pair.m_EscapeSpeed = Speed;
-				}
-				return b;
+				return SimpleCollisionPairSub(ShSrcCap, Dest);
 			}
 			else if (ShSrcObb) {
-				auto b =  SimpleCollisionPairSub(ShSrcObb, Dest);
-				if (b) {
-					Pair.m_EscapeSpeed = Speed;
-				}
-				return b;
+				return SimpleCollisionPairSub(ShSrcObb, Dest);
 			}
-			return false;
 		}
-		else {
-			return false;
-		}
+		return false;
 	}
+
+	bool CollisionManager::EnableedCollisionPair(const shared_ptr<GameObject>& Src, const shared_ptr<GameObject>& Dest) {
+		if (Src == Dest) {
+			return false;
+		}
+		if (!Src->IsUpdateActive() || !Dest->IsUpdateActive()) {
+			return false;
+		}
+		auto SrcColl = Src->GetComponent<Collision>(false);
+		auto DestColl = Dest->GetComponent<Collision>(false);
+		if (!SrcColl || !DestColl) {
+			return false;
+		}
+		if (SrcColl->IsFixed() || !SrcColl->IsUpdateActive() || !DestColl->IsUpdateActive()) {
+			return false;
+		}
+		if (SrcColl->IsExcludeCollisionObject(Dest) || DestColl->IsExcludeCollisionObject(Src)) {
+			return false;
+		}
+		return true;
+	}
+
 
 	void CollisionManager::SetNewCollision() {
 		auto& ObjVec = GetStage()->GetGameObjectVec();
 		for (auto& v : ObjVec) {
-			if (v->IsUpdateActive()) {
-				auto Col = v->GetComponent<Collision>(false);
-				if (Col && Col->IsUpdateActive() && !Col->IsFixed()) {
-					SetNewCollisionSub(Col);
-				}
-			}
+			SetNewCollisionSub(v);
 		}
 	}
 
-	void CollisionManager::SetNewCollisionSub(const shared_ptr<Collision>& Src) {
+	void CollisionManager::SetNewCollisionSub(const shared_ptr<GameObject>& Src) {
 		auto& ObjVec = GetStage()->GetGameObjectVec();
 		for (auto& v : ObjVec) {
-			if (v->IsUpdateActive()) {
-				auto Dest = v->GetComponent<Collision>(false);
-				if (Dest && Dest->IsUpdateActive() && Src != Dest) {
-					if (!IsInPair(Src, Dest, true)) {
-						//キープされている中になかったら
-						//Collisionによる衝突判定
-						Dest->CollisionCall(Src);
-					}
+			if (EnableedCollisionPair(Src,v)) {
+				auto SrcColl = Src->GetComponent<Collision>();
+				auto DestColl = v->GetComponent<Collision>();
+				if (!IsInPair(SrcColl, DestColl, true)) {
+					//キープされている中になかったら
+					//Collisionによる衝突判定
+					DestColl->CollisionCall(SrcColl);
 				}
 			}
 		}
@@ -273,9 +261,6 @@ namespace basecross {
 			}
 		}
 
-
-
-
 		//新規のペア配列のクリア
 		m_CollisionPairVec[m_NewIndex].clear();
 		//新規の衝突判定
@@ -284,8 +269,6 @@ namespace basecross {
 		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
 			m_CollisionPairVec[m_KeepIndex].push_back(v);
 		}
-
-
 
 		//キープ配列のソート
 		//--------------------------------------------------------
@@ -301,24 +284,30 @@ namespace basecross {
 			}
 			return false;
 		};
-
+		//動きのある物優先にソート
 		std::sort(m_CollisionPairVec[m_KeepIndex].begin(), m_CollisionPairVec[m_KeepIndex].end(), func);
 
-		for (size_t i = 0; i < m_CollisionPairVec[m_KeepIndex].size(); i++) {
-			m_CollisionPairVec[m_KeepIndex][i].m_SrcRegardFixed = false;
-		}
-
-
-		int count = 0;
-		do {
-			////キープされているペアのエスケープ
-			for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+		///Fixedに関係ないオブジェクトのエスケープ
+		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+			auto TgtSrcSh = v.m_Src.lock();
+			auto TgtDestSh = v.m_Dest.lock();
+			if (!TgtSrcSh->IsFixed() && !TgtDestSh->IsFixed()) {
 				EscapePair(v);
 			}
-			std::reverse(begin(m_CollisionPairVec[m_KeepIndex]), end(m_CollisionPairVec[m_KeepIndex]));
-			count++;
+		}
+		//動きのないもの順にする（リバースを掛ける）
+		std::reverse(m_CollisionPairVec[m_KeepIndex].begin(), m_CollisionPairVec[m_KeepIndex].end());
 
-		} while (count < 10);
+		m_RecursiveCount = 0;
+		//Fixedに衝突している
+		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
+			auto TgtSrcSh = v.m_Src.lock();
+			auto TgtDestSh = v.m_Dest.lock();
+			if (TgtDestSh->IsFixed()) {
+				//再帰呼び出し
+				EscapeFromDest(v);
+			}
+		}
 
 		//衝突メッセージの送信
 		//Exit
@@ -357,16 +346,7 @@ namespace basecross {
 				}
 			}
 		}
-
-
-//		virtual void OnCollisionEnter(shared_ptr<GameObject>& Other) {}
-//		virtual void OnCollisionExcute(shared_ptr<GameObject>& Other) {}
-//		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) {}
-
-
-
 	}
-
 
 
 

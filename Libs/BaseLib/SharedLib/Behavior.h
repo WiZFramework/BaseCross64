@@ -157,6 +157,82 @@ namespace basecross {
 		virtual void OnCreate() {}
 	};
 
+	enum class EasingType {
+		Quadratic,
+		Cubic,
+		Quartic,
+		Quintic,
+		Sinusoidal,
+		Exponential,
+		Circular,
+	};
+
+	//--------------------------------------------------------------------------------------
+	///	Easing行動クラス
+	//--------------------------------------------------------------------------------------
+	class EasingBehavior : public Behavior {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		EasingBehavior(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~EasingBehavior();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　Linearを計算する
+		@param[in]	Start	開始ベクトル
+		@param[in]	End		終了ベクトル
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Vec3 Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseInを計算する
+		@param[in]	type	EasingType
+		@param[in]	Start	開始ベクトル
+		@param[in]	End		終了ベクトル
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Vec3 EaseIn(EasingType type,const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseOutを計算する
+		@param[in]	type	EasingType
+		@param[in]	Start	開始ベクトル
+		@param[in]	End		終了ベクトル
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Vec3 EaseOut(EasingType type, const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseInOutを計算する
+		@param[in]	type	EasingType
+		@param[in]	Start	開始ベクトル
+		@param[in]	End		終了ベクトル
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		bsm::Vec3 EaseInOut(EasingType type, const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+	};
 
 
 }

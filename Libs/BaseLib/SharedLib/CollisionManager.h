@@ -13,12 +13,10 @@ namespace basecross {
 		weak_ptr<Collision> m_Src;
 		weak_ptr<Collision> m_Dest;
 		bsm::Vec3 m_SrcHitNormal;
-		float m_EscapeSpeed;
-		bool m_SrcRegardFixed;
+		float m_SrcHitLength;
 		CollisionPair():
 			m_SrcHitNormal(0),
-			m_EscapeSpeed(0),
-			m_SrcRegardFixed(false)
+			m_SrcHitLength(0)
 		{}
 	};
 
@@ -32,14 +30,17 @@ namespace basecross {
 		vector<CollisionPair> m_TempExitVec;
 		UINT m_NewIndex;
 		UINT m_KeepIndex;
+		int m_RecursiveCount;
 		void EscapePair(CollisionPair& Pair);
+		void EscapeFromDest(CollisionPair& Pair);
 
 		bool SimpleCollisionPair(CollisionPair& Pair);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest);
 		bool SimpleCollisionPairSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest);
 		void SetNewCollision();
-		void SetNewCollisionSub(const shared_ptr<Collision>& Src);
+		void SetNewCollisionSub(const shared_ptr<GameObject>& Src);
+		bool EnableedCollisionPair(const shared_ptr<GameObject>& Src, const shared_ptr<GameObject>& Dest);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

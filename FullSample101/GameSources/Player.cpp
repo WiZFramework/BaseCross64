@@ -161,7 +161,6 @@ namespace basecross{
 		PtrString->SetText(str);
 	}
 
-
 }
 //end basecross
 
