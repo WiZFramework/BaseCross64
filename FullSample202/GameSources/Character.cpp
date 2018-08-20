@@ -222,6 +222,7 @@ namespace basecross{
 		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
 		PtrDraw->SetTextureResource(L"WALL_TX");
 		PtrDraw->SetOwnShadowActive(true);
+
 	}
 
 	void MoveBox::OnUpdate() {
@@ -231,24 +232,22 @@ namespace basecross{
 			m_TotalTime = 0.0f;
 			m_Swap = 1 - m_Swap;
 		}
-		auto ea = GetBehavior<Easing>();
 		auto PtrTrans = GetComponent<Transform>();
 		auto StartPos = PtrTrans->GetPosition();
 		StartPos.x = m_Position.x;
 		auto EndPos = StartPos;
 		EndPos.x += 4.0f;
-
 		Vec3 StartRot(0, 0, 0);
 		Vec3 EndRot(0, XM_2PI * 2.0f, 0);
 		Vec3 TgtPos,TgtRot;
-
+		Easing<Vec3> easing;
 		if (m_Swap) {
-			TgtPos = ea->EaseInOut(EasingType::Exponential, EndPos, StartPos, m_TotalTime, 4.0f);
-			TgtRot = ea->EaseInOut(EasingType::Exponential, EndRot, StartRot, m_TotalTime, 4.0f);
+			TgtPos = easing.EaseInOut(EasingType::Exponential, EndPos, StartPos, m_TotalTime, 4.0f);
+			TgtRot = easing.EaseInOut(EasingType::Exponential, EndRot, StartRot, m_TotalTime, 4.0f);
 		}
 		else {
-			TgtPos = ea->EaseInOut(EasingType::Exponential, StartPos, EndPos, m_TotalTime, 4.0f);
-			TgtRot = ea->EaseInOut(EasingType::Exponential, StartRot, EndRot, m_TotalTime, 4.0f);
+			TgtPos = easing.EaseInOut(EasingType::Exponential, StartPos, EndPos, m_TotalTime, 4.0f);
+			TgtRot = easing.EaseInOut(EasingType::Exponential, StartRot, EndRot, m_TotalTime, 4.0f);
 		}
 		PtrTrans->SetRotation(TgtRot);
 		PtrTrans->SetPosition(TgtPos);

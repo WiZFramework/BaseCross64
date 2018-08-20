@@ -24,11 +24,12 @@
 <img src="img/1202a.png" width="80%"/>
 <p>図1202a</p>
 <p>&nbsp;</p>
+　中心の壁模様のボックスが、移動しながら回転するのがわかると思います。<br />
 <h4>イージングとは</h4>
 　イージングとは、<b>補間処理</b>のことです。オブジェクトを<b>移動</b>したり<b>回転</b>したり、あるいは<b>拡大縮小</b>するときに、一定のスピードで変化するばかりでは、面白くありません。<br />
-　<b>BaseCross64</b>には、この、<b>イージング処理</b>が<b>行動</b>としてライブラリ化されています。<br />
-<h4>Easing行動クラス</h4>
-　イージングを実装するには、<b>行動クラス</b>を実装します。<br />
+　<b>BaseCross64</b>には、この、<b>イージング処理</b>が、ライブラリ化されています。<br />
+<h4>Easingテンプレートクラス</h4>
+　イージングを実装するには、<b>Easingテンプレートクラス</b>を実装します。<br />
 　<b>Character.cpp</b>にあります、<b>MoveBoxクラス</b>に実装されてます。<br />
 　<b>MoveBox::OnUpdate()関数</b>を見てください。
 <div class="box1">
@@ -40,24 +41,22 @@ void MoveBox::OnUpdate() {
         m_TotalTime = 0.0f;
         m_Swap = 1 - m_Swap;
     }
-    <span class="red">auto ea = GetBehavior&lt;Easing>();</span>
     auto PtrTrans = GetComponent&lt;Transform>();
     auto StartPos = PtrTrans->GetPosition();
     StartPos.x = m_Position.x;
     auto EndPos = StartPos;
     EndPos.x += 4.0f;
-
     Vec3 StartRot(0, 0, 0);
     Vec3 EndRot(0, XM_2PI * 2.0f, 0);
     Vec3 TgtPos,TgtRot;
-
+    <span class="red">Easing&lt;Vec3> easing;</span>
     if (m_Swap) {
-        TgtPos = <span class="red">ea->EaseInOut(EasingType::Exponential, EndPos, StartPos, m_TotalTime, 4.0f);</span>
-        TgtRot = <span class="red">ea->EaseInOut(EasingType::Exponential, EndRot, StartRot, m_TotalTime, 4.0f);</span>
+        TgtPos = <span class="red">easing.EaseInOut(EasingType::Exponential, EndPos, StartPos, m_TotalTime, 4.0f);</span>
+        TgtRot = <span class="red">easing.EaseInOut(EasingType::Exponential, EndRot, StartRot, m_TotalTime, 4.0f);</span>
     }
     else {
-        TgtPos = <span class="red">ea->EaseInOut(EasingType::Exponential, StartPos, EndPos, m_TotalTime, 4.0f);</span>
-        TgtRot = <span class="red">ea->EaseInOut(EasingType::Exponential, StartRot, EndRot, m_TotalTime, 4.0f);</span>
+        TgtPos = <span class="red">easing.EaseInOut(EasingType::Exponential, StartPos, EndPos, m_TotalTime, 4.0f);</span>
+        TgtRot = <span class="red">easing.EaseInOut(EasingType::Exponential, StartRot, EndRot, m_TotalTime, 4.0f);</span>
     }
     PtrTrans->SetRotation(TgtRot);
     PtrTrans->SetPosition(TgtPos);
@@ -65,14 +64,25 @@ void MoveBox::OnUpdate() {
 </pre>
 </div>
 　赤くなっているところがポイントの部分です。<br />
-　<b>Easingクラス</b>には<b>EasiIn()、EasiOut()、そして、EasiInOut()関数</b>があります。ここでは<b>EasiInOut()関数</b>を使っています。<br />
+　<b>Easingテンプレートクラス</b>は<b>テンプレート</b>なので、<b>イージング処理</b>をしたい型で構築します。
+<div class="box1">
+<pre>
+    <span class="red">Easing&lt;Vec3> easing;</span>
+</pre>
+</div>
+　こんな感じです。もし<b>float型</b>で構築したい場合は
+<div class="box1">
+<pre>
+    Easing&lt;<span class="red">float</span>> easing;
+</pre>
+</div>
+　のようにします。<br />
+　<b>Easingテンプレートクラス</b>には<b>EasiIn()、EasiOut()、そして、EasiInOut()関数</b>があります。ここでは<b>EasiInOut()関数</b>を使っています。<br />
 　ここで実装している行動処理は<b>EasiInOut()で移動と回転</b>です。<br />
 　<b>行き</b>と<b>返り</b>を実装しています。この処理は<b>最初はゆっくり、途中は速く、最後はゆっくり</b>という処理です。<br />
 　<b>EasingType::Exponential</b>というのは、イージング方法です。主にイージングの速くなるまでのパラメータや速くなった時のスピードとかを変えられます。<br />
 　このパラメータは<b>Quadratic, Cubic, Quartic, Quintic, Sinusoidal, Exponential, Circular</b>があります。<br />
 　ここで使っているのは<b>Exponential</b>です。<br />
-
-
 </div>
 <!-- /コンテンツ　-->
 <hr>

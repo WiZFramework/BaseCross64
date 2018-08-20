@@ -167,10 +167,12 @@ namespace basecross {
 		Circular,
 	};
 
+
 	//--------------------------------------------------------------------------------------
-	///	Easing行動クラス
+	///	Easing行動クラステンプレート版
 	//--------------------------------------------------------------------------------------
-	class Easing : public Behavior {
+	template<typename T>
+	class Easing {
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -178,61 +180,215 @@ namespace basecross {
 		@param[in]	GameObjectPtr	ゲームオブジェクト
 		*/
 		//--------------------------------------------------------------------------------------
-		Easing(const shared_ptr<GameObject>& GameObjectPtr);
+		Easing(){}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~Easing();
+		~Easing() {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief　Linearを計算する
-		@param[in]	Start	開始ベクトル
-		@param[in]	End		終了ベクトル
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
 		@param[in]	TgtTime	計算するタイム
 		@param[in]	AllTime	トータルタイム
 		@return	計算結果ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		bsm::Vec3 Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		T Linear(const T& Start, T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			return EasingBase<T>::Linear(TgtTime, Start, SpanVec, AllTime);
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief　EaseInを計算する
 		@param[in]	type	EasingType
-		@param[in]	Start	開始ベクトル
-		@param[in]	End		終了ベクトル
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
 		@param[in]	TgtTime	計算するタイム
 		@param[in]	AllTime	トータルタイム
 		@return	計算結果ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		bsm::Vec3 EaseIn(EasingType type,const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		T EaseIn(EasingType type, const T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief　EaseOutを計算する
 		@param[in]	type	EasingType
-		@param[in]	Start	開始ベクトル
-		@param[in]	End		終了ベクトル
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
 		@param[in]	TgtTime	計算するタイム
 		@param[in]	AllTime	トータルタイム
 		@return	計算結果ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		bsm::Vec3 EaseOut(EasingType type, const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		T EaseOut(EasingType type, const T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief　EaseInOutを計算する
-		@param[in]	type	EasingType
-		@param[in]	Start	開始ベクトル
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
 		@param[in]	End		終了ベクトル
 		@param[in]	TgtTime	計算するタイム
 		@param[in]	AllTime	トータルタイム
 		@return	計算結果ベクトル
 		*/
 		//--------------------------------------------------------------------------------------
-		bsm::Vec3 EaseInOut(EasingType type, const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime);
+		T EaseInOut(EasingType type, T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
 	};
+
 
 
 }

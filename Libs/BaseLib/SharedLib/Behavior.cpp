@@ -19,6 +19,29 @@ namespace basecross {
 		~Impl() {}
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	行動クラスの親クラス
+	//--------------------------------------------------------------------------------------
+	Behavior::Behavior(const shared_ptr<GameObject>& GameObjectPtr) :
+		pImpl(new Impl(GameObjectPtr))
+	{}
+	Behavior::~Behavior() {}
+	shared_ptr<GameObject> Behavior::GetGameObject() const {
+		auto shptr = pImpl->m_GameObject.lock();
+		if (!shptr) {
+			throw BaseException(
+				L"GameObjectは有効ではありません",
+				L"if (!shptr)",
+				L"Behavior::GetGameObject()"
+			);
+		}
+		else {
+			return shptr;
+		}
+	}
+	shared_ptr<Stage> Behavior::GetStage() const {
+		return GetGameObject()->GetStage();
+	}
 
 	//--------------------------------------------------------------------------------------
 	///	行動ユーティリティクラス
@@ -83,207 +106,6 @@ namespace basecross {
 	}
 
 
-	//--------------------------------------------------------------------------------------
-	///	行動クラスの親クラス
-	//--------------------------------------------------------------------------------------
-	Behavior::Behavior(const shared_ptr<GameObject>& GameObjectPtr) :
-		pImpl(new Impl(GameObjectPtr))
-	{}
-	Behavior::~Behavior() {}
-	shared_ptr<GameObject> Behavior::GetGameObject() const {
-		auto shptr = pImpl->m_GameObject.lock();
-		if (!shptr) {
-			throw BaseException(
-				L"GameObjectは有効ではありません",
-				L"if (!shptr)",
-				L"Behavior::GetGameObject()"
-			);
-		}
-		else {
-			return shptr;
-		}
-	}
-	shared_ptr<Stage> Behavior::GetStage() const {
-		return GetGameObject()->GetStage();
-	}
-
-	//--------------------------------------------------------------------------------------
-	///	Easing行動クラス
-	//--------------------------------------------------------------------------------------
-	Easing::Easing(const shared_ptr<GameObject>& GameObjectPtr):
-		Behavior(GameObjectPtr)
-	{}
-	Easing::~Easing() {}
-
-	bsm::Vec3 Easing::Linear(const bsm::Vec3& Start, const bsm::Vec3& End, float TgtTime, float AllTime) {
-		auto SpanVec = End - Start;
-		return EasingBase<bsm::Vec3>::Linear(TgtTime, Start, SpanVec, AllTime);
-	}
-
-	bsm::Vec3 Easing::EaseIn(EasingType type,
-		const bsm::Vec3& Start, const bsm::Vec3& End, 
-		float TgtTime, float AllTime)
-	{
-		auto SpanVec = End - Start;
-		switch (type) {
-			case EasingType::Quadratic: 
-			{
-				EaseQuad<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-			}
-			break;
-			case EasingType::Cubic: 
-			{
-				EaseCubic<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-			}
-			break;
-			case EasingType::Quartic:
-			{
-				EaseQuart<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-			}
-			break;
-			case EasingType::Quintic:
-			{
-				EaseQuint<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-			}
-			break;
-			case EasingType::Sinusoidal:
-			{
-				EaseSin<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-
-			}
-			break;
-			case EasingType::Exponential:
-			{
-				EaseExpo<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-
-			}
-			break;
-			case EasingType::Circular:
-			{
-				EaseCirc<Vec3> es;
-				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
-			}
-			break;
-		}
-		//エラーの場合はスタートを戻す
-		return Start;
-	}
-
-	bsm::Vec3 Easing::EaseOut(EasingType type,
-		const bsm::Vec3& Start, const bsm::Vec3& End,
-		float TgtTime, float AllTime)
-	{
-		auto SpanVec = End - Start;
-		switch (type) {
-		case EasingType::Quadratic:
-		{
-			EaseQuad<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Cubic:
-		{
-			EaseCubic<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Quartic:
-		{
-			EaseQuart<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Quintic:
-		{
-			EaseQuint<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Sinusoidal:
-		{
-			EaseSin<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-
-		}
-		break;
-		case EasingType::Exponential:
-		{
-			EaseExpo<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-
-		}
-		break;
-		case EasingType::Circular:
-		{
-			EaseCirc<Vec3> es;
-			return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		}
-		//エラーの場合はスタートを戻す
-		return Start;
-	}
-
-	bsm::Vec3 Easing::EaseInOut(EasingType type,
-		const bsm::Vec3& Start, const bsm::Vec3& End,
-		float TgtTime, float AllTime)
-	{
-		auto SpanVec = End - Start;
-		switch (type) {
-		case EasingType::Quadratic:
-		{
-			EaseQuad<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Cubic:
-		{
-			EaseCubic<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Quartic:
-		{
-			EaseQuart<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Quintic:
-		{
-			EaseQuint<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		case EasingType::Sinusoidal:
-		{
-			EaseSin<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-
-		}
-		break;
-		case EasingType::Exponential:
-		{
-			EaseExpo<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-
-		}
-		break;
-		case EasingType::Circular:
-		{
-			EaseCirc<Vec3> es;
-			return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
-		}
-		break;
-		}
-		//エラーの場合はスタートを戻す
-		return Start;
-	}
 
 
 
