@@ -194,6 +194,238 @@ namespace basecross{
 		}
 	};
 
+	enum class EasingType {
+		Quadratic,
+		Cubic,
+		Quartic,
+		Quintic,
+		Sinusoidal,
+		Exponential,
+		Circular,
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	///	Easingクラステンプレート版
+	//--------------------------------------------------------------------------------------
+	template<typename T>
+	class Easing {
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		Easing() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		~Easing() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　Linearを計算する
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		T Linear(const T& Start, T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			return EasingBase<T>::Linear(TgtTime, Start, SpanVec, AllTime);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseInを計算する
+		@param[in]	type	EasingType
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		T EaseIn(EasingType type, const T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseIn(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseOutを計算する
+		@param[in]	type	EasingType
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		T EaseOut(EasingType type, const T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief　EaseInOutを計算する
+		@param[in]	Start	開始値（T型）
+		@param[in]	End		終了値（T型）
+		@param[in]	End		終了ベクトル
+		@param[in]	TgtTime	計算するタイム
+		@param[in]	AllTime	トータルタイム
+		@return	計算結果ベクトル
+		*/
+		//--------------------------------------------------------------------------------------
+		T EaseInOut(EasingType type, T& Start, const T& End, float TgtTime, float AllTime) {
+			auto SpanVec = End - Start;
+			switch (type) {
+			case EasingType::Quadratic:
+			{
+				EaseQuad<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Cubic:
+			{
+				EaseCubic<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quartic:
+			{
+				EaseQuart<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Quintic:
+			{
+				EaseQuint<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			case EasingType::Sinusoidal:
+			{
+				EaseSin<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Exponential:
+			{
+				EaseExpo<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+
+			}
+			break;
+			case EasingType::Circular:
+			{
+				EaseCirc<T> es;
+				return es.EaseInOut(TgtTime, Start, SpanVec, AllTime);
+			}
+			break;
+			}
+			//エラーの場合はスタートを戻す
+			return Start;
+		}
+	};
 
 
 	//--------------------------------------------------------------------------------------

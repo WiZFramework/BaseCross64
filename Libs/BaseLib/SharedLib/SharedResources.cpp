@@ -720,9 +720,10 @@ namespace basecross {
 	bsm::Vec3 Steering::Pursuit(const bsm::Vec3& Velocity, const bsm::Vec3& Pos, const bsm::Vec3& Rot, float MaxSpeed,
 		const bsm::Vec3& TargetVelocity, const bsm::Vec3& Target, const bsm::Vec3& TargetRot) {
 		bsm::Vec3 ToEvader = Target - Pos;
-		double RelativeHeading = bsm::dot(Rot,TargetRot);
+//		double RelativeHeading = bsm::dot(Rot,TargetRot);
+		auto RelativeHeading = abs(bsm::angleBetweenNormals(Rot, TargetRot));
 		if ((bsm::dot(ToEvader,Rot) > 0) &&
-			(RelativeHeading < -0.95))  //acos(0.95)=18 degs
+			(RelativeHeading < 0.95))  //acos(0.95)=18 degs
 		{
 			return Steering::Seek(Velocity, Target, Pos, MaxSpeed);
 		}
@@ -730,6 +731,7 @@ namespace basecross {
 			(MaxSpeed + bsm::length(TargetVelocity));
 		return Steering::Seek(Velocity, Target + TargetVelocity * LookAheadTime, Pos, MaxSpeed);
 	}
+
 
 	//--------------------------------------------------------------------------------------
 	bsm::Vec3 Steering::Wander(const bsm::Mat4x4 Matrix,

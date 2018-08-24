@@ -199,7 +199,9 @@ namespace basecross {
 		pImpl->m_Quaternion.normalize();
 	}
 	bsm::Vec3 Transform::GetRotation() const {
-		return pImpl->m_Quaternion.toRotVec();
+		bsm::Vec3 r = pImpl->m_Quaternion.toRotVec();
+		r.normalize();
+		return r;
 	}
 
 	void Transform::SetRotation(const bsm::Vec3& Rot) {

@@ -162,7 +162,6 @@ namespace basecross {
 	};
 
 
-#ifdef test
 
 
 	//--------------------------------------------------------------------------------------
@@ -186,24 +185,18 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
-		@param[in]	TargetPos	追いかける位置
-		@param[in]	TargetVelocity	追いかけるオブジェクトの速度
-		@param[in]	TargetRotation	追いかけるオブジェクトの回転
-		@return	追いかける位置との距離
+		@param[in]	Force	現在のフォース
+		@param[in]	Velocity	現在の速度
+		@param[in]	TargetPos	追跡する位置
+		@return	掛けるべきフォース
 		*/
 		//--------------------------------------------------------------------------------------
-		float Execute(const bsm::Vec3& TargetPos, const bsm::Vec3& TargetVelocity, const bsm::Vec3& TargetRotation);
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	行動を実行する
-		@param[in]	TargetKey	追いかけるオブジェクトのキー（SharedObjec）
-		@return	追いかけるオブジェクトとの距離
-		*/
-		//--------------------------------------------------------------------------------------
-		float Execute(const wstring& TargetKey);
+		bsm::Vec3 Execute(const bsm::Vec3& Force, const bsm::Vec3& Velocity, const bsm::Vec3& TargetPos,
+			const bsm::Vec3& TargetVelocity, const bsm::Vec3& TargetRotation);
 	};
 
 
+#ifdef test
 
 	//--------------------------------------------------------------------------------------
 	///	WanderSteering（徘徊）行動
@@ -297,6 +290,11 @@ namespace basecross {
 	};
 
 
+
+
+
+#endif
+
 	//--------------------------------------------------------------------------------------
 	///	WallAvoidanceSteering（壁回避）行動
 	//--------------------------------------------------------------------------------------
@@ -341,16 +339,17 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
-		@return	壁と衝突しているかどうか
+		@param[in]	Force	現在のフォース
+		@param[in]	Velocity	現在の速度
+		@return	掛けるべきフォース
 		*/
 		//--------------------------------------------------------------------------------------
-		bool Execute();
+		bsm::Vec3 Execute(const bsm::Vec3& Force, const bsm::Vec3& Velocity);
 	private:
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
-
 
 	//--------------------------------------------------------------------------------------
 	///	 ObstacleAvoidanceSteering（障害物回避）行動
@@ -418,15 +417,18 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
-		@return	なし
+		@param[in]	Force	現在のフォース
+		@param[in]	Velocity	現在の速度
+		@return	掛けるべきフォース
 		*/
 		//--------------------------------------------------------------------------------------
-		void Execute();
+		bsm::Vec3 Execute(const bsm::Vec3& Force, const bsm::Vec3& Velocity);
 	private:
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
 
 	//--------------------------------------------------------------------------------------
 	///	 FollowPathSteering（経路追従）行動
@@ -516,16 +518,20 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	行動を実行する
-		@return	巡回が終了したらtrue
+		@param[in]	Force	現在のフォース
+		@param[in]	Velocity	現在の速度
+		@return	掛けるべきフォース
 		*/
 		//--------------------------------------------------------------------------------------
-		bool Execute();
+		bsm::Vec3 Execute(const bsm::Vec3& Force, const bsm::Vec3& Velocity);
+
 	private:
 		// pImplイディオム
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
 
+#ifdef test
 
 	//--------------------------------------------------------------------------------------
 	///	 AlignmentSteering（整列）行動

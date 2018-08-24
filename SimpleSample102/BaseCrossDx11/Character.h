@@ -1,32 +1,36 @@
 /*!
-@file Scene.h
-@brief シーンなど
+@file Character.h
+@brief キャラクターなど
 */
+
 #pragma once
 #include "stdafx.h"
 
 namespace basecross {
+
 	//--------------------------------------------------------------------------------------
-	//	ゲームシーン
+	///	立方体
 	//--------------------------------------------------------------------------------------
-	class Scene : public SceneInterface {
-		shared_ptr<CubeObject> m_CubeObject1;				///<立方体オブジェクト1
-		shared_ptr<CubeObject> m_CubeObject2;				///<立方体オブジェクト2
-		shared_ptr<CubeObject> m_CubeObject3;				///<立方体オブジェクト3
-		shared_ptr<CubeObject> m_CubeObject4;				///<立方体オブジェクト4
+	class CubeObject : public ObjectInterface, public ShapeInterface {
+		//メッシュ
+		shared_ptr<MeshResource> m_CubeMesh;
+		Vec3 m_Scale;				///<スケーリング
+		Quat m_Qt;			///<回転
+		Vec3 m_Pos;				///<位置
+		void CreateBuffers();
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コンストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		Scene() :SceneInterface() {}
+		CubeObject();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~Scene() {}
+		virtual ~CubeObject();
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化
@@ -51,5 +55,6 @@ namespace basecross {
 	};
 
 
+
 }
-// end basecross
+//end basecross
