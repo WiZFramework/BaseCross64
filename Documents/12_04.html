@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０４．さまざまなステアリング</h3>
+　このサンプルは<b>FullSample204</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1204a.png" width="80%"/>
+<p>図1204a</p>
+<p>&nbsp;</p>
+<h4>ステアリング系行動</h4>
+　これまでも<b>追いかけるオブジェクト</b>で、<b>操舵（ステアリング）</b>の実装方法を説明してきました。<br />
+　この項では、これまで出てこなかった<b>ステアリング系行動</b>の説明を行います。<br />
+　まず、<b>ステアリング</b>というのは何かについて説明します。<br />
+　現実の世界では<b>物を動かす</b>時に<b>力</b>を加えます。<b>動きを止める</b>ときも<b>力</b>が必要です。<br />
+　この<b>力</b>を<b>フォース</b>といいます。<br />
+　物に<b>フォース</b>を加えると、その質量に応じて<b>加速</b>が発生します。この関係は<b>ニュートンの第2法則</b>として有名です。
+<div class="box1">
+<pre>
+F = M × A
+</pre>
+</div>
+　の関係があります。Fはフォースです。Mは質量で、Aは加速度です。<br />
+　<b>ステアリング</b>というのは<b>動的にFを変化させて、オブジェクトを動かす</b>、フルバージョン内のライブラリ（行動）です。<br />
+　例えばこれまでも出てきた<b>追いかけるオブジェクト</b>は、常にプレイヤーの方向に<b>フォース</b>を掛けて、<b>追いかける</b>という表現をしています。いきなり<b>速度（Valocity）</b>を変化させるのではなく<b>フォース</b>を掛けるだけなので、オブジェクトは急には移動方向を変えたりしません。カーブを描きながらプレイヤーを追いかけるようになります。<br />
+<h4>親クラスでまとめる</h4>
+　このサンプルは、<b>追いかけるオブジェクト</b>も実装されていますが、これまでとは実装方法が違います。<br />
+　このサンプルに含まれるいくつかのタイプのオブジェクトの<b>共通の親クラス</b>を作成し、その派生クラスとして実装します。<br />
+　ですので、まず、<b>共通の親クラス</b>を説明します。<br />
+　<b>共通の親クラス</b>は<b>BaseCharaクラス</b>です。<b>Character.h/cpp</b>に実装があります。まず宣言です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  配置されるオブジェクトの親
+//--------------------------------------------------------------------------------------
+class BaseChara : public GameObject {
+    //ステートマシーン
+    unique_ptr&lt; StateMachine&lt;BaseChara> >  m_StateMachine;
+    Vec3 m_StartPos;
+    float m_StateChangeSize;
+    //フォース
+    Vec3 m_Force;
+    //速度
+    Vec3 m_Velocity;
+    void ApplyForce();
+protected:
+    //構築と破棄
+    BaseChara(const shared_ptr&lt;Stage>& StagePtr, const Vec3& StartPos);
+    virtual ~BaseChara();
+public:
+    //アクセサ
+    const unique_ptr&lt;StateMachine&lt;BaseChara>>& GetStateMachine() {
+        return m_StateMachine;
+    }
+    Vec3 GetStartPos() const {
+        return m_StartPos;
+    }
+    float GetStateChangeSize() const {
+        return m_StateChangeSize;
+    }
+    const Vec3& GetForce()const {
+        return m_Force;
+    }
+    void SetForce(const Vec3& f) {
+        m_Force = f;
+    }
+    void AddForce(const Vec3& f) {
+        m_Force += f;
+    }
+    const Vec3& GetVelocity()const {
+        return m_Velocity;
+    }
+    void SetVelocity(const Vec3& v) {
+        m_Velocity = v;
+    }
+    shared_ptr&lt;GameObject>  GetTarget()const;
+    virtual void NearBehavior() = 0;
+    virtual void FarBehavior() = 0;
+    virtual void OnCreate() override;
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　ステートマシンは、<b>親クラス</b>で管理します。また<b>m_Force（フォース）</b>や<b>m_Velocity（速度）</b>もこのクラスで管理します。<br />
+　この派生クラスは<b>NearBehavior()仮想関数</b>および<b>FarBehavior()仮想関数</b>を必ず実装しなければなりません。<br />
+　<b>NearBehavior()</b>は、ステートが<b>プレイヤーから近い位置にある</b>ときに毎ターン呼ばれます。また<b>FarBehavior()</b>は、ステートが<b>プレイヤーから遠い位置にある</b>時に毎ターン呼ばれます。<br />
+　<b>BaseChara::OnCreate()</b>の実体を参照ください。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+void BaseChara::OnCreate() {
+    //オブジェクトのグループを得る
+    auto Group = GetStage()->GetSharedObjectGroup(L"ObjGroup");
+    //グループに自分自身を追加
+    Group->IntoGroup(GetThis&lt;BaseChara>());
+    //分離行動をつける
+    auto PtrSep = GetBehavior&lt;SeparationSteering>();
+    PtrSep->SetGameObjectGroup(Group);
+    //壁回避行動を付ける
+    auto PtrWall = GetBehavior&lt;WallAvoidanceSteering>();
+    vector&lt;PLANE> PlaneVec = {
+        {
+            Vec3(20,0,0),
+            Vec3(20,1.0,0),
+            Vec3(20,0,-1.0),
+        },
+        {
+            Vec3(0,0,-20),
+            Vec3(0,1.0,-20),
+            Vec3(-1.0,0,-20),
+        },
+        {
+            Vec3(-20,0,0),
+            Vec3(-20,1.0,0),
+            Vec3(-20,0,1.0),
+        },
+        {
+            Vec3(0,0,20),
+            Vec3(0,1.0,20),
+            Vec3(1.0,0,20),
+        },
+    };
+    PtrWall->SetPlaneVec(PlaneVec);
+    //障害物回避行動を付ける
+    vector&lt;shared_ptr&lt;GameObject>> SpObjVec;
+    GetStage()->GetUsedTagObjectVec(L"FixedSphere", SpObjVec);
+    vector&lt;SPHERE> SpVec;
+    for (auto& v : SpObjVec) {
+        auto TransPtr = v->GetComponent&lt;Transform>();
+        SPHERE sp;
+        sp.m_Center = TransPtr->GetPosition();
+        sp.m_Radius = TransPtr->GetScale().x * 0.5f;
+        SpVec.push_back(sp);
+    }
+    auto PtrAvoidance = GetBehavior&lt;ObstacleAvoidanceSteering>();
+    PtrAvoidance->SetObstacleSphereVec(SpVec);
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;BaseChara>(GetThis&lt;BaseChara>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(FarState::Instance());
+}
+</pre>
+</div>
+　ここでは<b>共通に使用するステアリング</b>の下準備を行います。共通のステアリングは以下です。
+<div class="box1">
+<pre>
+１、SeparationSteering（分離行動）
+２、WallAvoidanceSteering（壁回避行動）
+３、ObstacleAvoidanceSteering（障害物回避行動）
+</pre>
+</div>
+<h4>１、SeparationSteering（分離行動）</h4>
+　分離行動は、これまでも出てきました。お互いがくっつかないようにするステアリングです。
+<h4>２、WallAvoidanceSteering（壁回避行動）</h4>
+　これは一般的には<b>ゲーム盤の外には出ないようにする</b>ステアリングです。四方向に見えない壁があって、オブジェクトはその壁を越えようとすると、逆向きのフォースが発生します。<br />
+<h4>３、ObstacleAvoidanceSteering（障害物回避行動）</h4>
+　これは<b>障害物をよけいようとする</b>フォースを発生させます。このサンプルにはいくつかの丸い障害物がありますが、各オブジェクトはそれをよけようとします。しかし、当たってしまう場合もあります。<br />
+　フォースによるAI処理は、<b>失敗する場合もある</b>ということが重要です。あくまで<b>力</b>をAI的に加えるだけです。
+<h4>派生クラスのステアリング</h4>
+　このようにいくつかの基本的な<b>ステアリング</b>を親クラスに実装しておいて、派生クラスでは個別の実装を行います。<br />
+　また、派生クラスは<b>NearBehavior()関数</b>と<b>FarBehavior()関数</b>に実装を行います。この関数は仮想関数で、親クラスから呼びだされます。
+<h4>SeekObjectクラス</h4>
+　おなじみ<b>追いかけるオブジェクト</b>クラスです。しかしこれまでの自走方法とは違います。自分自身はステートを持たずに、親クラスである<b>BaseCharaクラス</b>のステートから呼び出される<b>NearBehavior()関数</b>と<b>FarBehavior()関数</b>に実装を行います。<br />
+　<b>NearBehavior()関数</b>では<b>プレイヤーから近い場合</b>の処理を行い、<b>FarBehavior()関数</b>では<b>プレイヤーから遠い場合</b>の処理を行います。この部分の動きはこれまでの<b>SeekObject</b>と同じで<b>FarBehavior()関数</b>には<b>SeekSteering行動</b>を実装し、<b>NearBehavior()関数</b>には<b>ArriveSteering行動</b>を実装します。<b>SeparationSteering行動（分離行動）</b>は、親クラス側で行いますので、<b>SeekObjectクラス</b>には実装しません。
+<h4>PursuitObjectクラス</h4>
+　このクラスは<b>SeekObject</b>に似ていますが、追いかけるオブジェクト（プレイヤー）の向きや速度に合わせて、<b>先読み</b>して追いかけます。ちょうど、サッカーボールを追いかけるような動きになります。<br />
+　<b>遠い位置</b>にいるときに<b>PursuitSteering行動</b>を実装します。近い場合は<b>ArriveSteering行動</b>でこれは<b>SeekObject</b>と一緒です。
+<h4>FollowPathObjectクラス</h4>
+　このクラスは<b>経路循環</b>といって、決められた経路（ポイント）をたどります。このサンプルでは4つのポイントが設定され、何もしなければその経路をひたすら移動します。この行動は<b>FollowPathSteering行動</b>です。<br />
+　しかしプレイヤーに近づくと、経路を離れ、プレイヤーに<b>ArriveSteering行動</b>を起こします。つまり<b>道草を食う</b>ような動きになります。プレイヤーから離れると、元の経路巡回に戻ります。
+<h4>親クラスと行動の分担</h4>
+　これらの派生クラスの行動に加え、親クラス側での処理が共通処理として合体されます。そのコードは<b>BaseChara::OnUpdate()関数</b>を見るとわかります。
+<div class="box1">
+<pre>
+void BaseChara::OnUpdate() {
+    m_Force = Vec3(0);
+    //共通のステアリング1
+    auto PtrWall = GetBehavior&lt;WallAvoidanceSteering>();
+    m_Force += PtrWall->Execute(m_Force, GetVelocity());
+    //ステートマシンのUpdateを行う
+    //この中でステートの切り替えが行われる
+    <span class="red">m_StateMachine->Update();</span>
+    //共通のステアリング2
+    auto PtrSep = GetBehavior&lt;SeparationSteering>();
+    m_Force += PtrSep->Execute(m_Force);
+    auto PtrAvoidance = GetBehavior&lt;ObstacleAvoidanceSteering>();
+    m_Force += PtrAvoidance->Execute(m_Force, GetVelocity());
+    ApplyForce();
+    auto PtrUtil = GetBehavior&lt;UtilBehavior>();
+    PtrUtil->RotToHead(1.0f);
+}
+</pre>
+</div>
+　ここではフォースを初期化した後、<b>共通のステアリング1</b>として<b>WallAvoidanceSteering行動</b>を実装します。この行動は、<b>見えない壁から外に出ないようにする行動</b>です。行動を実装する（フォースをかける）順番は、決まっているわけではありませんが、先に実装した行動が優先されます。例えば<b>WallAvoidanceSteering行動</b>を最後に実装しますと、<b>壁を突き破って落ちてしまう</b>場合もあります。<br />
+　続いて赤くなっている部分で<b>ステートマシンのUpdate</b>を行います。その処理は以下です。
+<div class="box1">
+<pre>
+shared_ptr&lt;FarState> FarState::Instance() {
+    static shared_ptr&lt;FarState> instance(new FarState);
+    return instance;
+}
+void FarState::Enter(const shared_ptr&lt;BaseChara>& Obj) {
+}
+void FarState::Execute(const shared_ptr&lt;BaseChara>& Obj) {
+    <span class="red">Obj->FarBehavior();</span>
+}
+
+void FarState::Exit(const shared_ptr&lt;BaseChara>& Obj) {
+}
+
+//--------------------------------------------------------------------------------------
+//  プレイヤーから近いときの移動
+//--------------------------------------------------------------------------------------
+shared_ptr&lt;NearState> NearState::Instance() {
+    static shared_ptr&lt;NearState> instance(new NearState);
+    return instance;
+}
+void NearState::Enter(const shared_ptr&lt;BaseChara>& Obj) {
+}
+void NearState::Execute(const shared_ptr&lt;BaseChara>& Obj) {
+    <span class="red">Obj->NearBehavior();</span>
+}
+void NearState::Exit(const shared_ptr&lt;BaseChara>& Obj) {
+}
+</pre>
+</div>
+　赤くなっている部分で、仮想関数を呼び出します。仮想関数ですから、各々の派生クラス内の関数が呼ばれます。そこで上記で説明した個別の処理が行われます。<br />
+　ステートマシンの更新が終わったら<b>//共通のステアリング2</b>として<b>SeparationSteering（分離行動）</b>と<b>ObstacleAvoidanceSteering（障害物回避）</b>が行われます。<br />
+　これらの優先順位はかなり低く設定されています。ですので、例えば<b>障害物回避</b>は、ステージ上の丸い物体を回避するものですが、回避しきれず球体に乗り上げてしまう場合があります。<br />
+<h4>まとめ</h4>
+　今項では<b>様々なステアリング行動</b>として、いくつかの実装を紹介しました。<br />
+　ただ<b>ステアリング</b>は調整が結構微妙です。実装する順番によっても動きはがらりと変わりますし、<b>ウェイト</b>と呼ばれるパラメータを変えて<b>重みづけ</b>を変えることもできます。<br />
+　それらは各ゲーム内で調整しましょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

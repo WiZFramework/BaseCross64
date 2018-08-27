@@ -173,12 +173,13 @@ namespace basecross{
 	//更新
 	void BaseChara::OnUpdate() {
 		m_Force = Vec3(0);
-		//ステートマシンのUpdateを行う
-		//共通のステアリング
+		//共通のステアリング1
 		auto PtrWall = GetBehavior<WallAvoidanceSteering>();
 		m_Force += PtrWall->Execute(m_Force, GetVelocity());
+		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
+		//共通のステアリング2
 		auto PtrSep = GetBehavior<SeparationSteering>();
 		m_Force += PtrSep->Execute(m_Force);
 		auto PtrAvoidance = GetBehavior<ObstacleAvoidanceSteering>();
