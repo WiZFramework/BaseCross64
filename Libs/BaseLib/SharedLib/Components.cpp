@@ -365,6 +365,11 @@ namespace basecross {
 		Velocity /= ElapsedTime;
 		return Velocity;
 	}
+	float Transform::GetMoveSize() const {
+		bsm::Vec3 Move = pImpl->m_Position - pImpl->m_BeforePosition;
+		return bsm::length(Move);
+	}
+
 	void Transform::SetToBefore() {
 		if (pImpl->m_BeforeScale != pImpl->m_Scale) {
 			pImpl->m_BeforeChangeed = true;

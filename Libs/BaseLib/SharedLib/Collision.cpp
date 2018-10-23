@@ -408,16 +408,19 @@ namespace basecross {
 			bsm::Vec3 Ret;
 			bool Ishit = HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret);
 			if (Ishit) {
-				bsm::Vec3 span = SrcSphere.m_Center - Ret;
-				if (span.length() <= 0.0f) {
-					span = Pair.m_SrcHitNormal;
-				}
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= SrcSphere.m_Radius;
-				span += Ret;
+				int count = 0;
+				while (HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret)) {
+					SrcSphere.m_Center += span * 0.01f;
+					count++;
+					if (count > 20) {
+						break;
+					}
+				}
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(span);
+				PtrTransform->ResetWorldPosition(SrcSphere.m_Center);
 			}
 		}
 	}
