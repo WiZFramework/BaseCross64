@@ -54,6 +54,17 @@ namespace basecross {
 
 	MyCamera::~MyCamera() {}
 	//アクセサ
+
+	void MyCamera::SetEye(const bsm::Vec3& Eye) {
+		Camera::SetEye(Eye);
+		UpdateArmLengh();
+	}
+	void MyCamera::SetEye(float x, float y, float z) {
+		Camera::SetEye(x,y,z);
+		UpdateArmLengh();
+	}
+
+
 	shared_ptr<GameObject> MyCamera::GetTargetObject() const {
 		if (!m_TargetObject.expired()) {
 			return m_TargetObject.lock();
@@ -149,7 +160,7 @@ namespace basecross {
 		ArmVec.normalize();
 		ArmVec *= m_ArmLen;
 		bsm::Vec3 NewEye = GetAt() + ArmVec;
-		SetEye(NewEye);
+		Camera::SetEye(NewEye);
 	}
 	void MyCamera::SetAt(float x, float y, float z) {
 		Camera::SetAt(x, y, z);
@@ -157,7 +168,7 @@ namespace basecross {
 		ArmVec.normalize();
 		ArmVec *= m_ArmLen;
 		bsm::Vec3 NewEye = GetAt() + ArmVec;
-		SetEye(NewEye);
+		Camera::SetEye(NewEye);
 
 	}
 

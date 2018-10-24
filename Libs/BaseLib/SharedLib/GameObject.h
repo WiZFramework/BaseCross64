@@ -430,6 +430,31 @@ namespace basecross {
 			}
 			return nullptr;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	DynamicCastを利用したコンポーネントの取得。コンポーネントの派生クラス使用時に使う
+		@tparam	T	取得する型（Tに型変換できるもの）
+		@param[in]	ExceptionActive	対象がnullだった場合に例外処理するかどうか
+		@return	コンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		shared_ptr<T> GetDynamicComponent(bool ExceptionActive = true)const {
+			auto Ptr = SearchDynamicComponent<T>();
+			if (Ptr) {
+				return Ptr;
+			}
+			else {
+				if (ExceptionActive) {
+					throw BaseException(
+						L"型キャストできるコンポーネントが見つかりません",
+						Util::GetWSTypeName<T>(),
+						L"GameObject::GetDynamicComponent<T>()"
+					);
+				}
+			}
+			return nullptr;
+		}
 
 		//--------------------------------------------------------------------------------------
 		/*!

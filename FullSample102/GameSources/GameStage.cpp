@@ -23,7 +23,7 @@ namespace basecross {
 		if (!bkCamera) {
 			auto PtrMyCamera = ObjectFactory::Create<MyCamera>(10.0f);
 			PtrView->SetCamera(PtrMyCamera);
-			PtrMyCamera->SetEye(Vec3(0.0f, 5.0f, -20.0f));
+			PtrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
 			PtrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		}
 		else {

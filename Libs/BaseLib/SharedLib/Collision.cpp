@@ -412,9 +412,9 @@ namespace basecross {
 				span.normalize();
 				int count = 0;
 				while (HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret)) {
-					SrcSphere.m_Center += span * 0.01f;
+					SrcSphere.m_Center += span * 0.005f;
 					count++;
-					if (count > 20) {
+					if (count > 100) {
 						break;
 					}
 				}
