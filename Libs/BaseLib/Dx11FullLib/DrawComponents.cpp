@@ -35,9 +35,6 @@ namespace basecross {
 	//PCStatic
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPCStatic, App::GetApp()->GetShadersPath() + L"VSPCStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPCStatic, App::GetApp()->GetShadersPath() + L"PSPCStatic.cso")
-	//PNStatic
-	IMPLEMENT_DX11_VERTEX_SHADER(VSPNStatic, App::GetApp()->GetShadersPath() + L"VSPNStatic.cso")
-	IMPLEMENT_DX11_PIXEL_SHADER(PSPNStatic, App::GetApp()->GetShadersPath() + L"PSPNStatic.cso")
 	//PTStatic
 	IMPLEMENT_DX11_VERTEX_SHADER(VSPTStatic, App::GetApp()->GetShadersPath() + L"VSPTStatic.cso")
 	IMPLEMENT_DX11_PIXEL_SHADER(PSPTStatic, App::GetApp()->GetShadersPath() + L"PSPTStatic.cso")
@@ -239,6 +236,8 @@ namespace basecross {
 		static float m_ViewWidth;
 		static float m_ViewHeight;
 
+		static float m_PosAdjustment;
+
 		//メッシュリソース
 		weak_ptr<MeshResource> m_MeshResource;
 		//マルチメッシュリソース
@@ -250,11 +249,12 @@ namespace basecross {
 		~Impl() {}
 	};
 
-	float Shadowmap::Impl::m_LightHeight(100.0f);
+	float Shadowmap::Impl::m_LightHeight(200.0f);
 	float Shadowmap::Impl::m_LightNear(1.0f);
-	float Shadowmap::Impl::m_LightFar(200.0f);
+	float Shadowmap::Impl::m_LightFar(300.0f);
 	float Shadowmap::Impl::m_ViewWidth(32.0f);
 	float Shadowmap::Impl::m_ViewHeight(32.0f);
+	float Shadowmap::Impl::m_PosAdjustment(0.2f);
 
 
 
@@ -273,6 +273,7 @@ namespace basecross {
 	float Shadowmap::GetLightFar() { return  Impl::m_LightFar; }
 	float Shadowmap::GetViewWidth() { return  Impl::m_ViewWidth; }
 	float Shadowmap::GetViewHeight() { return  Impl::m_ViewHeight; }
+	float Shadowmap::GetPosAdjustment() { return Impl::m_PosAdjustment; }
 
 	void Shadowmap::SetLightHeight(float f) { Impl::m_LightHeight = f; }
 	void Shadowmap::SetLightNear(float f) { Impl::m_LightNear = f; }
@@ -280,6 +281,7 @@ namespace basecross {
 	void Shadowmap::SetViewWidth(float f) { Impl::m_ViewWidth = f; }
 	void Shadowmap::SetViewHeight(float f) { Impl::m_ViewHeight = f; }
 	void Shadowmap::SetViewSize(float f) { Impl::m_ViewWidth = Impl::m_ViewHeight = f; }
+	void Shadowmap::SetPosAdjustment(float f) { Impl::m_PosAdjustment = f; }
 
 
 
@@ -376,7 +378,7 @@ namespace basecross {
 		//位置の取得
 		auto Pos = PtrTrans->GetWorldMatrix().transInMatrix();
 		bsm::Vec3 PosSpan = StageLight.m_Directional;
-		PosSpan *= 0.1f;
+		PosSpan *= pImpl->m_PosAdjustment;
 		Pos += PosSpan;
 		//ワールド行列の決定
 		World.affineTransformation(
@@ -415,7 +417,7 @@ namespace basecross {
 		auto MultiMeshPtr = pImpl->m_MultiMeshResource.lock();
 		bool MultiMeshFlg = MultiMeshPtr && MultiMeshPtr->IsSkining(0);
 		if (MeshFlg) {
-			auto DrawCompPtr = GetGameObject()->GetComponent<DrawComponent>(false);
+			auto DrawCompPtr = GetGameObject()->GetDynamicComponent<DrawComponent>(false);
 			if (auto* pLocalBoneVec = DrawCompPtr->GetVecLocalBonesPtr()) {
 				if (pLocalBoneVec) {
 					//ボーンの設定
@@ -435,7 +437,7 @@ namespace basecross {
 			IsSkinStride = true;
 		}
 		else if (MultiMeshFlg) {
-			auto DrawCompPtr = GetGameObject()->GetComponent<DrawComponent>(false);
+			auto DrawCompPtr = GetGameObject()->GetDynamicComponent<DrawComponent>(false);
 			if (auto* pLocalBoneVec = DrawCompPtr->GetVecMultiLocalBonesPtr(data.m_MultiMeshIndex)) {
 				if (pLocalBoneVec) {
 					//ボーンの設定
@@ -636,11 +638,11 @@ namespace basecross {
 	}
 
 	struct InstanceDrawStr {
-		size_t Start;
-		size_t Count;
+		UINT Start;
+		UINT Count;
 		shared_ptr<TextureResource> Tex;
 		bsm::Col4 m_Diffuse;
-		InstanceDrawStr(size_t s, size_t c, shared_ptr<TextureResource> t,
+		InstanceDrawStr(UINT s, UINT c, shared_ptr<TextureResource> t,
 			const bsm::Col4& Diffuse) :
 			Start(s), Count(c), Tex(t), m_Diffuse(Diffuse){}
 	};
@@ -667,8 +669,8 @@ namespace basecross {
 		auto  NowTexPtr = pImpl->m_DrawParticleSpriteVec[0].m_TextureRes;
 
 		vector<InstanceDrawStr> m_InstancVec;
-		size_t NowStartIndex = 0;
-		size_t NowDrawCount = 0;
+		UINT NowStartIndex = 0;
+		UINT NowDrawCount = 0;
 
 		shared_ptr<TextureResource> NowTexRes = pImpl->m_DrawParticleSpriteVec[0].m_TextureRes;
 		bsm::Col4 NowDiffuse  = bsm::Col4(1,1,1,1);
@@ -676,7 +678,7 @@ namespace basecross {
 			if (pImpl->m_DrawParticleSpriteVec[i].m_TextureRes != NowTexRes || 
 				pImpl->m_DrawParticleSpriteVec[i].m_Diffuse != NowDiffuse) {
 				m_InstancVec.push_back(InstanceDrawStr(NowStartIndex, NowDrawCount, NowTexRes, NowDiffuse));
-				NowStartIndex = i;
+				NowStartIndex = (UINT)i;
 				NowDrawCount = 0;
 				NowTexRes = pImpl->m_DrawParticleSpriteVec[i].m_TextureRes;
 				NowDiffuse = pImpl->m_DrawParticleSpriteVec[i].m_Diffuse;
@@ -1285,7 +1287,6 @@ namespace basecross {
 		SmCb.EyePos.w = 1.0f;
 		//影用
 		if (GetOwnShadowActive()) {
-/*
 			bsm::Vec3 CalcLightDir = -1.0 * StageLight.m_Directional;
 			bsm::Vec3 LightAt = CameraPtr->GetAt();
 			bsm::Vec3 LightEye = CalcLightDir;
@@ -1300,28 +1301,6 @@ namespace basecross {
 				Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
 			SmCb.LightView = bsm::transpose(LightView);
 			SmCb.LightProjection = bsm::transpose(LightProj);
-*/
-
-			bsm::Vec3 CalcLightDir(StageLight.m_Directional * -1.0);
-			bsm::Vec3 LightAt(CameraPtr->GetAt());
-			bsm::Vec3 LightEye(CalcLightDir);
-			LightEye *= Shadowmap::GetLightHeight();
-			LightEye = LightAt + LightEye;
-			bsm::Vec4 LightEye4(LightEye, 1.0f);
-			LightEye4.w = 1.0f;
-			SmCb.LightPos = LightEye4;
-			bsm::Vec4 eyePos4(CameraPtr->GetEye(), 1.0f);
-			eyePos4.w = 1.0f;
-			SmCb.EyePos = eyePos4;
-			bsm::Mat4x4 LightView, LightProj;
-			//ライトのビューと射影を計算
-			LightView = XMMatrixLookAtLH(LightEye, LightAt, bsm::Vec3(0, 1.0f, 0));
-			LightProj = XMMatrixOrthographicLH(Shadowmap::GetViewWidth(), Shadowmap::GetViewHeight(),
-			Shadowmap::GetLightNear(), Shadowmap::GetLightFar());
-			SmCb.LightView = bsm::transpose(LightView);
-			SmCb.LightProjection = bsm::transpose(LightProj);
-
-
 		}
 		//ボーンの設定
 		size_t BoneSz = pImpl->m_SmDrawObject.m_LocalBonesMatrix.size();
@@ -1841,46 +1820,6 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
-	///	PNStatic描画コンポーネント
-	//--------------------------------------------------------------------------------------
-	PNStaticDraw::PNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
-		SmBaseDraw(GameObjectPtr)
-	{}
-
-	PNStaticDraw::~PNStaticDraw() {}
-
-	void PNStaticDraw::OnCreate() {}
-
-	void PNStaticDraw::OnDraw() {
-		if (GetGameObject()->GetAlphaActive()) {
-			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
-				SetBlendState(BlendState::AlphaBlend);
-			}
-			SetRasterizerState(RasterizerState::DoubleDraw);
-		}
-		//メッシュリソースの取得
-		auto PtrMeshResource = GetMeshResource();
-		if (PtrMeshResource) {
-			DrawStatic<VSPNStatic, PSPNStatic>(PtrMeshResource->GetMashData());
-		}
-		//マルチメッシュリソースの取得
-		auto PtrMultiMeshResource = GetMultiMeshResource();
-		if (PtrMultiMeshResource) {
-			size_t count = PtrMultiMeshResource->GetMeshVecCount();
-			auto& vec = PtrMultiMeshResource->GetMeshVec();
-			for (size_t i = 0; i < count; i++) {
-				DrawStatic<VSPNStatic, PSPNStatic>(vec[i]);
-			}
-		}
-		//後始末
-		auto Dev = App::GetApp()->GetDeviceResources();
-		Dev->InitializeStates();
-
-	}
-
-
-
-	//--------------------------------------------------------------------------------------
 	///	PTStatic描画コンポーネント
 	//--------------------------------------------------------------------------------------
 	PTStaticDraw::PTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
@@ -1982,12 +1921,7 @@ namespace basecross {
 		auto PtrMeshResource = GetMeshResource();
 		if (PtrMeshResource) {
 			if (GetOwnShadowActive()) {
-				if (GetGameObject()->GetComponent<Shadowmap>(false)) {
-					DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow2>(PtrMeshResource->GetMashData());
-				}
-				else {
-					DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow>(PtrMeshResource->GetMashData());
-				}
+				DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow>(PtrMeshResource->GetMashData());
 			}
 			else {
 				DrawStatic<VSPNTStatic, PSPNTStatic>(PtrMeshResource->GetMashData());

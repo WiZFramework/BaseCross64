@@ -51,7 +51,7 @@ float4 main(PSPNTInputShadow input) : SV_TARGET
 	{
 
 		float margin = acos(saturate(NdotL));
-		float epsilon = 0.0005 / margin;
+		float epsilon = 0.0001 / margin;
 
 		epsilon = clamp(epsilon, 0, 0.1);
 
