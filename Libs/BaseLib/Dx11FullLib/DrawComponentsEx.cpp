@@ -26,6 +26,12 @@ namespace basecross {
 	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPCStatic, App::GetApp()->GetShadersPath() + L"BcVSPCStatic.cso")
 
 	//--------------------------------------------------------------------------------------
+	/// PN頂点シェーダ
+	//--------------------------------------------------------------------------------------
+	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPNStatic, App::GetApp()->GetShadersPath() + L"BcVSPNStaticVL.cso")
+
+
+	//--------------------------------------------------------------------------------------
 	/// PT頂点シェーダ
 	//--------------------------------------------------------------------------------------
 	IMPLEMENT_DX11_VERTEX_SHADER(BcVSPTStatic, App::GetApp()->GetShadersPath() + L"BcVSPTStatic.cso")
@@ -40,6 +46,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPCStatic, App::GetApp()->GetShadersPath() + L"BcPSPCStatic.cso")
 
+	//--------------------------------------------------------------------------------------
+	/// PN用ピクセルシェーダ
+	//--------------------------------------------------------------------------------------
+	IMPLEMENT_DX11_PIXEL_SHADER(BcPSPNStatic, App::GetApp()->GetShadersPath() + L"BcPSPNStaticVL.cso")
 
 	//--------------------------------------------------------------------------------------
 	/// PT,PCT用ピクセルシェーダ
@@ -1006,6 +1016,52 @@ namespace basecross {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	///BcPNStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	BcPNStaticDraw::BcPNStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		BcBaseDraw(GameObjectPtr)
+	{}
+	BcPNStaticDraw::~BcPNStaticDraw() {}
+	void BcPNStaticDraw::OnCreate() {
+		SetLightingEnabled(true);
+		//マルチライトの設定
+		for (int i = 0; i < GetMaxDirectionalLights(); i++) {
+			SetLightEnabled(i, true);
+		}
+	}
+	void BcPNStaticDraw::OnDraw() {
+		if (GetGameObject()->GetAlphaActive()) {
+			if (!(GetBlendState() == BlendState::AlphaBlend || GetBlendState() == BlendState::Additive)) {
+				SetBlendState(BlendState::AlphaBlend);
+			}
+			SetRasterizerState(RasterizerState::DoubleDraw);
+		}
+		//メッシュリソースの取得
+		auto PtrMeshResource = GetMeshResource();
+		if (PtrMeshResource) {
+			//頂点ライティング
+			DrawStatic<BcVSPNStatic, BcPSPNStatic>(PtrMeshResource->GetMashData());
+		}
+		//マルチメッシュリソースの取得
+		auto PtrMultiMeshResource = GetMultiMeshResource();
+		if (PtrMultiMeshResource) {
+			size_t count = PtrMultiMeshResource->GetMeshVecCount();
+			auto& vec = PtrMultiMeshResource->GetMeshVec();
+			for (size_t i = 0; i < count; i++) {
+				//シェーダの設定
+				//頂点ライティング
+				//バイアス無し
+				DrawStatic<BcVSPNStatic, BcPSPNStatic>(vec[i]);
+			}
+		}
+		//後始末
+		auto Dev = App::GetApp()->GetDeviceResources();
+		Dev->InitializeStates();
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	///	BasicPTStatic描画コンポーネント

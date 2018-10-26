@@ -45,6 +45,10 @@
     <FxCompile Include="$(MSBuildThisFileDirectory)BcPSPNTVLShadow.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)BcPSPNStaticVL.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <FileType>Document</FileType>
+    </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)BcPSPTStatic.hlsl">
       <ShaderType>Pixel</ShaderType>
     </FxCompile>
@@ -52,6 +56,9 @@
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)BcVSPCTStatic.hlsl">
+      <ShaderType>Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="$(MSBuildThisFileDirectory)BcVSPNStaticVL.hlsl">
       <ShaderType>Vertex</ShaderType>
     </FxCompile>
     <FxCompile Include="$(MSBuildThisFileDirectory)BcVSPNTBonePL.hlsl">

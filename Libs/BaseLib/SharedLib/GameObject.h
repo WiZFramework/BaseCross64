@@ -1827,11 +1827,18 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	class SceneBase :public SceneInterface {
 		void SetActiveStage(const shared_ptr<Stage>& stage);
+
+		//void ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
+		//	vector<VertexPositionColor>& new_pc_vertices,
+		//	vector<VertexPositionTexture>& new_pt_vertices,
+		//	vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices
+		//	);
 		void ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
 			vector<VertexPositionColor>& new_pc_vertices,
+			vector<VertexPositionNormal>& new_pn_vertices,
 			vector<VertexPositionTexture>& new_pt_vertices,
 			vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices
-			);
+		);
 	protected:
 		SceneBase();
 		virtual ~SceneBase();

@@ -29,6 +29,7 @@ namespace basecross{
 		//‘€ì
 	};
 
+
 	//--------------------------------------------------------------------------------------
 	///	PC‹…
 	//--------------------------------------------------------------------------------------
@@ -92,6 +93,9 @@ namespace basecross{
 		virtual void OnUpdate() override;
 	};
 
+
+
+
 	//--------------------------------------------------------------------------------------
 	///	Pnt‹…
 	//--------------------------------------------------------------------------------------
@@ -126,9 +130,10 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class StaticChara : public GameObject {
 		Vec3 m_StartPos;
+		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		StaticChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~StaticChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -139,22 +144,26 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class StaticMultiMeshChara : public GameObject {
 		Vec3 m_StartPos;
+		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		StaticMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		StaticMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~StaticMultiMeshChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
 	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	BoneƒLƒƒƒ‰
 	//--------------------------------------------------------------------------------------
 	class BoneChara : public GameObject {
 		Vec3 m_StartPos;
+		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		BoneChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~BoneChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -166,14 +175,16 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	class BoneMultiMeshChara : public GameObject {
 		Vec3 m_StartPos;
+		bool m_TamgentUse;
 	public:
 		//\’z‚Æ”jŠü
-		BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
 		virtual ~BoneMultiMeshChara();
 		//‰Šú‰»
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;
 	};
+
 
 
 
