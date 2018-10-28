@@ -69,6 +69,45 @@ namespace basecross {
 		}
 	}
 
+	void GameStage::CreateFixedSphere() {
+		struct SpStr {
+			float Scale;
+			Vec3 Rot;
+			Vec3 Pos;
+		};
+		//配列の初期化
+		vector< SpStr > Data = {
+			{
+				2.0f,
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(5.0f, 1.0f, 15.0f)
+			},
+		};
+		//オブジェクトの作成
+		for (auto v : Data) {
+			AddGameObject<FixedSphere>(v.Scale, v.Rot, v.Pos);
+		}
+
+	}
+
+
+	void GameStage::CreateFixedCapsule() {
+		//配列の初期化
+		vector< vector<Vec3> > Vec = {
+			{
+				Vec3(1.0f, 1.0f, 1.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, 1.0f, 15.0f)
+			},
+		};
+		//オブジェクトの作成
+		for (auto v : Vec) {
+			AddGameObject<FixedCapsule>(v[0], v[1], v[2]);
+		}
+
+	}
+
+
 	//移動するボックスの作成
 	void GameStage::CreateMoveBox() {
 		//配列の初期化
@@ -127,6 +166,10 @@ namespace basecross {
 			CreateFixedBox();
 			//移動するボックスの作成
 			CreateMoveBox();
+			//固定の球体の作成
+			CreateFixedSphere();
+			//固定のカプセルの作成
+			CreateFixedCapsule();
 			//追いかけるオブジェクトの作成
 			CreateSeekObject();
 			//プレーヤーの作成

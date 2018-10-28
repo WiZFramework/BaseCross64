@@ -29,6 +29,49 @@ namespace basecross{
 		//操作
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	class FixedSphere : public GameObject;
+	//--------------------------------------------------------------------------------------
+	class FixedSphere : public GameObject {
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
+	public:
+		//構築と破棄
+		FixedSphere(const shared_ptr<Stage>& StagePtr,
+			const float Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
+		);
+		virtual ~FixedSphere();
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
+	//	class FixedCapsule : public GameObject;
+	//--------------------------------------------------------------------------------------
+	class FixedCapsule : public GameObject {
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
+	public:
+		//構築と破棄
+		FixedCapsule(const shared_ptr<Stage>& StagePtr,
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
+		);
+		virtual ~FixedCapsule();
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+	};
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	追いかける配置オブジェクト

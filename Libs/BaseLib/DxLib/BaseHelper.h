@@ -981,6 +981,57 @@ namespace basecross{
 			}
 			return (float)Prob;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	切り上げ
+		@param[in]	dSrc	元の数値
+		@param[in]	iLen	小数点以下の桁数
+		@return	処理後の数値
+		*/
+		//--------------------------------------------------------------------------------------
+		static double Ceil(double dSrc, int iLen)
+		{
+			double	dRet;
+
+			dRet = dSrc * pow(10.0, iLen);
+			dRet = (double)(int)(dRet + 0.9);
+
+			return dRet * pow(10.0, -iLen);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	切り下げ
+		@param[in]	dSrc	元の数値
+		@param[in]	iLen	小数点以下の桁数
+		@return	処理後の数値
+		*/
+		//--------------------------------------------------------------------------------------
+		static double Floor(double dSrc, int iLen)
+		{
+			double dRet;
+
+			dRet = dSrc * pow(10.0, iLen);
+			dRet = (double)(int)(dRet);
+
+			return dRet * pow(10.0, -iLen);
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	四捨五入
+		@param[in]	dSrc	元の数値
+		@param[in]	iLen	小数点以下の桁数
+		@return	処理後の数値
+		*/
+		//--------------------------------------------------------------------------------------
+		static double Round(double dSrc, int iLen)
+		{
+			double	dRet;
+
+			dRet = dSrc * pow(10.0, iLen);
+			dRet = (double)(int)(dRet + 0.5);
+
+			return dRet * pow(10.0, -iLen);
+		}
 
 	};
 

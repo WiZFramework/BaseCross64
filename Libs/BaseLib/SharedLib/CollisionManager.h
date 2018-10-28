@@ -13,10 +13,10 @@ namespace basecross {
 		weak_ptr<Collision> m_Src;
 		weak_ptr<Collision> m_Dest;
 		bsm::Vec3 m_SrcHitNormal;
-		float m_SrcHitLength;
+//		float m_SrcHitLength;
 		CollisionPair():
-			m_SrcHitNormal(0),
-			m_SrcHitLength(0)
+			m_SrcHitNormal(0)
+//			m_SrcHitLength(0)
 		{}
 	};
 

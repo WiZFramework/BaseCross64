@@ -12,6 +12,7 @@
 namespace basecross {
 namespace bsm {
 
+
 	//--------------------------------------------------------------------------------------
 	///	Flt2インライン実装
 	//--------------------------------------------------------------------------------------
@@ -245,6 +246,28 @@ namespace bsm {
 		*this = (Flt2)XMVector2Normalize(*this);
 		return *this;
 	}
+	inline Flt2& Flt2::floor(int len) {
+		x = bsm::floor(x, len);
+		y = bsm::floor(y, len);
+		return *this;
+
+	}
+
+	inline Flt2& Flt2::round(int len) {
+		x = bsm::round(x, len);
+		y = bsm::round(y, len);
+
+		return *this;
+	}
+
+	inline Flt2& Flt2::ceil(int len) {
+		x = bsm::ceil(x, len);
+		y = bsm::ceil(y, len);
+		return *this;
+	}
+
+
+
 
 	inline float Flt2::dot(const Flt2 & vec1)const {
 		return ((Flt2)XMVector2Dot(*this, vec1)).x;
@@ -529,6 +552,29 @@ namespace bsm {
 		*this = (Flt3)XMVector3Normalize(*this);
 		return *this;
 	}
+
+	inline Flt3& Flt3::floor(int len) {
+		x = bsm::floor(x, len);
+		y = bsm::floor(y, len);
+		z = bsm::floor(z, len);
+		return *this;
+
+	}
+
+	inline Flt3& Flt3::round(int len) {
+		x = bsm::round(x, len);
+		y = bsm::round(y, len);
+		z = bsm::round(z, len);
+		return *this;
+	}
+
+	inline Flt3& Flt3::ceil(int len) {
+		x = bsm::ceil(x, len);
+		y = bsm::ceil(y, len);
+		z = bsm::ceil(z, len);
+		return *this;
+	}
+
 
 	inline float Flt3::dot(const Flt3 & vec1)const {
 		return ((Flt3)XMVector3Dot(*this, vec1)).x;
@@ -853,6 +899,33 @@ namespace bsm {
 		*this = (Flt4)XMVector4Normalize(*this);
 		return *this;
 	}
+
+	inline Flt4& Flt4::floor(int len) {
+		x = bsm::floor(x, len);
+		y = bsm::floor(y, len);
+		z = bsm::floor(z, len);
+		w = bsm::floor(w, len);
+		return *this;
+	}
+
+	inline Flt4& Flt4::round(int len) {
+		x = bsm::round(x, len);
+		y = bsm::round(y, len);
+		z = bsm::round(z, len);
+		w = bsm::round(w, len);
+		return *this;
+	}
+
+	inline Flt4& Flt4::ceil(int len) {
+		x = bsm::ceil(x, len);
+		y = bsm::ceil(y, len);
+		z = bsm::ceil(z, len);
+		w = bsm::ceil(w, len);
+		return *this;
+	}
+
+
+
 
 	inline float Flt4::dot(const Flt4 & vec1)const {
 		return ((Flt4)XMVector4Dot(*this, vec1)).x;
@@ -2080,6 +2153,39 @@ namespace bsm {
 		ret.y /= Scale.z;
 		ret.z /= Scale.z;
 		return ret;
+	}
+
+	//--------------------------------------------------------------------------------------
+	///	ユーティリティ関数群float
+	//--------------------------------------------------------------------------------------
+	inline float floor(float f, int len) {
+		double ret;
+
+		ret = (double)f * pow(10.0, len);
+		ret = (double)(int)(ret);
+
+		return (float)(ret * pow(10.0, -len));
+
+	}
+
+	inline float round(float f, int len) {
+		double	ret;
+
+		ret = (double)f * pow(10.0, len);
+		ret = (double)(int)(ret + 0.5);
+
+		return (float)(ret * pow(10.0, -len));
+
+	}
+
+	inline float ceil(float f, int len) {
+		double	ret;
+
+		ret = (double)f * pow(10.0, len);
+		ret = (double)(int)(ret + 0.9);
+
+		return (float)(ret * pow(10.0, -len));
+
 	}
 
 	//--------------------------------------------------------------------------------------

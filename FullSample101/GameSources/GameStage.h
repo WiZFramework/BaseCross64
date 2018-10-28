@@ -16,6 +16,10 @@ namespace basecross {
 		void CreateViewLight();
 		//固定のボックスの作成
 		void CreateFixedBox();
+		//固定の球体の作成
+		void CreateFixedSphere();
+		//固定のカプセルの作成
+		void CreateFixedCapsule();
 		//移動するボックスの作成
 		void CreateMoveBox();
 		//追いかけるオブジェクトの作成

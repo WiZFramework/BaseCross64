@@ -367,14 +367,29 @@ namespace basecross {
 			SPHERE DestSphere = ShDestSphere->GetSphere();
 			bool IsHit = HitTest::SPHERE_SPHERE(SrcSphere, DestSphere);
 			if (IsHit) {
-				bsm::Vec3 Normal = SrcSphere.m_Center - DestSphere.m_Center;
-				Normal.normalize();
-				float Span = SrcSphere.m_Radius + DestSphere.m_Radius;
-				Normal *= Span;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
+				span.normalize();
+				int count = 0;
+				while (HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
+					SrcSphere.m_Center += span * 0.002f;
+					count++;
+					if (count > 1000) {
+						break;
+					}
+				}
+				SrcSphere.m_Center.floor(3);
+				HitTest::SPHERE_SPHERE(SrcSphere, DestSphere);
+				//法線を再計算
+				auto N = SrcSphere.m_Center - DestSphere.m_Center;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-				bsm::Vec3 Pos = DestSphere.m_Center + Normal;
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Pos);
+				PtrTransform->ResetWorldPosition(SrcSphere.m_Center);
 			}
 		}
 		else if (ShDestCapsule) {
@@ -382,25 +397,29 @@ namespace basecross {
 			bsm::Vec3 Ret;
 			bool Ishit = HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret);
 			if (Ishit) {
-				bsm::Vec3 span = SrcSphere.m_Center - Ret;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.001f;
 				int count = 0;
-				auto Center = SrcSphere.m_Center;
-				while (1) {
-					Center += span;
-					SrcSphere.m_Center = Center;
-					if (!HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret)) {
-						break;
-					}
+				while (HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret)) {
+					SrcSphere.m_Center += span * 0.002f;
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				SrcSphere.m_Center.floor(3);
+				HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret);
+				//法線を再計算
+				auto N = SrcSphere.m_Center - Ret;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcSphere.m_Center);
 			}
 		}
 		else if (ShDestObb) {
@@ -412,12 +431,22 @@ namespace basecross {
 				span.normalize();
 				int count = 0;
 				while (HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret)) {
-					SrcSphere.m_Center += span * 0.005f;
+					SrcSphere.m_Center += span * 0.002f;
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				SrcSphere.m_Center.floor(3);
+				HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret);
+				//法線を再計算
+				auto N = SrcSphere.m_Center - Ret;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
 				PtrTransform->ResetWorldPosition(SrcSphere.m_Center);
@@ -677,10 +706,6 @@ namespace basecross {
 			HitTest::ClosetPtPointSegment(RetVec, SrcChkCapsule.m_PointBottom, SrcChkCapsule.m_PointTop, t, SegPoint);
 			pair.m_SrcHitNormal = SegPoint - RetVec;
 			pair.m_SrcHitNormal.normalize();
-			pair.m_SrcHitLength = bsm::length(SrcChkCapsule.GetCenter() - RetVec);
-			if (pair.m_SrcHitLength <= SrcChkCapsule.m_Radius) {
-				pair.m_SrcHitLength = SrcChkCapsule.m_Radius;
-			}
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -711,24 +736,32 @@ namespace basecross {
 			SPHERE DestSphere = ShDestSphere->GetSphere();
 			bsm::Vec3 Ret;
 			if (HitTest::SPHERE_CAPSULE(DestSphere, SrcCap, Ret)) {
-				int count = 0;
-				bsm::Vec3 span = DestSphere.m_Center - Ret;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.001f;
-				while (1) {
-					Center += span;
+				int count = 0;
+				while (HitTest::SPHERE_CAPSULE(DestSphere, SrcCap, Ret)) {
+					Center += span * 0.002f;
 					SrcCap.SetCenter(Center);
-					if (!HitTest::SPHERE_CAPSULE(DestSphere, SrcCap, Ret)) {
-						break;
-					}
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				bsm::Vec3 v = SrcCap.GetCenter();
+				v.floor(3);
+				SrcCap.SetCenter(v);
+				HitTest::SPHERE_CAPSULE(DestSphere, SrcCap, Ret);
+				//法線を再計算
+				auto N = Ret - DestSphere.m_Center;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcCap.GetCenter());
 			}
 		}
 		else if (ShDestCapsule) {
@@ -736,28 +769,39 @@ namespace basecross {
 			CAPSULE DestCap = ShDestCapsule->GetCapsule();
 			bsm::Vec3 Ret1, Ret2;
 			if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
-				int count = 0;
-				//接点へのベクトル
-				float t;
-				bsm::Vec3 SegPoint;
-				HitTest::ClosetPtPointSegment(Ret1, SrcCap.m_PointBottom, SrcCap.m_PointTop, t, SegPoint);
-				bsm::Vec3 span = SegPoint - Ret1;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.001f;
-				while (1) {
-					Center += span;
+				int count = 0;
+				while (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
+					Center += span * 0.002f;
 					SrcCap.SetCenter(Center);
-					if (!HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
-						break;
-					}
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				bsm::Vec3 v = SrcCap.GetCenter();
+				v.floor(3);
+				SrcCap.SetCenter(v);
+				HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2);
+				//接点へのベクトル
+				//DestCapの線分とRetVec1の線分上の最近接点とRetVec1の法線
+				bsm::Vec3 Start = DestCap.m_PointBottom;
+				bsm::Vec3 End = DestCap.m_PointTop;
+				float t;
+				bsm::Vec3 RetVec;
+				HitTest::ClosetPtPointSegment(Ret1, Start, End, t, RetVec);
+				//法線を再計算
+				auto N = Ret1 - RetVec;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcCap.GetCenter());
 			}
 		}
 		else if (ShDestObb) {
@@ -766,30 +810,36 @@ namespace basecross {
 			bsm::Vec3 Ret;
 			bool Ishit = HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret);
 			if (Ishit) {
-				bsm::Vec3 span = SrcCap.GetCenter() - Ret;
-				bsm::Vec3 spanChk = span;
-				spanChk.normalize();
-				if (span.length() <= 0.0f || abs(bsm::angleBetweenNormals(spanChk, Pair.m_SrcHitNormal)) > 1.0f) {
-					span = Pair.m_SrcHitNormal;
-				}
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.005f;
-				auto Center = SrcCap.GetCenter();
 				int count = 0;
-				while (1) {
-					Center += span;
+				while (HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret)) {
+					Center += span * 0.002f;
 					SrcCap.SetCenter(Center);
-					if (!HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret)) {
-						break;
-					}
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				bsm::Vec3 v = SrcCap.GetCenter();
+				v.floor(3);
+				SrcCap.SetCenter(v);
+				HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret);
+				//接点へのベクトル
+				float t;
+				bsm::Vec3 SegPoint;
+				HitTest::ClosetPtPointSegment(Ret, SrcCap.m_PointBottom, SrcCap.m_PointTop, t, SegPoint);
+				//法線を再計算
+				auto N = SegPoint - Ret;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcCap.GetCenter());
 			}
 		}
 
@@ -964,7 +1014,6 @@ namespace basecross {
 			HitTest::ClosetPtPointSegment(RetVec, DestChkCapsule.m_PointBottom, DestChkCapsule.m_PointTop, t, SegPoint);
 			pair.m_SrcHitNormal = RetVec - SegPoint;
 			pair.m_SrcHitNormal.normalize();
-			pair.m_SrcHitLength = bsm::length(SrcChkObb.m_Center - RetVec);
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -1035,16 +1084,29 @@ namespace basecross {
 			bsm::Vec3 Ret;
 			bool Ishit = HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret);
 			if (Ishit) {
-				float CenterToRetLen = bsm::length(Ret - SrcObb.m_Center);
-				CenterToRetLen += DestSphere.m_Radius;
-				bsm::Vec3 MoveSpan = SrcObb.m_Center - DestSphere.m_Center;
-				MoveSpan.normalize();
-				MoveSpan *= CenterToRetLen;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
+				span.normalize();
+				int count = 0;
+				while (HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret)) {
+					SrcObb.m_Center += span * 0.002f;
+					count++;
+					if (count > 1000) {
+						break;
+					}
+				}
+				SrcObb.m_Center.floor(3);
+				HitTest::SPHERE_OBB(DestSphere, SrcObb, Ret);
+				//衝突した瞬間で法線を計算
+				auto N = Ret - DestSphere.m_Center;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
-				auto Pos = DestSphere.m_Center;
-				Pos += MoveSpan;
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Pos);
+				PtrTransform->ResetWorldPosition(SrcObb.m_Center);
 			}
 		}
 		else if (ShDestCapsule) {
@@ -1053,53 +1115,67 @@ namespace basecross {
 			bsm::Vec3 Ret;
 			bool Ishit = HitTest::CAPSULE_OBB(DestCapsule, SrcObb, Ret);
 			if (Ishit) {
-				bsm::Vec3 span = SrcObb.m_Center - Ret;
+				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.005f;
-				auto Center = SrcObb.m_Center;
 				int count = 0;
-				while (1) {
-					Center += span;
-					SrcObb.m_Center = Center;
-					if (!HitTest::CAPSULE_OBB(DestCapsule, SrcObb, Ret)) {
-						break;
-					}
+				while (HitTest::CAPSULE_OBB(DestCapsule, SrcObb, Ret)) {
+					SrcObb.m_Center += span * 0.002f;
 					count++;
-					if (count > 100) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				SrcObb.m_Center.floor(3);
+				HitTest::CAPSULE_OBB(DestCapsule, SrcObb, Ret);
+				//接点へのベクトル
+				float t;
+				bsm::Vec3 SegPoint;
+				HitTest::ClosetPtPointSegment(Ret, DestCapsule.m_PointBottom, DestCapsule.m_PointTop, t, SegPoint);
+				//衝突した瞬間で法線を計算
+				auto N = Ret - SegPoint;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcObb.m_Center);
 			}
 		}
 		else if (ShDestObb) {
 			OBB DestObb = ShDestObb->GetObb();
 			bool Ishit = HitTest::OBB_OBB(SrcObb, DestObb);
 			if (Ishit) {
-				bsm::Vec3 Ret;
-				//SrcのOBBとDestの最近接点を得る
-				HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, Ret);
+
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				span *= 0.001f;
-				auto Center = SrcObb.m_Center;
 				int count = 0;
-				while (1) {
-					Center += span;
-					SrcObb.m_Center = Center;
-					if (!HitTest::OBB_OBB(SrcObb, DestObb)) {
-						break;
-					}
+				while (HitTest::OBB_OBB(SrcObb, DestObb)) {
+					SrcObb.m_Center += span * 0.002f;
 					count++;
-					if (count > 500) {
+					if (count > 1000) {
 						break;
 					}
 				}
+				SrcObb.m_Center.floor(3);
+				bsm::Vec3 RetVec;
+				//SrcのOBBとDestの最近接点を得る
+				HitTest::ClosestPtPointOBB(SrcObb.m_Center, DestObb, RetVec);
+				//法線を再計算
+				auto N = SrcObb.m_Center - RetVec;
+				N.normalize();
+				if (bsm::angleBetweenNormals(Pair.m_SrcHitNormal, N) > XM_PI) {
+					N = N * -1.0f;
+				}
+				//接点へのベクトル
+				//衝突した瞬間で法線を計算
+				Pair.m_SrcHitNormal = N;
+				Pair.m_SrcHitNormal.normalize();
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
-				PtrTransform->ResetWorldPosition(Center);
+				PtrTransform->ResetWorldPosition(SrcObb.m_Center);
 			}
 		}
 	}

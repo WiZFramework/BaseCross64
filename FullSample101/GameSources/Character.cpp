@@ -49,6 +49,88 @@ namespace basecross{
 
 	}
 
+	//--------------------------------------------------------------------------------------
+	//	class FixedSphere : public GameObject;
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	FixedSphere::FixedSphere(const shared_ptr<Stage>& StagePtr,
+		const float Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
+	) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position)
+	{
+	}
+	FixedSphere::~FixedSphere() {}
+
+	//初期化
+	void FixedSphere::OnCreate() {
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_Scale);
+		PtrTransform->SetRotation(m_Rotation);
+		PtrTransform->SetPosition(m_Position);
+		//CollisionSphere衝突j判定を付ける
+		auto PtrColl = AddComponent<CollisionSphere>();
+		PtrColl->SetFixed(true);
+		//タグをつける
+		AddTag(L"FixedSphere");
+		//影をつける（シャドウマップを描画する）
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		PtrDraw->SetTextureResource(L"SKY_TX");
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetOwnShadowActive(true);
+
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	class FixedCapsule : public GameObject;
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	FixedCapsule::FixedCapsule(const shared_ptr<Stage>& StagePtr,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
+	) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position)
+	{
+	}
+	FixedCapsule::~FixedCapsule() {}
+
+	//初期化
+	void FixedCapsule::OnCreate() {
+		auto PtrTransform = GetComponent<Transform>();
+		PtrTransform->SetScale(m_Scale);
+		PtrTransform->SetRotation(m_Rotation);
+		PtrTransform->SetPosition(m_Position);
+		//CAPSULE衝突j判定を付ける
+		auto PtrColl = AddComponent<CollisionCapsule>();
+		PtrColl->SetFixed(true);
+		//タグをつける
+		AddTag(L"FixedCapsule");
+		//影をつける（シャドウマップを描画する）
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		ShadowPtr->SetMeshResource(L"DEFAULT_CAPSULE");
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
+		PtrDraw->SetTextureResource(L"SKY_TX");
+		PtrDraw->SetFogEnabled(true);
+		PtrDraw->SetOwnShadowActive(true);
+
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	//	追いかける配置オブジェクト
