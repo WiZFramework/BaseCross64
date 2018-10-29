@@ -28,24 +28,24 @@ namespace basecross{
 
 	//初期化
 	void FixedBox::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
-		PtrTransform->SetScale(m_Scale);
-		PtrTransform->SetRotation(m_Rotation);
-		PtrTransform->SetPosition(m_Position);
+		auto ptrTransform = GetComponent<Transform>();
+		ptrTransform->SetScale(m_Scale);
+		ptrTransform->SetRotation(m_Rotation);
+		ptrTransform->SetPosition(m_Position);
 		//OBB衝突j判定を付ける
-		auto PtrColl = AddComponent<CollisionObb>();
-		PtrColl->SetFixed(true);
+		auto ptrColl = AddComponent<CollisionObb>();
+		ptrColl->SetFixed(true);
 		//タグをつける
 		AddTag(L"FixedBox");
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetTextureResource(L"SKY_TX");
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetOwnShadowActive(true);
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetTextureResource(L"SKY_TX");
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetOwnShadowActive(true);
 
 	}
 
@@ -66,30 +66,30 @@ namespace basecross{
 
 	//初期化
 	void SeekObject::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
-		PtrTransform->SetPosition(m_StartPos);
-		PtrTransform->SetScale(0.125f, 0.25f, 0.25f);
-		PtrTransform->SetRotation(0.0f, 0.0f, 0.0f);
+		auto ptrTransform = GetComponent<Transform>();
+		ptrTransform->SetPosition(m_StartPos);
+		ptrTransform->SetScale(0.125f, 0.25f, 0.25f);
+		ptrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 
 		//オブジェクトのグループを得る
-		auto Group = GetStage()->GetSharedObjectGroup(L"SeekGroup");
+		auto group = GetStage()->GetSharedObjectGroup(L"SeekGroup");
 		//グループに自分自身を追加
-		Group->IntoGroup(GetThis<SeekObject>());
+		group->IntoGroup(GetThis<SeekObject>());
 		//Obbの衝突判定をつける
-		auto PtrColl = AddComponent<CollisionObb>();
+		auto ptrColl = AddComponent<CollisionObb>();
 		//重力をつける
-		auto PtrGra = AddComponent<Gravity>();
+		auto ptrGra = AddComponent<Gravity>();
 		//分離行動をつける
 		auto PtrSep = GetBehavior<SeparationSteering>();
-		PtrSep->SetGameObjectGroup(Group);
+		PtrSep->SetGameObjectGroup(group);
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetTextureResource(L"TRACE_TX");
 		//透明処理をする
 		SetAlphaActive(true);
 
@@ -106,8 +106,8 @@ namespace basecross{
 		//ステートマシンのUpdateを行う
 		//この中でステートの切り替えが行われる
 		m_StateMachine->Update();
-		auto PtrUtil = GetBehavior<UtilBehavior>();
-		PtrUtil->RotToHead(1.0f);
+		auto ptrUtil = GetBehavior<UtilBehavior>();
+		ptrUtil->RotToHead(1.0f);
 	}
 
 	void SeekObject::OnUpdate2() {
@@ -115,25 +115,25 @@ namespace basecross{
 
 	void SeekObject::OnCollisionEnter(shared_ptr<GameObject>& Other) {
 		if (Other->FindTag(L"Player")) {
-			auto Grav = GetComponent<Gravity>();
-			Grav->StartJump(Vec3(0, 4.0f, 0));
+			auto grav = GetComponent<Gravity>();
+			grav->StartJump(Vec3(0, 4.0f, 0));
 		}
 	}
 
 
 	Vec3 SeekObject::GetTargetPos()const {
-		auto TargetPtr = GetStage()->GetSharedObject(L"Player");
-		return TargetPtr->GetComponent<Transform>()->GetPosition();
+		auto ptrTarget = GetStage()->GetSharedObject(L"Player");
+		return ptrTarget->GetComponent<Transform>()->GetPosition();
 	}
 
 
 	void SeekObject::ApplyForce() {
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		m_Velocity += m_Force * ElapsedTime;
-		auto PtrTransform = GetComponent<Transform>();
-		auto Pos = PtrTransform->GetPosition();
-		Pos += m_Velocity * ElapsedTime;
-		PtrTransform->SetPosition(Pos);
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		m_Velocity += m_Force * elapsedTime;
+		auto ptrTrans = GetComponent<Transform>();
+		auto pos = ptrTrans->GetPosition();
+		pos += m_Velocity * elapsedTime;
+		ptrTrans->SetPosition(pos);
 	}
 
 
@@ -148,12 +148,12 @@ namespace basecross{
 	void SeekFarState::Enter(const shared_ptr<SeekObject>& Obj) {
 	}
 	void SeekFarState::Execute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrSeek = Obj->GetBehavior<SeekSteering>();
-		auto PtrSep = Obj->GetBehavior<SeparationSteering>();
-		auto Force = Obj->GetForce();
-		Force = PtrSeek->Execute(Force, Obj->GetVelocity(), Obj->GetTargetPos());
-		Force += PtrSep->Execute(Force);
-		Obj->SetForce(Force);
+		auto ptrSeek = Obj->GetBehavior<SeekSteering>();
+		auto ptrSep = Obj->GetBehavior<SeparationSteering>();
+		auto force = Obj->GetForce();
+		force = ptrSeek->Execute(force, Obj->GetVelocity(), Obj->GetTargetPos());
+		force += ptrSep->Execute(force);
+		Obj->SetForce(force);
 		Obj->ApplyForce();
 		float f = bsm::length(Obj->GetComponent<Transform>()->GetPosition() - Obj->GetTargetPos());
 		if (f < Obj->GetStateChangeSize()) {
@@ -174,12 +174,12 @@ namespace basecross{
 	void SeekNearState::Enter(const shared_ptr<SeekObject>& Obj) {
 	}
 	void SeekNearState::Execute(const shared_ptr<SeekObject>& Obj) {
-		auto PtrArrive = Obj->GetBehavior<ArriveSteering>();
-		auto PtrSep = Obj->GetBehavior<SeparationSteering>();
-		auto Force = Obj->GetForce();
-		Force = PtrArrive->Execute(Force, Obj->GetVelocity(), Obj->GetTargetPos());
-		Force += PtrSep->Execute(Force);
-		Obj->SetForce(Force);
+		auto ptrArrive = Obj->GetBehavior<ArriveSteering>();
+		auto ptrSep = Obj->GetBehavior<SeparationSteering>();
+		auto force = Obj->GetForce();
+		force = ptrArrive->Execute(force, Obj->GetVelocity(), Obj->GetTargetPos());
+		force += ptrSep->Execute(force);
+		Obj->SetForce(force);
 		Obj->ApplyForce();
 		float f = bsm::length(Obj->GetComponent<Transform>()->GetPosition() - Obj->GetTargetPos());
 		if (f >= Obj->GetStateChangeSize()) {

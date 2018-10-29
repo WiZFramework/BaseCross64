@@ -27,23 +27,23 @@ namespace basecross{
 	//初期化
 	void FixedPsBox::OnCreate() {
 
-		auto PtrTrans = GetComponent<Transform>();
+		auto ptrTrans = GetComponent<Transform>();
 
-		PtrTrans->SetScale(m_Scale);
-		PtrTrans->SetQuaternion(m_Qt);
-		PtrTrans->SetPosition(m_Position);
+		ptrTrans->SetScale(m_Scale);
+		ptrTrans->SetQuaternion(m_Qt);
+		ptrTrans->SetPosition(m_Position);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetOwnShadowActive(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetOwnShadowActive(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
 		//物理計算ボックス
-		PsBoxParam param(PtrTrans->GetWorldMatrix(), 0.0f, true, PsMotionType::MotionTypeFixed);
+		PsBoxParam param(ptrTrans->GetWorldMatrix(), 0.0f, true, PsMotionType::MotionTypeFixed);
 		auto PsPtr = AddComponent<RigidbodyBox>(param);
 	}
 
@@ -65,23 +65,23 @@ namespace basecross{
 	ActivePsBox::~ActivePsBox() {}
 	//初期化
 	void ActivePsBox::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
+		auto ptrTrans = GetComponent<Transform>();
 
-		PtrTrans->SetScale(m_Scale);
-		PtrTrans->SetQuaternion(m_Qt);
-		PtrTrans->SetPosition(m_Position);
+		ptrTrans->SetScale(m_Scale);
+		ptrTrans->SetQuaternion(m_Qt);
+		ptrTrans->SetPosition(m_Position);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetOwnShadowActive(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetOwnShadowActive(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
 		//物理計算ボックス
-		PsBoxParam param(PtrTrans->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
+		PsBoxParam param(ptrTrans->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
 		auto PsPtr = AddComponent<RigidbodyBox>(param);
 	}
 
@@ -104,25 +104,25 @@ namespace basecross{
 	//初期化
 	void ActivePsSphere::OnCreate() {
 
-		auto PtrTransform = GetComponent<Transform>();
+		auto ptrTransform = GetComponent<Transform>();
 
-		PtrTransform->SetScale(Vec3(m_Scale));
-		PtrTransform->SetQuaternion(m_Qt);
-		PtrTransform->SetPosition(m_Position);
+		ptrTransform->SetScale(Vec3(m_Scale));
+		ptrTransform->SetQuaternion(m_Qt);
+		ptrTransform->SetPosition(m_Position);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		PtrDraw->SetOwnShadowActive(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrDraw->SetOwnShadowActive(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
 
 		//物理計算球体
 		//WorldMatrixをもとにRigidbodySphereのパラメータを作成
-		PsSphereParam param(PtrTransform->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
+		PsSphereParam param(ptrTransform->GetWorldMatrix(), 1.0f, true, PsMotionType::MotionTypeActive);
 		auto PsPtr = AddComponent<RigidbodySphere>(param);
 	}
 

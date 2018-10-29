@@ -257,7 +257,7 @@ namespace basecross {
 	float Shadowmap::Impl::m_LightFar(300.0f);
 	float Shadowmap::Impl::m_ViewWidth(32.0f);
 	float Shadowmap::Impl::m_ViewHeight(32.0f);
-	float Shadowmap::Impl::m_PosAdjustment(0.2f);
+	float Shadowmap::Impl::m_PosAdjustment(0.1f);
 
 
 

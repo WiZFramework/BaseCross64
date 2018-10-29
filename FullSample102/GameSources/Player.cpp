@@ -23,48 +23,47 @@ namespace basecross{
 			//補間係数が0以下なら何もしない
 			return;
 		}
-		auto PtrTransform = GetComponent<Transform>();
+		auto ptrTransform = GetComponent<Transform>();
 		//回転の更新
 		if (Velocity.length() > 0.0f) {
-			bsm::Vec3 Temp = Velocity;
-			Temp.normalize();
-			float ToAngle = atan2(Temp.x, Temp.z);
-			Quat Qt;
-			Qt.rotationRollPitchYawFromVector(bsm::Vec3(0, ToAngle, 0));
-			Qt.normalize();
+			Vec3 temp = Velocity;
+			temp.normalize();
+			float toAngle = atan2(temp.x, temp.z);
+			Quat qt;
+			qt.rotationRollPitchYawFromVector(Vec3(0, toAngle, 0));
+			qt.normalize();
 			//現在の回転を取得
-			Quat NowQt = PtrTransform->GetQuaternion();
+			Quat nowQt = ptrTransform->GetQuaternion();
 			//現在と目標を補間
 			if (LerpFact >= 1.0f) {
-				NowQt = Qt;
+				nowQt = qt;
 			}
 			else {
 				//クオータニオンの補間処理
-				NowQt = XMQuaternionSlerp(NowQt, Qt, LerpFact);
+				nowQt = XMQuaternionSlerp(nowQt, qt, LerpFact);
 			}
-			PtrTransform->SetQuaternion(NowQt);
+			ptrTransform->SetQuaternion(nowQt);
 		}
 	}
 
 
 	Vec3 Player::GetMoveVector() const {
-		Vec3 Angle(0, 0, 0);
+		Vec3 angle(0, 0, 0);
 		//コントローラの取得
-		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (CntlVec[0].bConnected) {
-			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
-				float MoveLength = 0;	//動いた時のスピード
-				auto PtrTransform = GetComponent<Transform>();
-				auto PtrCamera = OnGetDrawCamera();
+		auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		if (cntlVec[0].bConnected) {
+			if (cntlVec[0].fThumbLX != 0 || cntlVec[0].fThumbLY != 0) {
+				auto ptrTransform = GetComponent<Transform>();
+				auto ptrCamera = OnGetDrawCamera();
 				//進行方向の向きを計算
-				Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
-				Front.y = 0;
-				Front.normalize();
+				Vec3 front = ptrTransform->GetPosition() - ptrCamera->GetEye();
+				front.y = 0;
+				front.normalize();
 				//進行方向向きからの角度を算出
-				float FrontAngle = atan2(Front.z, Front.x);
+				float FrontAngle = atan2(front.z, front.x);
 				//コントローラの向き計算
-				float MoveX = CntlVec[0].fThumbLX;
-				float MoveZ = CntlVec[0].fThumbLY;
+				float MoveX = cntlVec[0].fThumbLX;
+				float MoveZ = cntlVec[0].fThumbLY;
 				Vec2 MoveVec(MoveX, MoveZ);
 				float MoveSize = MoveVec.length();
 				//コントローラの向きから角度を計算
@@ -72,66 +71,66 @@ namespace basecross{
 				//トータルの角度を算出
 				float TotalAngle = FrontAngle + CntlAngle;
 				//角度からベクトルを作成
-				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+				angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
 				//正規化する
-				Angle.normalize();
+				angle.normalize();
 				//移動サイズを設定。
-				Angle *= MoveSize;
+				angle *= MoveSize;
 				//Y軸は変化させない
-				Angle.y = 0;
+				angle.y = 0;
 			}
 		}
-		return Angle;
+		return angle;
 	}
 
 
 	//初期化
 	void Player::OnCreate() {
 		//初期位置などの設定
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(m_Scale));	//直径25センチの球体
-		PtrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(m_Scale));	//直径25センチの球体
+		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
 		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
-		Vec3 FirstPos;
+		Vec3 firstPos;
 		if (!bkCamera) {
-			FirstPos = Vec3(0, m_Scale * 0.5f, 0);
+			firstPos = Vec3(0, m_Scale * 0.5f, 0);
 		}
 		else {
-			FirstPos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
+			firstPos = App::GetApp()->GetScene<Scene>()->GetBackupPlayerPos();
 		}
-		PtrTrans->SetPosition(FirstPos);
+		ptrTrans->SetPosition(firstPos);
 		//WorldMatrixをもとにRigidbodySphereのパラメータを作成
-		PsSphereParam param(PtrTrans->GetWorldMatrix(),1.0f,false, PsMotionType::MotionTypeActive);
+		PsSphereParam param(ptrTrans->GetWorldMatrix(),1.0f,false, PsMotionType::MotionTypeActive);
 		//RigidbodySphereコンポーネントを追加
-		auto PsPtr = AddComponent<RigidbodySphere>(param);
+		auto psPtr = AddComponent<RigidbodySphere>(param);
 		//自動的にTransformを設定するフラグは無し
-		PsPtr->SetAutoTransform(false);
+		psPtr->SetAutoTransform(false);
 
 		//文字列をつける
-		auto PtrString = AddComponent<StringSprite>();
-		PtrString->SetText(L"");
-		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
+		auto ptrString = AddComponent<StringSprite>();
+		ptrString->SetText(L"");
+		ptrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+		ptrDraw->SetTextureResource(L"TRACE_TX");
 
 		//透明処理
 		SetAlphaActive(true);
 		//カメラを得る
-		auto PtrCamera = dynamic_pointer_cast<MyCamera>(OnGetDrawCamera());
-		if (PtrCamera) {
+		auto ptrCamera = dynamic_pointer_cast<MyCamera>(OnGetDrawCamera());
+		if (ptrCamera) {
 			//MyCameraである
 			//MyCameraに注目するオブジェクト（プレイヤー）の設定
-			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
+			ptrCamera->SetTargetObject(GetThis<GameObject>());
+			ptrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 	}
 
@@ -139,29 +138,29 @@ namespace basecross{
 	void Player::OnUpdate() {
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
-		auto Vec = GetMoveVector();
-		auto PtrPs = GetComponent<RigidbodySphere>();
-		auto Velo = PtrPs->GetLinearVelocity();
+		auto vec = GetMoveVector();
+		auto ptrPs = GetComponent<RigidbodySphere>();
+		auto velo = ptrPs->GetLinearVelocity();
 		//xとzの速度を修正
-		Velo.x = Vec.x * 5.0f;
-		Velo.z = Vec.z * 5.0f;
+		velo.x = vec.x * 5.0f;
+		velo.z = vec.z * 5.0f;
 		//速度を設定
-		PtrPs->SetLinearVelocity(Velo);
+		ptrPs->SetLinearVelocity(velo);
 	}
 
 	//後更新
 	void Player::OnUpdate2() {
 		//RigidbodySphereからTransformへのパラメータの設定
 		//自動的に設定はされない設定になっているので自分で行う
-		auto PtrPs = GetComponent<RigidbodySphere>();
-		auto Ptr = GetComponent<Transform>();
+		auto ptrPs = GetComponent<RigidbodySphere>();
+		auto ptrTrans = GetComponent<Transform>();
 		//位置情報はそのまま設定
-		Ptr->SetPosition(PtrPs->GetPosition());
+		ptrTrans->SetPosition(ptrPs->GetPosition());
 		//回転の計算
-		Vec3 Angle = GetMoveVector();
-		if (Angle.length() > 0.0f) {
+		Vec3 angle = GetMoveVector();
+		if (angle.length() > 0.0f) {
 			//補間処理を行う回転。
-			RotToHead(Angle, 0.1f);
+			RotToHead(angle, 0.1f);
 		}
 		//文字列の表示
 		DrawStrings();
@@ -169,15 +168,15 @@ namespace basecross{
 
 	//Aボタンハンドラ
 	void  Player::OnPushA() {
-		auto Ptr = GetComponent<Transform>();
-		if (Ptr->GetPosition().y > 0.125f) {
+		auto ptrTrans = GetComponent<Transform>();
+		if (ptrTrans->GetPosition().y > 0.125f) {
 			//地面についてなければジャンプしない
 			return;
 		}
-		auto PtrPs = GetComponent<RigidbodySphere>();
-		auto Velo = PtrPs->GetLinearVelocity();
-		Velo += Vec3(0, 4.0f, 0.0);
-		PtrPs->SetLinearVelocity(Velo);
+		auto ptrPs = GetComponent<RigidbodySphere>();
+		auto velo = ptrPs->GetLinearVelocity();
+		velo += Vec3(0, 4.0f, 0.0);
+		ptrPs->SetLinearVelocity(velo);
 	}
 
 	//Bボタンハンドラ
@@ -192,30 +191,30 @@ namespace basecross{
 	void Player::DrawStrings() {
 
 		//文字列表示
-		wstring Mess(L"Bボタンで再読み込み\n");
+		wstring strMess(L"Bボタンで再読み込み\n");
 		//オブジェクト数
 		auto ObjCount = GetStage()->GetGameObjectVec().size();
-		wstring OBJ_COUNT(L"OBJ_COUNT: ");
-		OBJ_COUNT += Util::SizeTToWStr(ObjCount);
-		OBJ_COUNT += L"\n";
+		wstring  strObjCount(L"OBJ_COUNT: ");
+		strObjCount += Util::SizeTToWStr(ObjCount);
+		strObjCount += L"\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
-		wstring FPS(L"FPS: ");
-		FPS += Util::UintToWStr(fps);
-		FPS += L"\nElapsedTime: ";
+		wstring strFps(L"FPS: ");
+		strFps += Util::UintToWStr(fps);
+		strFps += L"\nElapsedTime: ";
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		FPS += Util::FloatToWStr(ElapsedTime);
-		FPS += L"\n";
+		strFps += Util::FloatToWStr(ElapsedTime);
+		strFps += L"\n";
 
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		wstring PositionStr(L"Position:\t");
-		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+		auto pos = GetComponent<Transform>()->GetPosition();
+		wstring strPos(L"Position:\t");
+		strPos += L"X=" + Util::FloatToWStr(pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+		strPos += L"Y=" + Util::FloatToWStr(pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+		strPos += L"Z=" + Util::FloatToWStr(pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring str = Mess + OBJ_COUNT + FPS + PositionStr;
+		wstring str = strMess + strObjCount + strFps + strPos;
 		//文字列をつける
-		auto PtrString = GetComponent<StringSprite>();
-		PtrString->SetText(str);
+		auto ptrString = GetComponent<StringSprite>();
+		ptrString->SetText(str);
 	}
 
 }

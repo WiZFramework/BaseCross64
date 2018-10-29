@@ -19,6 +19,8 @@ namespace basecross{
 		void DrawStrings();
 		//入力ハンドラー
 		InputHandler<Player> m_InputHandler;
+		//速度
+		Vec3 m_Velocity;
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -45,6 +47,8 @@ namespace basecross{
 		void MovePlayer();
 
 	};
+
+
 
 
 

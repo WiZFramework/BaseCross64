@@ -19,54 +19,54 @@ namespace basecross{
 	{}
 
 	Vec3 Player::GetMoveVector() const {
-		Vec3 Angle(0, 0, 0);
+		Vec3 angle(0, 0, 0);
 		//コントローラの取得
-		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (CntlVec[0].bConnected) {
-			if (CntlVec[0].fThumbLX != 0 || CntlVec[0].fThumbLY != 0) {
-				float MoveLength = 0;	//動いた時のスピード
-				auto PtrTransform = GetComponent<Transform>();
-				auto PtrCamera = OnGetDrawCamera();
+		auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+		if (cntlVec[0].bConnected) {
+			if (cntlVec[0].fThumbLX != 0 || cntlVec[0].fThumbLY != 0) {
+				float moveLength = 0;	//動いた時のスピード
+				auto ptrTransform = GetComponent<Transform>();
+				auto ptrCamera = OnGetDrawCamera();
 				//進行方向の向きを計算
-				Vec3 Front = PtrTransform->GetPosition() - PtrCamera->GetEye();
-				Front.y = 0;
-				Front.normalize();
+				auto front = ptrTransform->GetPosition() - ptrCamera->GetEye();
+				front.y = 0;
+				front.normalize();
 				//進行方向向きからの角度を算出
-				float FrontAngle = atan2(Front.z, Front.x);
+				float frontAngle = atan2(front.z, front.x);
 				//コントローラの向き計算
-				float MoveX = CntlVec[0].fThumbLX;
-				float MoveZ = CntlVec[0].fThumbLY;
-				Vec2 MoveVec(MoveX, MoveZ);
-				float MoveSize = MoveVec.length();
+				float moveX = cntlVec[0].fThumbLX;
+				float moveZ = cntlVec[0].fThumbLY;
+				Vec2 moveVec(moveX, moveZ);
+				float moveSize = moveVec.length();
 				//コントローラの向きから角度を計算
-				float CntlAngle = atan2(-MoveX, MoveZ);
+				float cntlAngle = atan2(-moveX, moveZ);
 				//トータルの角度を算出
-				float TotalAngle = FrontAngle + CntlAngle;
+				float totalAngle = frontAngle + cntlAngle;
 				//角度からベクトルを作成
-				Angle = Vec3(cos(TotalAngle), 0, sin(TotalAngle));
+				angle = Vec3(cos(totalAngle), 0, sin(totalAngle));
 				//正規化する
-				Angle.normalize();
+				angle.normalize();
 				//移動サイズを設定。
-				Angle *= MoveSize;
+				angle *= moveSize;
 				//Y軸は変化させない
-				Angle.y = 0;
+				angle.y = 0;
 			}
 		}
-		return Angle;
+		return angle;
 	}
 
 	void Player::MovePlayer() {
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		Vec3 Angle = GetMoveVector();
-		if (Angle.length() > 0.0f) {
-			auto Pos = GetComponent<Transform>()->GetPosition();
-			Pos += Angle * ElapsedTime *6.0f;
-			GetComponent<Transform>()->SetPosition(Pos);
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		auto angle = GetMoveVector();
+		if (angle.length() > 0.0f) {
+			auto pos = GetComponent<Transform>()->GetPosition();
+			pos += angle * elapsedTime * 6.0f;
+			GetComponent<Transform>()->SetPosition(pos);
 		}
 		//回転の計算
-		if (Angle.length() > 0.0f) {
-			auto UtilPtr = GetBehavior<UtilBehavior>();
-			UtilPtr->RotToHead(Angle, 1.0f);
+		if (angle.length() > 0.0f) {
+			auto utilPtr = GetBehavior<UtilBehavior>();
+			utilPtr->RotToHead(angle, 1.0f);
 		}
 	}
 
@@ -74,43 +74,43 @@ namespace basecross{
 	void Player::OnCreate() {
 
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(0, 0.125f, 0);
+		auto ptr = AddComponent<Transform>();
+		ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
+		ptr->SetRotation(0.0f, 0.0f, 0.0f);
+		ptr->SetPosition(0, 0.125f, 0);
 
 		//CollisionSphere衝突判定を付ける
-		auto PtrColl = AddComponent<CollisionSphere>();
+		auto ptrColl = AddComponent<CollisionSphere>();
 		//重力をつける
-		auto PtrGra = AddComponent<Gravity>();
+		auto ptrGra = AddComponent<Gravity>();
 
 
 		//文字列をつける
-		auto PtrString = AddComponent<StringSprite>();
-		PtrString->SetText(L"");
-		PtrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
+		auto ptrString = AddComponent<StringSprite>();
+		ptrString->SetText(L"");
+		ptrString->SetTextRect(Rect2D<float>(16.0f, 16.0f, 640.0f, 480.0f));
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto shadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		shadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 
 		//描画コンポーネントの設定
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		PtrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrDraw->SetFogEnabled(true);
 		//描画するテクスチャを設定
-		PtrDraw->SetTextureResource(L"TRACE_TX");
+		ptrDraw->SetTextureResource(L"TRACE_TX");
 		SetAlphaActive(true);
 
 		//カメラを得る
-		auto PtrCamera = dynamic_pointer_cast<MyCamera>(OnGetDrawCamera());
-		if (PtrCamera) {
+		auto ptrCamera = dynamic_pointer_cast<MyCamera>(OnGetDrawCamera());
+		if (ptrCamera) {
 			//MyCameraである
 			//MyCameraに注目するオブジェクト（プレイヤー）の設定
-			PtrCamera->SetTargetObject(GetThis<GameObject>());
-			PtrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
+			ptrCamera->SetTargetObject(GetThis<GameObject>());
+			ptrCamera->SetTargetToAt(Vec3(0, 0.25f, 0));
 		}
 	}
 
@@ -119,18 +119,17 @@ namespace basecross{
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
 		MovePlayer();
-		DrawStrings();
 	}
 
 	void Player::OnUpdate2() {
 		//文字列の表示
-//		DrawStrings();
+		DrawStrings();
 	}
 
 	//Aボタン
 	void Player::OnPushA() {
-		auto Grav = GetComponent<Gravity>();
-		Grav->StartJump(Vec3(0,4.0f,0));
+		auto grav = GetComponent<Gravity>();
+		grav->StartJump(Vec3(0,4.0f,0));
 	}
 
 	//文字列の表示
@@ -138,35 +137,28 @@ namespace basecross{
 
 		//文字列表示
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
-		wstring FPS(L"FPS: ");
-		FPS += Util::UintToWStr(fps);
-		FPS += L"\nElapsedTime: ";
+		wstring fpsStr(L"FPS: ");
+		fpsStr += Util::UintToWStr(fps);
+		fpsStr += L"\nElapsedTime: ";
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		FPS += Util::FloatToWStr(ElapsedTime);
-		FPS += L"\n";
+		fpsStr += Util::FloatToWStr(ElapsedTime);
+		fpsStr += L"\n";
 
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		wstring PositionStr(L"Position:\t");
-		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+		auto pos = GetComponent<Transform>()->GetPosition();
+		wstring positionStr(L"Position:\t");
+		positionStr += L"X=" + Util::FloatToWStr(pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+		positionStr += L"Y=" + Util::FloatToWStr(pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+		positionStr += L"Z=" + Util::FloatToWStr(pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		auto Velo = GetComponent<Transform>()->GetVelocity();
-		wstring VelocityStr(L"Velocity:\t");
-		VelocityStr += L"X=" + Util::FloatToWStr(Velo.x, 6, Util::FloatModify::Fixed) + L",\t";
-		VelocityStr += L"Y=" + Util::FloatToWStr(Velo.y, 6, Util::FloatModify::Fixed) + L",\t";
-		VelocityStr += L"Z=" + Util::FloatToWStr(Velo.z, 6, Util::FloatModify::Fixed) + L"\n";
-
-
-		wstring GravStr(L"GravityVelocoty:\t");
-		auto GravVelocity = GetComponent<Gravity>()->GetGravityVelocity();
-		GravStr += L"X=" + Util::FloatToWStr(GravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Y=" + Util::FloatToWStr(GravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
-		GravStr += L"Z=" + Util::FloatToWStr(GravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-		wstring str = FPS + PositionStr + VelocityStr + GravStr;
+		wstring gravStr(L"GravityVelocoty:\t");
+		auto gravVelocity = GetComponent<Gravity>()->GetGravityVelocity();
+		gravStr += L"X=" + Util::FloatToWStr(gravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
+		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
+		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+		wstring str = fpsStr + positionStr + gravStr;
 		//文字列コンポーネントの取得
-		auto PtrString = GetComponent<StringSprite>();
-		PtrString->SetText(str);
+		auto ptrString = GetComponent<StringSprite>();
+		ptrString->SetText(str);
 	}
 
 }

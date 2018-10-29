@@ -17,43 +17,41 @@ namespace basecross {
 
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
-		auto PtrView = CreateView<SingleView>();
+		auto ptrView = CreateView<SingleView>();
 		//ビューのカメラの設定
 		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
 		if (!bkCamera) {
-			auto PtrMyCamera = ObjectFactory::Create<MyCamera>(10.0f);
-			PtrView->SetCamera(PtrMyCamera);
-			PtrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
-			PtrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+			auto ptrMyCamera = ObjectFactory::Create<MyCamera>(10.0f);
+			ptrView->SetCamera(ptrMyCamera);
+			ptrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+			ptrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		}
 		else {
-			PtrView->SetCamera(bkCamera);
+			ptrView->SetCamera(bkCamera);
 		}
 		//マルチライトの作成
-		auto PtrMultiLight = CreateLight<MultiLight>();
+		auto ptrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
-		PtrMultiLight->SetDefaultLighting();
+		ptrMultiLight->SetDefaultLighting();
 
-		//シャドウマップのライトの高さを調整(ステージが広いため)
-		Shadowmap::SetLightHeight(50.0f);
 	}
 
 
 	//物理計算オブジェクトの作成
 	void GameStage::CreatePhysicsObjects() {
-		Quat Qt1, Qt2, Qt3, Qt4;
-		Qt1.rotationZ(2.0f);
-		Qt2.rotationX(0.7f);
-		Qt3.rotationZ(-2.0f);
-		Qt4.rotationX(-0.7f);
+		Quat qt1, qt2, qt3, qt4;
+		qt1.rotationZ(2.0f);
+		qt2.rotationX(0.7f);
+		qt3.rotationZ(-2.0f);
+		qt4.rotationX(-0.7f);
 		//下の台
 		AddGameObject<FixedPsBox>(Vec3(30.0f, 1.0f, 30.0f), Quat(), Vec3(0.0f, -0.5f, 0.0f));
 		//動かない台
 		AddGameObject<FixedPsBox>(Vec3(3.0f, 1.0f, 3.0f), Quat(), Vec3(0.0f, 0.5f, 3.0f));
 		//上から降ってくるボックス
 		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Quat(), Vec3(2.0f, 1.0f, 4.0f));
-		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), Qt2, Vec3(1.0f, 3.0f, 3.0f));
-		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), Qt4, Vec3(1.0f, 11.0f, 8.0f));
+		AddGameObject<ActivePsBox>(Vec3(2.0f, 1.0f, 1.0f), qt2, Vec3(1.0f, 3.0f, 3.0f));
+		AddGameObject<ActivePsBox>(Vec3(1.0f, 1.0f, 1.0f), qt4, Vec3(1.0f, 11.0f, 8.0f));
 		//上から降ってくる球体
 		AddGameObject<ActivePsSphere>(1.0f, Quat(), Vec3(0.0f, 6.0f, 5.0f));
 
@@ -62,9 +60,9 @@ namespace basecross {
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>();
+		auto ptrPlayer = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
-		SetSharedGameObject(L"Player", PlayerPtr);
+		SetSharedGameObject(L"Player", ptrPlayer);
 	}
 
 

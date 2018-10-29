@@ -13,19 +13,19 @@ namespace basecross{
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	void Scene::CreateResourses() {
-		wstring DataDir;
+		wstring dataDir;
 		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
+		App::GetApp()->GetAssetsDirectory(dataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"sky.jpg";
+		//App::GetApp()->GetDataDirectory(dataDir);
+		wstring strTexture = dataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"trace.png";
+		strTexture = dataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-		strTexture = DataDir + L"trace2.png";
+		strTexture = dataDir + L"trace2.png";
 		App::GetApp()->RegisterTexture(L"TRACE2_TX", strTexture);
 
-		strTexture = DataDir + L"wall.jpg";
+		strTexture = dataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
 
 	}
