@@ -12,22 +12,10 @@ namespace basecross {
 	//	ゲームステージクラス実体
 	//--------------------------------------------------------------------------------------
 	void GameStage::CreateViewLight() {
+		//ビューの作成
 		auto PtrView = CreateView<SingleView>();
-/*
-		//ビューのカメラの設定
-		auto PtrCamera = ObjectFactory::Create<Camera>();
-		PtrView->SetCamera(PtrCamera);
-		PtrCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
-		PtrCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
-		//マルチライトの作成
-		auto PtrMultiLight = CreateLight<MultiLight>();
-		//デフォルトのライティングを指定
-		PtrMultiLight->SetDefaultLighting();
-*/
-
 		//シャドウマップは使用しない
 		SetShadowmapDraw(false);
-
 	}
 
 	//半透明のスプライト作成
@@ -80,8 +68,8 @@ namespace basecross {
 	}
 
 	void GameStage::OnUpdate() {
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		m_TotalTime += ElapsedTime;
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += elapsedTime;
 		if (m_TotalTime >= 10000.0f) {
 			m_TotalTime = 0.0f;
 		}

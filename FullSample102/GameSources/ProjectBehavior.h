@@ -15,14 +15,14 @@ namespace basecross {
 	struct InputHandler {
 		void PushHandle(const shared_ptr<T>& Obj) {
 			//コントローラの取得
-			auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-			if (CntlVec[0].bConnected) {
+			auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+			if (cntlVec[0].bConnected) {
 				//Aボタン
-				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+				if (cntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
 					Obj->OnPushA();
 				}
 				//Bボタン
-				else if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+				else if (cntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
 					Obj->OnPushB();
 				}
 			}

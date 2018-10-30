@@ -28,24 +28,24 @@ namespace basecross{
 
 	//初期化
 	void FixedBox::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
-		PtrTransform->SetScale(m_Scale);
-		PtrTransform->SetRotation(m_Rotation);
-		PtrTransform->SetPosition(m_Position);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(m_Scale);
+		ptrTrans->SetRotation(m_Rotation);
+		ptrTrans->SetPosition(m_Position);
 		//OBB衝突j判定を付ける
-		auto PtrColl = AddComponent<CollisionObb>();
-		PtrColl->SetFixed(true);
+		auto ptrColl = AddComponent<CollisionObb>();
+		ptrColl->SetFixed(true);
 		//タグをつける
 		AddTag(L"FixedBox");
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
-		PtrDraw->SetOwnShadowActive(true);
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
+		ptrDraw->SetOwnShadowActive(true);
 
 	}
 
@@ -63,41 +63,41 @@ namespace basecross{
 
 	//初期化
 	void PcSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPCStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
+		auto ptrDraw = AddComponent<BcPCStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
 		vector<VertexPositionNormalTexture> vertices;
-		vector<VertexPositionColor> new_vertices;
+		vector<VertexPositionColor> newVertices;
 		vector<uint16_t> indices;
 		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
 		for (size_t i = 0; i < vertices.size(); i++) {
-			VertexPositionColor new_v;
-			new_v.position = vertices[i].position;
-			new_v.color = Col4(
-				new_v.position.x * 2.0f,
-				new_v.position.y * 2.0f,
-				new_v.position.z * 2.0f,
+			VertexPositionColor newV;
+			newV.position = vertices[i].position;
+			newV.color = Col4(
+				newV.position.x * 2.0f,
+				newV.position.y * 2.0f,
+				newV.position.z * 2.0f,
 				1.0f);
-			new_vertices.push_back(new_v);
+			newVertices.push_back(newV);
 
 		}
-		PtrDraw->CreateOriginalMesh(new_vertices, indices);
-		PtrDraw->SetOriginalMeshUse(true);
+		ptrDraw->CreateOriginalMesh(newVertices, indices);
+		ptrDraw->SetOriginalMeshUse(true);
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(ptrDraw->GetOriginalMeshResource());
 	}
 
 	void PcSphere::OnUpdate() {
-		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionColor, BcPCStaticDraw>();
+		auto beh = GetBehavior<VertexBehavior>();
+		beh->ExpandAndContract<VertexPositionColor, BcPCStaticDraw>();
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -113,37 +113,37 @@ namespace basecross{
 
 	//初期化
 	void PnSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPNStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
+		auto ptrDraw = AddComponent<BcPNStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
 		vector<VertexPositionNormalTexture> vertices;
-		vector<VertexPositionNormal> new_vertices;
+		vector<VertexPositionNormal> newVertices;
 		vector<uint16_t> indices;
 		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
 		for (size_t i = 0; i < vertices.size(); i++) {
-			VertexPositionNormal new_v;
-			new_v.position = vertices[i].position;
-			new_v.normal = vertices[i].normal;
-			new_vertices.push_back(new_v);
+			VertexPositionNormal newV;
+			newV.position = vertices[i].position;
+			newV.normal = vertices[i].normal;
+			newVertices.push_back(newV);
 
 		}
-		PtrDraw->CreateOriginalMesh(new_vertices, indices);
-		PtrDraw->SetOriginalMeshUse(true);
+		ptrDraw->CreateOriginalMesh(newVertices, indices);
+		ptrDraw->SetOriginalMeshUse(true);
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(ptrDraw->GetOriginalMeshResource());
 	}
 
 	void PnSphere::OnUpdate() {
-		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionNormal, BcPNStaticDraw>();
+		auto beh = GetBehavior<VertexBehavior>();
+		beh->ExpandAndContract<VertexPositionNormal, BcPNStaticDraw>();
 	}
 
 
@@ -160,36 +160,36 @@ namespace basecross{
 
 	//初期化
 	void PtSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
+		auto ptrDraw = AddComponent<BcPTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
 		vector<VertexPositionNormalTexture> vertices;
-		vector<VertexPositionTexture> new_vertices;
+		vector<VertexPositionTexture> newVertices;
 		vector<uint16_t> indices;
 		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
 		for (size_t i = 0; i < vertices.size(); i++) {
-			VertexPositionTexture new_v;
-			new_v.position = vertices[i].position;
-			new_v.textureCoordinate = vertices[i].textureCoordinate;
-			new_vertices.push_back(new_v);
+			VertexPositionTexture newV;
+			newV.position = vertices[i].position;
+			newV.textureCoordinate = vertices[i].textureCoordinate;
+			newVertices.push_back(newV);
 		}
-		PtrDraw->CreateOriginalMesh(new_vertices, indices);
-		PtrDraw->SetOriginalMeshUse(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		ptrDraw->CreateOriginalMesh(newVertices, indices);
+		ptrDraw->SetOriginalMeshUse(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(ptrDraw->GetOriginalMeshResource());
 	}
 	void PtSphere::OnUpdate() {
-		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionTexture, BcPTStaticDraw>();
+		auto beh = GetBehavior<VertexBehavior>();
+		beh->ExpandAndContract<VertexPositionTexture, BcPTStaticDraw>();
 	}
 
 
@@ -206,42 +206,42 @@ namespace basecross{
 
 	//初期化
 	void PctSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPCTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
+		auto ptrDraw = AddComponent<BcPCTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
 		vector<VertexPositionNormalTexture> vertices;
-		vector<VertexPositionColorTexture> new_vertices;
+		vector<VertexPositionColorTexture> newVertices;
 		vector<uint16_t> indices;
 		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
 		for (size_t i = 0; i < vertices.size(); i++) {
-			VertexPositionColorTexture new_v;
-			new_v.position = vertices[i].position;
-			new_v.textureCoordinate = vertices[i].textureCoordinate;
-			new_v.color = Col4(
-				new_v.position.x * 2.0f,
-				new_v.position.y * 2.0f,
-				new_v.position.z * 2.0f,
+			VertexPositionColorTexture newV;
+			newV.position = vertices[i].position;
+			newV.textureCoordinate = vertices[i].textureCoordinate;
+			newV.color = Col4(
+				newV.position.x * 2.0f,
+				newV.position.y * 2.0f,
+				newV.position.z * 2.0f,
 				1.0f);
-			new_vertices.push_back(new_v);
+			newVertices.push_back(newV);
 		}
-		PtrDraw->CreateOriginalMesh(new_vertices, indices);
-		PtrDraw->SetOriginalMeshUse(true);
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		ptrDraw->CreateOriginalMesh(newVertices, indices);
+		ptrDraw->SetOriginalMeshUse(true);
+		ptrDraw->SetTextureResource(L"SKY_TX");
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(PtrDraw->GetOriginalMeshResource());
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(ptrDraw->GetOriginalMeshResource());
 	}
 
 	void PctSphere::OnUpdate() {
-		auto Beh = GetBehavior<VertexBehavior>();
-		Beh->ExpandAndContract<VertexPositionColorTexture, BcPCTStaticDraw>();
+		auto beh = GetBehavior<VertexBehavior>();
+		beh->ExpandAndContract<VertexPositionColorTexture, BcPCTStaticDraw>();
 	}
 
 
@@ -260,22 +260,23 @@ namespace basecross{
 
 	//初期化
 	void PntSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrDraw->SetOwnShadowActive(true);
 		if (m_TextureUse) {
-			PtrDraw->SetTextureResource(L"SKY_TX");
+			ptrDraw->SetTextureResource(L"SKY_TX");
 		}
 	}
 
@@ -292,24 +293,24 @@ namespace basecross{
 	PntSpSphere::~PntSpSphere() {}
 	//初期化
 	void PntSpSphere::OnCreate() {
-		auto PtrTrans = GetComponent<Transform>();
-		PtrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
-		Quat Qt;
-		Qt.identity();
-		PtrTrans->SetQuaternion(Qt);
-		PtrTrans->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(1.0f, 1.0f, 1.0f));
+		Quat qt;
+		qt.identity();
+		ptrTrans->SetQuaternion(qt);
+		ptrTrans->SetPosition(m_StartPos);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 
 		//描画コンポーネント
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetSpecularColorAndPower(Col4(1.0f, 1.0f, 1.0f, 1.0f));
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetSpecularColorAndPower(Col4(1.0f, 1.0f, 1.0f, 1.0f));
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		if (m_TextureUse) {
-			PtrDraw->SetTextureResource(L"SKY_TX");
+			ptrDraw->SetTextureResource(L"SKY_TX");
 		}
 	}
 
@@ -328,13 +329,13 @@ namespace basecross{
 	//初期化
 	void StaticChara::OnCreate() {
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.5f, 0.5f, 0.5f);
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(0.5f, 0.5f, 0.5f);
+		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		ptrTrans->SetPosition(m_StartPos);
 
-		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.affineTransformation(
+		Mat4x4 spanMat; // モデルとトランスフォームの間の差分行列
+		spanMat.affineTransformation(
 			Vec3(1.0f, 1.0f, 1.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
@@ -342,23 +343,23 @@ namespace basecross{
 		);
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"MODEL_MESH");
-		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+		ptrShadow->SetMeshResource(L"MODEL_MESH");
+		ptrShadow->SetMeshToTransformMatrix(spanMat);
 
 		if (m_TamgentUse) {
-			auto PtrDraw = AddComponent<BcPNTnTStaticModelDraw>();
-			PtrDraw->SetFogEnabled(true);
-			PtrDraw->SetMeshResource(L"MODEL_MESH_WITH_TAN");
-			PtrDraw->SetNormalMapTextureResource(L"MODEL_NORMAL_TX");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			auto ptrDraw = AddComponent<BcPNTnTStaticModelDraw>();
+			ptrDraw->SetFogEnabled(true);
+			ptrDraw->SetMeshResource(L"MODEL_MESH_WITH_TAN");
+			ptrDraw->SetNormalMapTextureResource(L"MODEL_NORMAL_TX");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 		}
 		else {
-			auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
-			PtrDraw->SetFogEnabled(true);
-			PtrDraw->SetMeshResource(L"MODEL_MESH");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			auto ptrDraw = AddComponent<BcPNTStaticModelDraw>();
+			ptrDraw->SetFogEnabled(true);
+			ptrDraw->SetMeshResource(L"MODEL_MESH");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 		}
 	}
 
@@ -376,13 +377,13 @@ namespace basecross{
 	//初期化
 	void StaticMultiMeshChara::OnCreate() {
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.5f, 0.5f, 0.5f);
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(0.5f, 0.5f, 0.5f);
+		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		ptrTrans->SetPosition(m_StartPos);
 
-		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.affineTransformation(
+		Mat4x4 spanMat; // モデルとトランスフォームの間の差分行列
+		spanMat.affineTransformation(
 			Vec3(1.0f, 1.0f, 1.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
@@ -390,23 +391,23 @@ namespace basecross{
 		);
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMultiMeshResource(L"ObjectOnly_MESH");
-		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+		ptrShadow->SetMultiMeshResource(L"ObjectOnly_MESH");
+		ptrShadow->SetMeshToTransformMatrix(spanMat);
 
 		if (m_TamgentUse) {
-			auto PtrDraw = AddComponent<BcPNTnTStaticModelDraw>();
-			PtrDraw->SetFogEnabled(true);
-			PtrDraw->SetMultiMeshResource(L"ObjectOnly_MESH_WITH_TAN");
-			PtrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			auto ptrDraw = AddComponent<BcPNTnTStaticModelDraw>();
+			ptrDraw->SetFogEnabled(true);
+			ptrDraw->SetMultiMeshResource(L"ObjectOnly_MESH_WITH_TAN");
+			ptrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 		}
 		else {
-			auto PtrDraw = AddComponent<BcPNTStaticModelDraw>();
-			PtrDraw->SetFogEnabled(true);
-			PtrDraw->SetMultiMeshResource(L"ObjectOnly_MESH");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			auto ptrDraw = AddComponent<BcPNTStaticModelDraw>();
+			ptrDraw->SetFogEnabled(true);
+			ptrDraw->SetMultiMeshResource(L"ObjectOnly_MESH");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 		}
 	}
 
@@ -428,13 +429,13 @@ namespace basecross{
 	//初期化
 	void BoneChara::OnCreate() {
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.5f, 0.5f, 0.5f);
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(0.5f, 0.5f, 0.5f);
+		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		ptrTrans->SetPosition(m_StartPos);
 
-		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.affineTransformation(
+		Mat4x4 spanMat; // モデルとトランスフォームの間の差分行列
+		spanMat.affineTransformation(
 			Vec3(1.0f, 1.0f, 1.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
@@ -442,33 +443,33 @@ namespace basecross{
 		);
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMeshResource(L"Chara_R_MESH");
-		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+		ptrShadow->SetMeshResource(L"Chara_R_MESH");
+		ptrShadow->SetMeshToTransformMatrix(spanMat);
 
 		if (m_TamgentUse) {
 			//描画コンポーネントの設定
-			auto PtrDraw = AddComponent<BcPNTnTBoneModelDraw>();
-			PtrDraw->SetFogEnabled(true);
+			auto ptrDraw = AddComponent<BcPNTnTBoneModelDraw>();
+			ptrDraw->SetFogEnabled(true);
 			//描画するメッシュを設定
-			PtrDraw->SetMeshResource(L"Chara_R_MESH_WITH_TAN");
-			PtrDraw->SetNormalMapTextureResource(L"Chara_R_NORMAL_TX");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
-			PtrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
-			PtrDraw->ChangeCurrentAnimation(L"Default");
+			ptrDraw->SetMeshResource(L"Chara_R_MESH_WITH_TAN");
+			ptrDraw->SetNormalMapTextureResource(L"Chara_R_NORMAL_TX");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
+			ptrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
+			ptrDraw->ChangeCurrentAnimation(L"Default");
 		}
 		else {
 			//描画コンポーネントの設定
-			auto PtrDraw = AddComponent<BcPNTBoneModelDraw>();
-			PtrDraw->SetFogEnabled(true);
+			auto ptrDraw = AddComponent<BcPNTBoneModelDraw>();
+			ptrDraw->SetFogEnabled(true);
 			//描画するメッシュを設定
-			PtrDraw->SetMeshResource(L"Chara_R_MESH");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			ptrDraw->SetMeshResource(L"Chara_R_MESH");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 
-			PtrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
-			PtrDraw->ChangeCurrentAnimation(L"Default");
+			ptrDraw->AddAnimation(L"Default", 0, 100, true, 20.0f);
+			ptrDraw->ChangeCurrentAnimation(L"Default");
 
 		}
 		//透明処理
@@ -477,17 +478,15 @@ namespace basecross{
 
 	//更新
 	void BoneChara::OnUpdate() {
+		float elapsedTime = App::GetApp()->GetElapsedTime();
 		//アニメーションを更新する
 		if (m_TamgentUse) {
-			auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
-			PtrDraw->UpdateAnimation(ElapsedTime);
-
+			auto ptrDraw = GetComponent<BcPNTnTBoneModelDraw>();
+			ptrDraw->UpdateAnimation(elapsedTime);
 		}
 		else {
-			auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
-			PtrDraw->UpdateAnimation(ElapsedTime);
+			auto ptrDraw = GetComponent<BcPNTBoneModelDraw>();
+			ptrDraw->UpdateAnimation(elapsedTime);
 		}
 	}
 
@@ -507,13 +506,13 @@ namespace basecross{
 	//初期化
 	void BoneMultiMeshChara::OnCreate() {
 		//初期位置などの設定
-		auto Ptr = AddComponent<Transform>();
-		Ptr->SetScale(0.5f, 0.5f, 0.5f);
-		Ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		Ptr->SetPosition(m_StartPos);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(0.5f, 0.5f, 0.5f);
+		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+		ptrTrans->SetPosition(m_StartPos);
 
-		Mat4x4 SpanMat; // モデルとトランスフォームの間の差分行列
-		SpanMat.affineTransformation(
+		Mat4x4 spanMat; // モデルとトランスフォームの間の差分行列
+		spanMat.affineTransformation(
 			Vec3(1.0f, 1.0f, 1.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
 			Vec3(0.0f, 0.0f, 0.0f),
@@ -521,51 +520,50 @@ namespace basecross{
 		);
 
 		//影をつける（シャドウマップを描画する）
-		auto ShadowPtr = AddComponent<Shadowmap>();
+		auto ptrShadow = AddComponent<Shadowmap>();
 
 		//影の形（メッシュ）を設定
-		ShadowPtr->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
-		ShadowPtr->SetMeshToTransformMatrix(SpanMat);
+		ptrShadow->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
+		ptrShadow->SetMeshToTransformMatrix(spanMat);
 
 		if (m_TamgentUse) {
 			//描画コンポーネントの設定
-			auto PtrDraw = AddComponent<BcPNTnTBoneModelDraw>();
-			PtrDraw->SetFogEnabled(true);
+			auto ptrDraw = AddComponent<BcPNTnTBoneModelDraw>();
+			ptrDraw->SetFogEnabled(true);
 			//描画するメッシュを設定
-			PtrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH_WITH_TAN");
-			PtrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
-			PtrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
-			PtrDraw->ChangeCurrentAnimation(L"Default");
+			ptrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH_WITH_TAN");
+			ptrDraw->SetNormalMapTextureResource(L"OBJECT_NORMAL_TX");
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
+			ptrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
+			ptrDraw->ChangeCurrentAnimation(L"Default");
 		}
 		else {
 			//描画コンポーネントの設定
-			auto PtrDraw = AddComponent<BcPNTBoneModelDraw>();
-			PtrDraw->SetFogEnabled(true);
+			auto ptrDraw = AddComponent<BcPNTBoneModelDraw>();
+			ptrDraw->SetFogEnabled(true);
 			//描画するメッシュを設定
-			PtrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
-			PtrDraw->SetSamplerState(SamplerState::LinearWrap);
-			PtrDraw->SetMeshToTransformMatrix(SpanMat);
+			ptrDraw->SetMultiMeshResource(L"Object_WalkAnimation_MESH");
+			ptrDraw->SetSamplerState(SamplerState::LinearWrap);
+			ptrDraw->SetMeshToTransformMatrix(spanMat);
 
-			PtrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
-			PtrDraw->ChangeCurrentAnimation(L"Default");
+			ptrDraw->AddAnimation(L"Default", 0, 30, true, 10.0f);
+			ptrDraw->ChangeCurrentAnimation(L"Default");
 
 		}
 	}
 
 	//更新
 	void BoneMultiMeshChara::OnUpdate() {
+		float elapsedTime = App::GetApp()->GetElapsedTime();
 		//アニメーションを更新する
 		if (m_TamgentUse) {
-			auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
-			PtrDraw->UpdateAnimation(ElapsedTime);
+			auto ptrDraw = GetComponent<BcPNTnTBoneModelDraw>();
+			ptrDraw->UpdateAnimation(elapsedTime);
 
 		}
 		else {
-			auto PtrDraw = GetComponent<BcPNTBoneModelDraw>();
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
-			PtrDraw->UpdateAnimation(ElapsedTime);
+			auto ptrDraw = GetComponent<BcPNTBoneModelDraw>();
+			ptrDraw->UpdateAnimation(elapsedTime);
 		}
 	}
 

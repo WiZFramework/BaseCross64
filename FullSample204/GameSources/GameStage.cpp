@@ -14,23 +14,23 @@ namespace basecross {
 
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
-		auto PtrView = CreateView<SingleView>();
+		auto ptrView = CreateView<SingleView>();
 		//ビューのカメラの設定
-		auto PttMyCamera = ObjectFactory::Create<MyCamera>();
-		PtrView->SetCamera(PttMyCamera);
-		PttMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
-		PttMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+		auto ptrMyCamera = ObjectFactory::Create<MyCamera>();
+		ptrView->SetCamera(ptrMyCamera);
+		ptrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+		ptrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
-		auto PtrMultiLight = CreateLight<MultiLight>();
+		auto ptrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
-		PtrMultiLight->SetDefaultLighting();
+		ptrMultiLight->SetDefaultLighting();
 	}
 
 
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vec3> > Vec = {
+		vector< vector<Vec3> > vec = {
 			{
 				Vec3(50.0f, 1.0f, 50.0f),
 				Vec3(0.0f, 0.0f, 0.0f),
@@ -38,7 +38,7 @@ namespace basecross {
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec) {
+		for (auto v : vec) {
 			AddGameObject<FixedBox>(v[0], v[1], v[2]);
 		}
 	}
@@ -46,7 +46,7 @@ namespace basecross {
 	//障害物球の作成
 	void GameStage::CreateFixedSphere() {
 		//配列の初期化
-		vector< vector<Vec3> > Vec = {
+		vector< vector<Vec3> > vec = {
 			{
 				Vec3(0.0f, 0.0f, 0.0f),
 				Vec3(5.0f, 0.0f, 10.0f)
@@ -65,7 +65,7 @@ namespace basecross {
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec) {
+		for (auto v : vec) {
 			AddGameObject<FixedSphere>(1.0f, v[0], v[1]);
 		}
 
@@ -76,9 +76,9 @@ namespace basecross {
 	//追いかけるオブジェクトの作成
 	void GameStage::CreateSeekObject() {
 		//オブジェクトのグループを作成する
-		auto Group = CreateSharedObjectGroup(L"ObjGroup");
+		auto group = CreateSharedObjectGroup(L"ObjGroup");
 		//配列の初期化
-		vector<Vec3> Vec = {
+		vector<Vec3> vec = {
 			{ 0, 0.125f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
@@ -86,8 +86,8 @@ namespace basecross {
 		};
 
 		//配置オブジェクトの作成
-		for (size_t count = 0; count < Vec.size(); count++) {
-			auto Ptr = AddGameObject<SeekObject>(Vec[count]);
+		for (size_t count = 0; count < vec.size(); count++) {
+			AddGameObject<SeekObject>(vec[count]);
 		}
 
 	}
@@ -95,13 +95,13 @@ namespace basecross {
 	//追跡するオブジェクトの作成
 	void GameStage::CreatePursuitObject() {
 		//配列の初期化
-		vector<Vec3> Vec = {
+		vector<Vec3> vec = {
 			{ 10.0f, 0.125f, 10.0f },
 		};
 
 		//配置オブジェクトの作成
-		for (size_t count = 0; count < Vec.size(); count++) {
-			auto Ptr = AddGameObject<PursuitObject>(Vec[count]);
+		for (size_t count = 0; count < vec.size(); count++) {
+			AddGameObject<PursuitObject>(vec[count]);
 		}
 
 	}
@@ -109,13 +109,13 @@ namespace basecross {
 	//経路巡回するオブジェクトの作成
 	void GameStage::CreateFollowPathObject() {
 		//配列の初期化
-		vector<Vec3> Vec = {
+		vector<Vec3> vec = {
 			{ -10.0f, 0.125f, 10.0f },
 		};
 
 		//配置オブジェクトの作成
-		for (size_t count = 0; count < Vec.size(); count++) {
-			auto Ptr = AddGameObject<FollowPathObject>(Vec[count]);
+		for (size_t count = 0; count < vec.size(); count++) {
+			AddGameObject<FollowPathObject>(vec[count]);
 		}
 
 	}
@@ -125,10 +125,10 @@ namespace basecross {
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>();
+		auto ptrPlayer = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
-		SetSharedGameObject(L"Player", PlayerPtr);
-		PlayerPtr->AddTag(L"Player");
+		SetSharedGameObject(L"Player", ptrPlayer);
+		ptrPlayer->AddTag(L"Player");
 	}
 
 

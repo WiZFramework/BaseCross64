@@ -13,22 +13,22 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
-		auto PtrView = CreateView<SingleView>();
+		auto ptrView = CreateView<SingleView>();
 		//ビューのカメラの設定
-		auto PttMyCamera = ObjectFactory::Create<MyCamera>();
-		PtrView->SetCamera(PttMyCamera);
-		PttMyCamera->SetEye(Vec3(0.0f, 7.0f, -7.0f));
-		PttMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+		auto ptrMyCamera = ObjectFactory::Create<MyCamera>();
+		ptrView->SetCamera(ptrMyCamera);
+		ptrMyCamera->SetEye(Vec3(0.0f, 7.0f, -7.0f));
+		ptrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
 		//マルチライトの作成
-		auto PtrMultiLight = CreateLight<MultiLight>();
+		auto ptrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
-		PtrMultiLight->SetDefaultLighting();
+		ptrMultiLight->SetDefaultLighting();
 	}
 
 	//固定のボックスの作成
 	void GameStage::CreateFixedBox() {
 		//配列の初期化
-		vector< vector<Vec3> > Vec = {
+		vector< vector<Vec3> > vec = {
 			{
 				Vec3(50.0f, 1.0f, 50.0f),
 				Vec3(0.0f, 0.0f, 0.0f),
@@ -36,7 +36,7 @@ namespace basecross {
 			},
 		};
 		//オブジェクトの作成
-		for (auto v : Vec) {
+		for (auto v : vec) {
 			AddGameObject<FixedBox>(v[0], v[1], v[2]);
 		}
 	}
@@ -65,10 +65,10 @@ namespace basecross {
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
 		//プレーヤーの作成
-		auto PlayerPtr = AddGameObject<Player>();
+		auto ptrPlayer = AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
-		SetSharedGameObject(L"Player", PlayerPtr);
-		PlayerPtr->AddTag(L"Player");
+		SetSharedGameObject(L"Player", ptrPlayer);
+		ptrPlayer->AddTag(L"Player");
 	}
 
 

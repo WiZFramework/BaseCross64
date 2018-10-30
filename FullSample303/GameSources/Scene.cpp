@@ -13,61 +13,61 @@ namespace basecross{
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	void Scene::CreateResourses() {
-		wstring DataDir;
+		wstring dataDir;
 		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
+		App::GetApp()->GetAssetsDirectory(dataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"trace.png";
+		//App::GetApp()->GetDataDirectory(dataDir);
+		wstring strTexture = dataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-		strTexture = DataDir + L"sky.jpg";
+		strTexture = dataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"wall.jpg";
+		strTexture = dataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
-		strTexture = DataDir + L"number.png";
+		strTexture = dataDir + L"number.png";
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 
 		//ボーンモデルの通常リソース
-		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
-		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
+		auto modelMesh = MeshResource::CreateBoneModelMesh(dataDir, L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH", modelMesh);
 
 		//ボーンモデルのタンジェント付きリソース
-		ModelMesh = MeshResource::CreateBoneModelMeshWithTangent(DataDir, L"Chara_R.bmf");
-		App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", ModelMesh);
+		modelMesh = MeshResource::CreateBoneModelMeshWithTangent(dataDir, L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH_WITH_TAN", modelMesh);
 		//法線マップ
-		strTexture = DataDir + L"Chara_R_narmal.png";
+		strTexture = dataDir + L"Chara_R_narmal.png";
 		App::GetApp()->RegisterTexture(L"Chara_R_NORMAL_TX", strTexture);
 
 		//ボーンモデル(マルチメッシュ)の通常リソース
-		auto MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
-		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
+		auto multiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(dataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", multiModelMesh);
 
 		//ボーンモデル(マルチメッシュ)のタンジェント付きリソース
-		MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMeshWithTangent(DataDir, L"Object_WalkAnimation.bmf");
-		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH_WITH_TAN", MultiModelMesh);
+		multiModelMesh = MultiMeshResource::CreateBoneModelMultiMeshWithTangent(dataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH_WITH_TAN", multiModelMesh);
 
 		//法線マップ
-		strTexture = DataDir + L"Tx_Checker_Normal.png";
+		strTexture = dataDir + L"Tx_Checker_Normal.png";
 		App::GetApp()->RegisterTexture(L"OBJECT_NORMAL_TX", strTexture);
 
 
 		//スタティックモデルの通常リソース
-		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
+		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(dataDir, L"Character_01.bmf");
 		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
 		//スタティックモデルのタンジェント付きリソース
-		StaticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(DataDir, L"Character_01.bmf");
+		StaticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(dataDir, L"Character_01.bmf");
 		App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", StaticModelMesh);
 		//法線マップ
-		strTexture = DataDir + L"Character_2_normal.png";
+		strTexture = dataDir + L"Character_2_normal.png";
 		App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);
 
 		//スタティックモデル(マルチメッシュ)の通常リソース
-		auto StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
-		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+		auto staticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(dataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", staticMultiModelMesh);
 
 		//スタティックモデル(マルチメッシュ)のタンジェント付きリソース
-		StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMeshWithTangent(DataDir, L"ObjectOnly.bmf");
-		App::GetApp()->RegisterResource(L"ObjectOnly_MESH_WITH_TAN", StaticMultiModelMesh);
+		staticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMeshWithTangent(dataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH_WITH_TAN", staticMultiModelMesh);
 
 
 	}

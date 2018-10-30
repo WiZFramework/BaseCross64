@@ -15,10 +15,10 @@ namespace basecross {
 	struct InputHandler {
 		void PushHandle(const shared_ptr<T>& Obj) {
 			//コントローラの取得
-			auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-			if (CntlVec[0].bConnected) {
+			auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
+			if (cntlVec[0].bConnected) {
 				//Aボタン
-				if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
+				if (cntlVec[0].wPressedButtons & XINPUT_GAMEPAD_A) {
 					Obj->OnPushA();
 				}
 			}
@@ -57,23 +57,23 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T, typename T2>
 		void ExpandAndContract() {
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
-			m_TotalTime += ElapsedTime;
+			float elapsedTime = App::GetApp()->GetElapsedTime();
+			m_TotalTime += elapsedTime;
 			if (m_TotalTime >= XM_2PI) {
 				m_TotalTime = 0;
 			}
-			auto PtrDraw = GetGameObject()->GetDynamicComponent<T2>();
-			const vector<T>& BackupVec = PtrDraw->GetOriginalMeshResource()->GetBackupVerteces<T>();
-			vector<T> new_vec;
-			for (auto& v : BackupVec) {
-				T new_v;
-				new_v = v;
-				auto Len = (sin(m_TotalTime) * 0.5f) + 1.0f;
-				new_v.position.x *= Len;
-				new_v.position.z *= Len;
-				new_vec.push_back(new_v);
+			auto ptrDraw = GetGameObject()->GetDynamicComponent<T2>();
+			const vector<T>& backupVec = ptrDraw->GetOriginalMeshResource()->GetBackupVerteces<T>();
+			vector<T> newVec;
+			for (auto& v : backupVec) {
+				T newV;
+				newV = v;
+				auto len = (sin(m_TotalTime) * 0.5f) + 1.0f;
+				newV.position.x *= len;
+				newV.position.z *= len;
+				newVec.push_back(newV);
 			}
-			PtrDraw->UpdateVertices(new_vec);
+			ptrDraw->UpdateVertices(newVec);
 		}
 
 	};

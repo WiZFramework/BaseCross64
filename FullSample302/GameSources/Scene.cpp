@@ -13,32 +13,32 @@ namespace basecross{
 	///	ゲームシーン
 	//--------------------------------------------------------------------------------------
 	void Scene::CreateResourses() {
-		wstring DataDir;
+		wstring dataDir;
 		//サンプルのためアセットディレクトリを取得
-		App::GetApp()->GetAssetsDirectory(DataDir);
+		App::GetApp()->GetAssetsDirectory(dataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(DataDir);
-		wstring strTexture = DataDir + L"trace.png";
+		//App::GetApp()->GetDataDirectory(dataDir);
+		wstring strTexture = dataDir + L"trace.png";
 		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-		strTexture = DataDir + L"sky.jpg";
+		strTexture = dataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = DataDir + L"wall.jpg";
+		strTexture = dataDir + L"wall.jpg";
 		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
-		strTexture = DataDir + L"number.png";
+		strTexture = dataDir + L"number.png";
 		App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
 
-		auto ModelMesh = MeshResource::CreateBoneModelMesh(DataDir, L"Chara_R.bmf");
-		App::GetApp()->RegisterResource(L"Chara_R_MESH", ModelMesh);
-		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(DataDir, L"Character_01.bmf");
-		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
+		auto modelMesh = MeshResource::CreateBoneModelMesh(dataDir, L"Chara_R.bmf");
+		App::GetApp()->RegisterResource(L"Chara_R_MESH", modelMesh);
+		auto staticModelMesh = MeshResource::CreateStaticModelMesh(dataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH", staticModelMesh);
 
 		//スタティックモデル(マルチメッシュ)の通常リソース
-		auto StaticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(DataDir, L"ObjectOnly.bmf");
-		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", StaticMultiModelMesh);
+		auto staticMultiModelMesh = MultiMeshResource::CreateStaticModelMultiMesh(dataDir, L"ObjectOnly.bmf");
+		App::GetApp()->RegisterResource(L"ObjectOnly_MESH", staticMultiModelMesh);
 
 		//ボーンモデル(マルチメッシュ)の通常リソース
-		auto MultiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(DataDir, L"Object_WalkAnimation.bmf");
-		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", MultiModelMesh);
+		auto multiModelMesh = MultiMeshResource::CreateBoneModelMultiMesh(dataDir, L"Object_WalkAnimation.bmf");
+		App::GetApp()->RegisterResource(L"Object_WalkAnimation_MESH", multiModelMesh);
 
 	}
 
