@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０５．行列操作</h3>
+　このサンプルは<b>FullSample205</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1205a.png" width="80%"/>
+<p>図1205a</p>
+<p>&nbsp;</p>
+<h4>親子関係の実装</h4>
+　このサンプルのテーマは<b>行列操作</b>です。<b>行列</b>を使うと、いろんな座標変換ができるわけですが、このサンプルでは<b>BaseCross64</b>において<b>行列の取得と利用方法</b>を中心に述べます。<br />
+　サンプルを実行し、コントローラを操作しますと<b>プレイヤー</b>のあとにぞろぞろと球体がついてきます。<br />
+　プレイヤーが台に上がってもついてきます。台から降りると一緒に降ります。<br />
+　この動きを実装するには<b>行列による座標系の変換</b>というのを行います。<br />
+　以下のコードを見てください。<b>Character.h/cpp</b>です。プレイヤーはこれまで紹介してきた内容とほぼ変わりませんので省略します。<br />
+　まず<b>Character.h</b>です。<b>ChildSphere</b>というクラスがあり、これがプレイヤーの後をついていきます。
+<div class="box1">
+<pre>
+class ChildSphere : public GameObject {
+    <span class="red">weak_ptr&lt;GameObject> m_Parent;
+    Vec3 m_VecToParent;</span>
+    //ステートマシーン
+    unique_ptr&lt; StateMachine&lt;ChildSphere> >  m_StateMachine;
+public:
+    //構築と破棄
+    ChildSphere(const shared_ptr&lt;Stage>& StagePtr,
+        const shared_ptr&lt;GameObject>& Parent,
+        const Vec3& VecToParent
+    );
+    virtual ~ChildSphere();
+    //初期化
+    virtual void OnCreate() override;
+    //操作
+    virtual void OnUpdate() override;
+    //親を追いかける処理
+    void SeekParent();
+    //宙刷りになってるかどうかのチェック
+    bool IsHang();
+    //アクセサ
+    const unique_ptr&lt;StateMachine&lt;ChildSphere>>& GetStateMachine() {
+        return m_StateMachine;
+    }
+};
+</pre>
+</div>
+　このクラスはステートマシンを使っています。<b>DefaultState</b>と<b>GravState</b>です。<b>GravState</b>は<b>重力をかけるステート</b>です。これについては後ほど述べます。<br />
+<br />
+　まず、親子関係から述べます。ヘッダ部で、重要な変数が２つあります。赤くなっている<b>m_Parentとm_VecToParent</b>です。<br />
+　<b>m_Parent</b>は<b>自分の前にある球（親）</b>です。メモリーリークを防ぐために<b>weak_ptr</b>になっています。<br />
+　<b>m_VecToParent</b>は、<b>親からの目標となる相対ベクトル</b>です。<b>目標となる</b>という部分が重要です。<br />
+　これらの変数はコンストラクタで渡され、<b>OnCreate()関数</b>で処理されます。以下は<b>ChildSphere::OnCreate()関数</b>です。<br />
+　描画系の設定は略してあります。
+<div class="box1">
+<pre>
+void ChildSphere::OnCreate() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(Vec3(0.25f));
+    ptrTrans->SetQuaternion(Quat());
+
+    //CollisionSphere衝突判定を付ける
+    AddComponent&lt;CollisionSphere>();
+
+    //重力をつける
+    auto ptrGra = AddComponent&lt;Gravity>();
+    //無効にしておく
+    ptrGra->SetUpdateActive(false);
+
+    <span class="red">auto ptrParent = m_Parent.lock();
+    if (ptrParent) {
+        auto posTarget = ptrParent->GetComponent&lt;Transform>()->GetPosition();
+        posTarget += m_VecToParent;
+        ptrTrans->SetPosition(posTarget);
+    }</span>
+
+    //中略
+
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;ChildSphere>(GetThis&lt;ChildSphere>()));
+    //最初のステートをSeekFarStateに設定
+    m_StateMachine->ChangeState(DefaultState::Instance());
+
+}
+</pre>
+</div>
+　まず<b>CollisionSphereコンポーネント</b>と<b>Gravityコンポーネント</b>を付けます。<br />
+　<b>Gravityコンポーネント</b>は初期値を無効にしておきます。その後
+<div class="box1">
+<pre>
+    auto ptrParent = m_Parent.lock();
+    if (ptrParent) {
+        auto posTarget = ptrParent->GetComponent&lt;Transform>()->GetPosition();
+        posTarget += m_VecToParent;
+        ptrTrans->SetPosition(posTarget);
+    }
+</pre>
+</div>
+　と<b>week_ptr</b>である<b>m_Parent</b>にlockをかけて、<b>shared_ptr</b>に格上げします。<br />
+　そうしたうえで、親からの相対位置を計算し、その位置を自分のポジションに設定します。
+<h4>行列による親の座標系への変換</h4>
+　このクラスは<b>ステートマシン</b>を使ってますので、<b>親を追いかける処理</b>は関数化してあります。<b>void ChildSphere::SeekParent()関数</b>です。
+<div class="box1">
+<pre>
+void ChildSphere::SeekParent() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    auto pos = ptrTrans->GetPosition();
+    auto ptrParent = m_Parent.lock();
+    if (ptrParent) {
+        <span class="red">auto matParent = ptrParent->GetComponent&lt;Transform>()->GetWorldMatrix();
+        matParent.scaleIdentity();
+        Mat4x4 mat;
+        mat.affineTransformation(
+            Vec3(1.0),
+            Vec3(0.0),
+            Vec3(0.0),
+            m_VecToParent
+        );
+        mat *= matParent;</span>
+
+        auto posTarget = mat.transInMatrix();
+        auto v = Lerp::CalculateLerp(pos, posTarget, 0.0f, 1.0f, 0.2f, Lerp::rate::Linear);
+        ptrTrans->SetPosition(v);
+        ptrTrans->SetQuaternion(mat.quatInMatrix());
+    }
+}
+</pre>
+</div>
+　赤くなっているところは、このサンプルの根幹ともいえる処理です。<br />
+　ここでは以下の処理をします。
+<div class="box1">
+<pre>
+１、親のワールド行列を取得
+auto matParent = ptrParent->GetComponent&lt;Transform>()->GetWorldMatrix();
+
+２、その行列のスケーリングを1.0にする。
+matParent.scaleIdentity();
+
+３、親からの相対位置を行列化する。
+Mat4x4 mat;
+mat.affineTransformation(
+    Vec3(1.0),
+    Vec3(0.0),
+    Vec3(0.0),
+    m_VecToParent
+);
+
+４、３で作成した行列に親の行列を掛ける
+mat *= matParent;
+</pre>
+</div>
+　４の処理で、<b>親の座標系</b>に座標変換した自分のワールド行列を作り出すことができます。<br/>
+　あとは
+<div class="box1">
+<pre>
+        auto posTarget = mat.transInMatrix();
+        auto v = Lerp::CalculateLerp(pos, posTarget, 0.0f, 1.0f, 0.2f, Lerp::rate::Linear);
+        ptrTrans->SetPosition(v);
+        ptrTrans->SetQuaternion(mat.quatInMatrix());
+</pre>
+</div>
+　でその行列から<b>位置</b>を取り出し、そこを目標とした<b>補間処理</b>を行います。その補間結果が、自分の設定すべき位置です。<br />
+　回転については、親の座標系に変換した回転値（クオータニオン）を設定します。<br />
+<h4>宙づりの解消</h4>
+　ここまでで、平地の場合はプレイヤーをうねうねと追いかけるオブジェクト郡ができますが、プレイヤーが台に上がったりすると、そのまま真横に追いかけてしまい、後ろの方のオブジェクトが<b>宙づり</b>になったようになります。<br />
+　そこで<b>宙づりになった場合は重力を追加する</b>という処理を入れます。<br />
+　まず、<b>宙づりになっているかどうか</b>を調査する関数を作ります。<b>bool ChildSphere::IsHang()関数</b>です。ここでは<b>コリジョンマネージャ</b>に自分自身が何かと衝突してるかどうかを問い合わせます。<br />
+　何も衝突していなければ<b>宙づり</b>になっているのがわかるので<b>DefaultState</b>から、<b>GravState</b>に移行します。<br />
+　<b>GravState</b>では、重力コンポーネントを有効にして、何かと衝突するまで落下処理を入れます。<br />
+　何かと衝突したら<b>GravState</b>を抜け<b>DefaultState</b>に戻ります。<br />
+<h4>ステージへの実装</h4>
+　クラスができたら、ステージに実装します。<b>GameStage::CreateChildSphere()</b>に記述します。
+<div class="box1">
+<pre>
+void GameStage::CreateChildSphere() {
+    shared_ptr&lt;GameObject> ptrTarget = GetSharedGameObject&lt;Player>(L"Player");
+    int count = 0;
+    while (count &lt; 10) {
+        ptrTarget = AddGameObject&lt;ChildSphere>(ptrTarget, Vec3(0, 0, -0.26f));
+        count++;
+    }
+}
+</pre>
+</div>
+　ここで、プレイヤーの後ろに10個の<b>ChildSphere</b>を配置しています。<br />
+　余談ですが
+<div class="box1">
+<pre>
+    <span class="red">shared_ptr&lt;GameObject></span> ptrTarget = GetSharedGameObject&lt;Player>(L"Player");
+</pre>
+</div>
+　は
+<div class="box1">
+<pre>
+    <span class="red">auto</span> ptrTarget = GetSharedGameObject&lt;Player>(L"Player");
+</pre>
+</div>
+　とは書けません。<b>GetSharedGameObject</b>は<b>Playerのshared_ptr</b>を返すので、<b>GameObjectのshared_ptr</b>にキャストする必要があるからです。<br />
+　また、親子の距離を<b>0.26f</b>としています。これは、実際には各球体の直径は<b>0.25f</b>なのですが、少し話して配置します。この処理により各オブジェクトに対する<b>重力の実装</b>が安定します。<br />
+　最後に<b>GameStage::OnCreate()</b>でこの関数を呼び出します。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        //ビューとライトの作成
+        CreateViewLight();
+        //固定のボックスの作成
+        CreateFixedBox();
+        <span class="red">//プレーヤーの作成
+        CreatePlayer();
+        //子供球体の作成
+        CreateChildSphere();</span>
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　このように、プレイヤーの後に実装します。<b>ChildSphere</b>は親のポインタが必要なので、最初の親は<b>プレイヤー</b>だからです。<br />
+<br />
+　今回は<b>行列操作</b>における<b>親の座標系への変換</b>を行いました。<b>行列</b>はこのほかにもいろんな計算ができます。調べてみるといいと思います。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
