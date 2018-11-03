@@ -21,14 +21,29 @@ namespace basecross{
 	void MultiSpark::OnCreate() {
 	}
 
+	void MultiSpark::OnUpdate() {
+		for (auto ptrParticle : GetParticleVec()) {
+			for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
+				if (rParticleSprite.m_Active) {
+					rParticleSprite.m_Color.z += 0.05f;
+					if (rParticleSprite.m_Color.z >= 1.0f) {
+						rParticleSprite.m_Color.z = 1.0f;
+					}
+				}
+			}
+		}
+		//eƒNƒ‰ƒX‚ÌOnUpdate()‚ðŒÄ‚Ô
+		MultiParticle::OnUpdate();
+	}
+
+
 
 	void MultiSpark::InsertSpark(const Vec3& Pos) {
-		auto ParticlePtr = InsertParticle(4);
-		ParticlePtr->SetEmitterPos(Pos);
-		ParticlePtr->SetTextureResource(L"SPARK_TX");
-		ParticlePtr->SetMaxTime(0.5f);
-		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
-		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+		auto ptrParticle = InsertParticle(4);
+		ptrParticle->SetEmitterPos(Pos);
+		ptrParticle->SetTextureResource(L"SPARK_TX");
+		ptrParticle->SetMaxTime(0.5f);
+		for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
 			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
@@ -64,7 +79,7 @@ namespace basecross{
 		ParticlePtr->SetEmitterPos(Pos);
 		ParticlePtr->SetTextureResource(L"FIRE_TX");
 		ParticlePtr->SetMaxTime(0.5f);
-		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
+//		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
 		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
 			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;

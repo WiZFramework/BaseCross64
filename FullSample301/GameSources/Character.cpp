@@ -216,7 +216,6 @@ namespace basecross{
 		//頂点とインデックスを指定してスプライト作成
 		auto ptrDraw = AddComponent<PTSpriteDraw>(m_BackupVertices, indices);
 		ptrDraw->SetTextureResource(m_TextureKey);
-
 		GetStage()->SetSharedGameObject(L"ScoreSprite", GetThis<ScoreSprite>());
 	}
 

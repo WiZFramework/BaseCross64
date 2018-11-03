@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１３．Draw系の操作とオーディオ</h2>
+<h3>１３０１．さまざまなスプライト</h3>
+　このサンプルは<b>FullSample301</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1301a.png" width="80%"/>
+<p>図1301a</p>
+<p>&nbsp;</p>
+　ここで表示されている<b>スプライト</b>は<b>Character.h/cpp</b>に記述があります。
+<br/>
+<h4>半透明のスプライト</h4>
+　半透明のスプライト（左側のもの）は<b>TraceSprite</b>クラスです。<br />
+　このスプライトは<b>VertexPositionColor</b>という<b>頂点定義</b>で構成されるスプライトです。メンバ関数<b>OnCreate()</b>により初期化されます。以下は<b>TraceSprite::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void TraceSprite::OnCreate() {
+    float helfSize = 0.5f;
+    //頂点配列
+    m_BackupVertices = {
+        { VertexPositionColor(Vec3(-helfSize, helfSize, 0),Col4(1.0f,0.0f,0.0f,0.0f)) },
+        { VertexPositionColor(Vec3(helfSize, helfSize, 0), Col4(0.0f, 1.0f, 0.0f, 0.0f)) },
+        { VertexPositionColor(Vec3(-helfSize, -helfSize, 0), Col4(0.0f, 0.0f, 1.0f, 0.0f)) },
+        { VertexPositionColor(Vec3(helfSize, -helfSize, 0), Col4(0.0f, 0.0f, 0, 0.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    SetAlphaActive(m_Trace);
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+    ptrTrans->SetRotation(0, 0, 0);
+    ptrTrans->SetPosition(m_StartPos);
+    //頂点とインデックスを指定してスプライト作成
+    AddComponent&lt;PCSpriteDraw>(m_BackupVertices, indices);
+}
+</pre>
+</div>
+　まず、ここでは、メンバ変数（vector&ltVertexPositionColor>型）の<b>m_BackupVertices</b>に頂点を設定します。<br />
+　頂点は4つです。ローカル座標は原点を中心に、上下左右1.0の大きさになるようにします。この、頂点のローカルサイズはどの頂点型でも同じです。<br />
+　頂点の配列を作成したら<b>インデックス</b>を作成します。時計回りの三角形を２つ描画するように、頂点の順番（インデックス）を配列化します。インデックス配列はバックアップしておく必要はありません。動的に頂点の変更は行いますが、インデックスは変化させません。<br />
+　頂点を作成したら<b>Transformコンポーネント</b>で大きさや位置を設定するわけですが、<b>スプライト</b>の場合、通常の３Ｄとは座標系が違います。<b>スプライト</b>の座標系は<b>ディスプレイのピクセル</b>になります。（ただしfloatで設定）。<br />
+　以下は、<b>TraceSprite</b>をステージに実装しているコードです。<b>GameStage.cpp</b>にあります。
+<div class="box1">
+<pre>
+    void GameStage::CreateTraceSprite() {
+        AddGameObject&lt;TraceSprite>(true,
+            Vec2(320.0f, 320.0f), Vec3(-400.0f, 0.0f, 0.0f));
+    }
+</pre>
+</div>
+　パラメータは<b>true,Vec2(320.0f, 320.0f), Vec3(-400.0f, 0.0f, 0.0f)</b>となってますが、最初から<b>traceするかどうか、スケール、位置</b>の順番です。スケールは<b>Vec2(320.0f, 320.0f)</b>（Zスケールは1.0固定）で、位置は、X方向に400.0fだけ左に寄っています。３Ｄが<b>メートル単位</b>を想定しているのに対して、このように<b>ディスプレイのピクセル</b>になっているので注意しましょう。<br />
+　このスプライトは動的に色が変化します。これは<b>頂点を変更する</b>ことで実装します。<b>TraceSprite::OnUpdate()関数</b>に記述があります。
+<div class="box1">
+<pre>
+void TraceSprite::OnUpdate() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += elapsedTime;
+    if (m_TotalTime >= XM_PI) {
+        m_TotalTime = 0;
+    }
+    vector&lt;VertexPositionColor> newVertices;
+    for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
+        Col4 col = m_BackupVertices[i].color;
+        col.w = sin(m_TotalTime);
+        auto v = VertexPositionColor(
+            m_BackupVertices[i].position,
+            col
+        );
+        newVertices.push_back(v);
+    }
+    auto ptrDraw = GetComponent&lt;PCSpriteDraw>();
+    ptrDraw->UpdateVertices(newVertices);
+
+}
+</pre>
+</div>
+　<b>m_TotalTime</b>というのはメンバ変数で、時間のカウンタです。毎ターンごとに<b>elapsedTime（１つ前のターンからの経過時間）</b>を加算します。<br />
+　このオブジェクトの頂点の変化は<b>色の変化</b>です。変化させるのに<b>sin（サイン）カーブ</b>を使います。その変数に<b>m_TotalTime</b>を使います。sinカーブは<b>XM_PI</b>（すなわち、ラジアンでは<b>π</b>。度数では<b>180度</b>）を超えたところで初期化（0.0fにする）します。<br />
+　sinカーブは<b>２π（つまり360度）</b>で一回りしますが、マイナス値にならないようにしています。<br />
+　頂点の変化は<b>m_BackupVertices</b>の<b>color要素</b>を変化させて<b>newVertices</b>を作成します。
+<div class="box1">
+<pre>
+        col.w = sin(m_TotalTime);
+</pre>
+</div>
+　という計算で、<b>色の透明度</b>を変化させます。sin(m_TotalTime)は<b>0.0から1.0</b>を行ったり来たりすることになります。<br />
+　新しい頂点ができたら、描画コンポーネントを取り出し
+<div class="box1">
+<pre>
+    ptrDraw->UpdateVertices(newVertices);
+</pre>
+</div>
+　と頂点を更新します。
+<h4>壁模様のスプライト</h4>
+　右側のスプライトのうち<b>下地になっている</b>のが<b>壁模様のスプライト（WallSpriteクラス）</b>です。<br />
+　<b>VertexPositionColorTexture</b>頂点を使います。以下は<b>WallSprite::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void WallSprite::OnCreate() {
+    float helfSize = 0.5f;
+    //頂点配列(縦横5個ずつ表示)
+    vector&lt;VertexPositionColorTexture> vertices = {
+        { VertexPositionColorTexture(Vec3(-helfSize, helfSize, 0),Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, helfSize, 0), Col4(0.0f, 1.0f, 1.0f, 1.0f), Vec2(5.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-helfSize, -helfSize, 0), Col4(1.0f, 0.0f, 1.0f, 1.0f), Vec2(0.0f, 5.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, -helfSize, 0), Col4(0.0f, 0.0f, 0, 1.0f), Vec2(5.0f, 5.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    SetAlphaActive(m_Trace);
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+    ptrTrans->SetRotation(0, 0, 0);
+    ptrTrans->SetPosition(m_StartPos);
+    //頂点とインデックスを指定してスプライト作成
+    auto ptrDraw = AddComponent&lt;PCTSpriteDraw>(vertices, indices);
+    <span class="red">ptrDraw->SetSamplerState(SamplerState::LinearWrap);</span>
+    ptrDraw->SetTextureResource(m_TextureKey);
+}
+</pre>
+</div>
+　ここで重要なのは赤くなっている、描画コンポーネントの<b>SetSamplerState()関数</b>です。<br />
+　<b>SamplerState::LinearWrap</b>を使うことで、テクスチャが繰り返し（タイリング）描画されるようになります。<br />
+　この<b>タイリング描画</b>は重要で、例えば３Ｄ上でも、大きなオブジェクトを演出するのに、小さなオブジェクトを並べるのではなく、大きなオブジェクトをタイリング処理することで、例えば衝突判定のひっかかりもなくなりますし、動作速度も速くなります。<br />
+　もう一つこのオブジェクトで注意したいのは<b>表示場所（ポジション）</b>です。<br />
+　以下は<b>GameStage.cpp</b>内の<b>WallSprite</b>を作り出す部分です。
+<div class="box1">
+<pre>
+    void GameStage::CreateWallSprite() {
+        AddGameObject&lt;WallSprite>(L"WALL_TX", false,
+            Vec2(320.0f, 320.0f), Vec3(400.0f, 0.0f, <span class="red">0.1f</span>));
+    }
+</pre>
+</div>
+　赤くなっているのは<b>ポジションのＺ位置</b>です。<b>0.0fではなく0.1f</b>になっています。<br />
+　これはこの上にもう一つスプライトが乗るので、少し奥に引っ込めているのです。<br />
+　スプライトのZ位置は<b>0.0fから1.0fの間</b>で指定します。これは、デバイス座標と呼ばれるものです。DirectXはアクセラレータのZ方向は<b>0.0fから1.0fの間</b>です。1.0に近い方が<b>遠く</b>なります。<br />
+　これを超えた値に設定しても、有効範囲にクランプ（切り詰め）られるので注意しましょう。<br />
+　正確にはこの値が、すべてのケースでデバイス座標になるわけではなく、ビューの深さによって調整されます。例えば複数のビューを持った場合は、ターゲットとなるビューの深さの範囲に収められます。<br />
+　ただしこのサンプルは単一のビューなので、デバイス座標と同じになります。
+<h4>スクロールするスプライト</h4>
+　壁模様のスプライトの上に乗っているのが、<b>スクロールするスプライト</b>です。<b>ScrollSpriteクラス</b>になります。<br />
+　以下は<b>ScrollSprite::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void ScrollSprite::OnCreate() {
+    float helfSize = 0.5f;
+    //頂点配列
+    m_BackupVertices = {
+        { VertexPositionTexture(Vec3(-helfSize, helfSize, 0), Vec2(0.0f, 0.0f)) },
+        { VertexPositionTexture(Vec3(helfSize, helfSize, 0), Vec2(4.0f, 0.0f)) },
+        { VertexPositionTexture(Vec3(-helfSize, -helfSize, 0), Vec2(0.0f, 1.0f)) },
+        { VertexPositionTexture(Vec3(helfSize, -helfSize, 0), Vec2(4.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    SetAlphaActive(m_Trace);
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+    ptrTrans->SetRotation(0, 0, 0);
+    ptrTrans->SetPosition(m_StartPos);
+    //頂点とインデックスを指定してスプライト作成
+    auto ptrDraw = AddComponent&lt;PTSpriteDraw>(m_BackupVertices, indices);
+    ptrDraw->SetSamplerState(SamplerState::LinearWrap);
+    ptrDraw->SetTextureResource(m_TextureKey);
+}
+</pre>
+</div>
+　このスプライトは<b>VertexPositionTexture頂点</b>を使っています。つまり<b>色要素を含まない</b>頂点となります。<br />
+　このスプライトも<b>壁模様のスプライト</b>同様、サンプラーに<b>SamplerState::LinearWrap</b>を使って<b>タイリング処理</b>をします。<br />
+　このスプライトは<b>VertexPositionTexture頂点</b>ですので、描画コンポーネントは<b>PTSpriteDraw</b>を使います。<br />
+　このスプライトの変化処理は<b>模様が流れるように動く</b>処理です。<b>ScrollSprite::OnUpdate()</b>に記述します。
+<div class="box1">
+<pre>
+void ScrollSprite::OnUpdate() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += elapsedTime;
+    if (m_TotalTime > 1.0f) {
+        m_TotalTime = 0;
+    }
+    vector&lt;VertexPositionTexture> newVertices;
+    for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
+        Vec2 uv = <span class="red">m_BackupVertices[i].textureCoordinate;</span>
+        if (uv.x == 0.0f) {
+            uv.x = m_TotalTime;
+        }
+        else if (uv.x == 4.0f) {
+            uv.x += m_TotalTime;
+        }
+        auto v = VertexPositionTexture(
+            m_BackupVertices[i].position,
+            uv
+        );
+        newVertices.push_back(v);
+    }
+    auto ptrDraw = GetComponent&lt;PTSpriteDraw>();
+    ptrDraw->UpdateVertices(newVertices);
+}
+</pre>
+</div>
+　ここでは<b>m_BackupVertices[i].textureCoordinate</b>を変化させます。<b>流れるように模様が変わる</b>のはすなわち<b>テクスチャUV値が変化する</b>ということです。<br />
+　バックアップ頂点のUV値のX(すなわち<b>U値</b>）は、<b>0.0fもしくはタイリング数4.0f</b>のどちらかです。<br />
+　それを時間経過によって変化させます。もし縦方向の変化が必要な場合は<b>V値</b>を変化させます。<br />
+　このスプライトは<b>壁模様のスプライト</b>の上に乗っています。<b>壁模様のスプライト</b>は<b>Z位置を0.1f</b>としていました。ですのでこのスプライトの<b>Z位置は0.0f</b>で、手前に描画されます。
+<h4>スコア表示のスプライト</h4>
+　ゲーム中にスコア（ポイントなど）を表示したいことはよくあります。<br />
+　こんな時は<b>スコア表示のスプライト</b>のように、複数の数字を変化させながら表示させると便利です。<br/>
+　以下は<b>ScoreSprite::OnCreate()</b>の抜粋ですが、
+<div class="box1">
+<pre>
+void ScoreSprite::OnCreate() {
+    float xPiecesize = 1.0f / (float)m_NumberOfDigits;
+    float helfSize = 0.5f;
+
+    //インデックス配列
+    vector&lt;uint16_t> indices;
+    for (UINT i = 0; i &lt; m_NumberOfDigits; i++) {
+        float vertex0 = -helfSize + xPiecesize * (float)i;
+        float vertex1 = vertex0 + xPiecesize;
+        //0
+        m_BackupVertices.push_back(
+            VertexPositionTexture(Vec3(vertex0, helfSize, 0), Vec2(0.0f, 0.0f))
+        );
+        //1
+        m_BackupVertices.push_back(
+            VertexPositionTexture(Vec3(vertex1, helfSize, 0), Vec2(0.1f, 0.0f))
+        );
+        //2
+        m_BackupVertices.push_back(
+            VertexPositionTexture(Vec3(vertex0, -helfSize, 0), Vec2(0.0f, 1.0f))
+        );
+        //3
+        m_BackupVertices.push_back(
+            VertexPositionTexture(Vec3(vertex1, -helfSize, 0), Vec2(0.1f, 1.0f))
+        );
+        indices.push_back(i * 4 + 0);
+        indices.push_back(i * 4 + 1);
+        indices.push_back(i * 4 + 2);
+        indices.push_back(i * 4 + 1);
+        indices.push_back(i * 4 + 3);
+        indices.push_back(i * 4 + 2);
+    }
+
+//中略
+
+    //頂点とインデックスを指定してスプライト作成
+    auto ptrDraw = AddComponent&lt;PTSpriteDraw>(m_BackupVertices, indices);
+}
+</pre>
+</div>
+　ここで頂点の配列は、表示する桁数分の横並びに作成します。<br />
+　<b>ScoreSprite::OnUpdate()</b>では<b>スコア</b>である<b>m_Score</b>の値をもとに、10進数の各桁を数値に変換し、そのテクスチャ位置のUV値を設定します。<br />
+　この<b>m_Score</b>は外部から変更できるように<b> SetScore()関数</b>を用意しています。<br />
+　実際の<b>m_Score</b>の変更は、<b>GameStage.cpp</b>にある<b>GameStage::OnUpdate()</b>で行います。
+<div class="box1">
+<pre>
+void GameStage::OnUpdate() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += elapsedTime;
+    if (m_TotalTime >= 10000.0f) {
+        m_TotalTime = 0.0f;
+    }
+    //スコアを更新する
+    auto ptrScor = GetSharedGameObject&lt;ScoreSprite>(L"ScoreSprite");
+    ptrScor->SetScore(m_TotalTime);
+}
+</pre>
+</div>
+<br />
+　このサンプルでは、このようにいろんな頂点タイプが違うスプライトの表示と更新について説明しました。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="13_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

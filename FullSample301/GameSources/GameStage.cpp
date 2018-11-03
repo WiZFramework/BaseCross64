@@ -74,8 +74,8 @@ namespace basecross {
 			m_TotalTime = 0.0f;
 		}
 		//スコアを更新する
-		auto ScorPtr = GetSharedGameObject<ScoreSprite>(L"ScoreSprite");
-		ScorPtr->SetScore(m_TotalTime);
+		auto ptrScor = GetSharedGameObject<ScoreSprite>(L"ScoreSprite");
+		ptrScor->SetScore(m_TotalTime);
 	}
 
 

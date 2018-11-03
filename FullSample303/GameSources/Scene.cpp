@@ -52,11 +52,11 @@ namespace basecross{
 
 
 		//スタティックモデルの通常リソース
-		auto StaticModelMesh = MeshResource::CreateStaticModelMesh(dataDir, L"Character_01.bmf");
-		App::GetApp()->RegisterResource(L"MODEL_MESH", StaticModelMesh);
+		auto staticModelMesh = MeshResource::CreateStaticModelMesh(dataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH", staticModelMesh);
 		//スタティックモデルのタンジェント付きリソース
-		StaticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(dataDir, L"Character_01.bmf");
-		App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", StaticModelMesh);
+		staticModelMesh = MeshResource::CreateStaticModelMeshWithTangent(dataDir, L"Character_01.bmf");
+		App::GetApp()->RegisterResource(L"MODEL_MESH_WITH_TAN", staticModelMesh);
 		//法線マップ
 		strTexture = dataDir + L"Character_2_normal.png";
 		App::GetApp()->RegisterTexture(L"MODEL_NORMAL_TX", strTexture);

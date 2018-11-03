@@ -19,6 +19,8 @@ namespace basecross{
 		//‰Šú‰»
 		virtual void OnCreate() override;
 		void InsertSpark(const Vec3& Pos);
+		virtual void OnUpdate() override;
+
 	};
 
 
