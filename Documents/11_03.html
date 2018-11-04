@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１１．チュートリアル</h2>
+<h3>１１０３．オブジェクトの継承関係</h3>
+　このサンプルは<b>FullSample103</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1103a.png" width="80%"/>
+<p>図1103a</p>
+<p>&nbsp;</p>
+　プレイヤーを動かすと敵に見立てた複数のオブジェクトが追いかけてきたり、あるいは様子をうかがったりしています。<br />
+　プレイヤーが近づくと動き出すオブジェクトもいます。<br />
+　これらのオブジェクトを作成するにあたっては、<b>継承関係</b>を使うと便利です。<br />
+　一つのゲームでは、敵キャラはおおむねゲームのルールに合わせた動きをします。その中で、持ってる能力が違ったりできることが違ったりします。<br />
+　そんな場合は<b>敵として共通の処理</b>と<b>個別の処理</b>を分けて考えます。<br />
+　<b>共通の処理</b>は<b>継承元（親クラス）</b>に記述し、個別のものは、派生クラスを作成して継承先に記述します。<br />
+　こうすることで、コードのダブりも減りますし、考え方がシンプルになります。
+<h4>親クラス</h4>
+　まず親クラスです。<b>Charecter.h/cpp</b>を見てください。<br />
+　<b>EnemyBaseクラス</b>です<b>GameObject</b>を継承しています。<br />
+　まずヘッダ部ですが、以下のように<b>コンストラクタとデストラクタをprotectedメンバ</b>として作成します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 敵の親
+//--------------------------------------------------------------------------------------
+class EnemyBase : public GameObject {
+    Vec3 m_StartPos;
+    //フォース
+    Vec3 m_Force;
+    //速度
+    Vec3 m_Velocity;
+protected:
+    //構築と破棄
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  プロテクトコンストラクタ
+    @param[in]  StagePtr    ステージ
+    */
+    //--------------------------------------------------------------------------------------
+    EnemyBase(const shared_ptr&lt;Stage>& StagePtr, const Vec3& StartPos);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  プロテクトデストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~EnemyBase() {}
+public:
+    //アクセサ
+    const Vec3& GetForce()const {
+        return m_Force;
+    }
+    void SetForce(const Vec3& f) {
+        m_Force = f;
+    }
+    void AddForce(const Vec3& f) {
+        m_Force += f;
+    }
+    const Vec3& GetVelocity()const {
+        return m_Velocity;
+    }
+    void SetVelocity(const Vec3& v) {
+        m_Velocity = v;
+    }
+    void ApplyForce();
+    Vec3 GetTargetPos()const;
+    //初期化
+    virtual void OnCreate() override;
+    //更新
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　ここでは、共通のメンバ変数とそれらのアクセサ、そして共通の操作関数を宣言（場合によっては定義）します。<br />
+　また、以下は初期化処理ですが、以下のように記述します
+<div class="box1">
+<pre>
+//初期化
+void EnemyBase::OnCreate() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetPosition(m_StartPos);
+    ptrTrans->SetScale(0.25f, 0.25f, 0.25f);
+    ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
+
+    //オブジェクトのグループを得る
+    auto group = GetStage()->GetSharedObjectGroup(L"EnemyGroup");
+    //グループに自分自身を追加
+    group->IntoGroup(GetThis&lt;GameObject>());
+    //分離行動をつける
+    auto ptrSep = GetBehavior&lt;SeparationSteering>();
+    ptrSep->SetGameObjectGroup(group);
+
+    //重力をつける
+    auto ptrGra = AddComponent&lt;Gravity>();
+
+}
+</pre>
+</div>
+<h4>派生クラス</h4>
+　親クラスはこのようにしておいて、例えば<b>追いかけるオブジェクトクラス</b>は以下のように宣言します。<br />
+　<b>EnemyBase</b>の派生クラスとして宣言します。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+/// 敵１
+//--------------------------------------------------------------------------------------
+class Enemy1 : public EnemyBase {
+    //ステートマシーン
+    unique_ptr&lt;StateMachine&lt;Enemy1>>  m_StateMachine;
+    //NearとFarを切り替える値
+    float m_StateChangeSize;
+public:
+    //構築と破棄
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  コンストラクタ
+    @param[in]  StagePtr    ステージ
+    */
+    //--------------------------------------------------------------------------------------
+    Enemy1(const shared_ptr&lt;Stage>& StagePtr, const Vec3& StartPos);
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  デストラクタ
+    */
+    //--------------------------------------------------------------------------------------
+    virtual ~Enemy1() {}
+    //アクセサ
+    //--------------------------------------------------------------------------------------
+    /*!
+    @brief  ステートマシンを得る
+    @return ステートマシン
+    */
+    //--------------------------------------------------------------------------------------
+    unique_ptr&lt; StateMachine&lt;Enemy1>>& GetStateMachine() {
+        return m_StateMachine;
+    }
+    float GetStateChangeSize() const {
+        return m_StateChangeSize;
+    }
+    //初期化
+    virtual void OnCreate() override;
+    //更新
+    virtual void OnUpdate() override;
+};
+</pre>
+</div>
+　親クラスにもあった<b>OnCreate()やOnUpdate()</b>も持っているのに気を付けてください。<br />
+　また<b>ステートマシン</b>は派生クラス側につけます。親クラス側につけることもできますが、このサンプルでは派生クラスに突けます。それは継承先によってステートの切り替えるタイミングが違うからです。
+　以下は<b>Enemy1</b>の初期化処理です。
+<div class="box1">
+<pre>
+//初期化
+void Enemy1::OnCreate() {
+    <span class="red">EnemyBase::OnCreate();</span>
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(0.125f, 0.25f, 0.25f);
+
+
+    //Obbの衝突判定をつける
+    AddComponent&lt;CollisionObb>();
+
+    //影をつける
+    auto ptrShadow = AddComponent&lt;Shadowmap>();
+    ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
+
+    //描画コンポーネントの設定
+    auto ptrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    //描画するメッシュを設定
+    ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+    //描画するテクスチャを設定
+    ptrDraw->SetTextureResource(L"TRACE_TX");
+    //透明処理
+    SetAlphaActive(true);
+
+    //ステートマシンの構築
+    m_StateMachine.reset(new StateMachine&lt;Enemy1>(GetThis&lt;Enemy1>()));
+    //最初のステートをEnemy1FarStateに設定
+    m_StateMachine->ChangeState(Enemy1FarState::Instance());
+}
+</pre>
+</div>
+　気を付けるべきは、冒頭で
+<div class="box1">
+<pre>
+    <span class="red">EnemyBase::OnCreate();</span>
+</pre>
+</div>
+　と親クラスの<b>OnCreate()</b>を呼び出しています。こうすることで、親クラスの初期化を行い、そのあとこの派生クラスの初期化を行う形になります。<br />
+　同様に<b>OnUpdate()</b>も以下のように記述します。
+<div class="box1">
+<pre>
+void Enemy1::OnUpdate() {
+    <span class="red">EnemyBase::OnUpdate();</span>
+    //ステートマシンのUpdateを行う
+    //この中でステートの切り替えが行われる
+    m_StateMachine->Update();
+    auto ptrUtil = GetBehavior&lt;UtilBehavior>();
+    ptrUtil->RotToHead(1.0f);
+}
+</pre>
+</div>
+　冒頭の<b><span class="red">EnemyBase::OnUpdate();</span></b>呼び出し、に注意してください。<br />
+　前述したように、このサンプルでは派生クラス側に<b>ステートマシン</b>が実装されています。<b>ステートマシン</b>については<b>１２０１．コンポーネントとステートと行動</b>を参照してください。<br />
+　Enemy2、Enemy3についても同じような記述をして、共通部分は親クラスの機能を使って、個別の部分を派生クラス側に記述しています。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="11_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
