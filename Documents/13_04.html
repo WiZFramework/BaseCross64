@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１３．Draw系の操作とオーディオ</h2>
+<h3>１３０４．エフェクトとオーディオ</h3>
+　このサンプルは<b>FullSample304</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　すると以下のような画面が現れます。<br />
+<p>&nbsp;</p>
+<img src="img/1304a.png" width="80%"/>
+<p>図1304a</p>
+<h4>エフェクト</h4>
+　このサンプルでは<b>エフェクト</b>を表現しています。<br />
+　プレイヤーを動かすとほかのサンプルでも出てくる<b>追いかけるオブジェクト</b>が追いかけてきますが、その際、上図のように炎のようなエフェクトを送出します。プレイヤーがジャンプするとエフェクトが出る頻度が上がります。<br />
+　またプレイヤーもジャンプすると赤いエフェクトを送出します。<br />
+　エフェクトを表現するには、まず<b>エフェクトの種</b>のような画像を用意します。このサンプルで使用しているのは<b>Assets</b>ディレクトリにある<b>spark.pngとfire.png</b>です。<br />
+　これらを、<b>Scene.cpp</b>などで、あらかじめリソース登録しておきます。その上で、エフェクトのクラスを作成します。<br />
+　クラスは<b>MultiParticleクラス</b>を継承して作成します。<br />
+　以下は<b>追いかけるオブジェクト</b>が送出する<b>MultiFire</b>クラスの初期化です。
+<div class="box1">
+<pre>
+//初期化
+void MultiFire::OnCreate() {
+    //加算描画処理をする
+    SetAddType(true);
+}
+</pre>
+</div>
+　このようにほとんど何もしていません。描画に<b>加算処理</b>するかを設定しています。もう一つのエフェクトの<b>MultiSpark</b>に至ってはほんとに何もしてません。<b>OnCreate()関数</b>を多重定義しているだけです。<br />
+　実際のエフェクト送出処理は<b>MultiFire::InsertFire()関数</b>などを作成して記述します。この関数は多重定義するものではないので、自由に関数名を付けて構いません。また、引数にエフェクトの発射位置（<b>エミッター</b>といいうます）を付けておきます。<br />
+　そのうえで以下のように記述します。
+<div class="box1">
+<pre>
+void MultiFire::InsertFire(const Vec3& Pos) {
+    auto ptrParticle = InsertParticle(4);
+    ptrParticle->SetEmitterPos(Pos);
+    ptrParticle->SetTextureResource(L"FIRE_TX");
+    ptrParticle->SetMaxTime(0.5f);
+    for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
+        rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+        rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+        rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+        //各パーティクルの移動速度を指定
+        rParticleSprite.m_Velocity = Vec3(
+            rParticleSprite.m_LocalPos.x * 5.0f,
+            rParticleSprite.m_LocalPos.y * 5.0f,
+            rParticleSprite.m_LocalPos.z * 5.0f
+        );
+        //色の指定
+        rParticleSprite.m_Color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+}
+</pre>
+</div>
+　最初の
+<div class="box1">
+<pre>
+    auto ptrParticle = InsertParticle(4);
+</pre>
+</div>
+　によって<b>４つのパーティクルスプライトを持つ</b>パーティクルが作成されます。親クラスである<b>MultiParticle</b>というのは<b>複数のパーティクルを持つ</b>クラスという意味です。<br />
+　各パーティクルは複数の<b>ParticleSprite</b>を持つことができます。<br />
+　ここで指定している<b>４</b>は<b>４つのParticleSprite</b>という意味です。<br />
+　パーティクルが作成されたらそのポインタが返りますので
+<div class="box1">
+<pre>
+    ptrParticle->SetEmitterPos(Pos);
+    ptrParticle->SetTextureResource(L"FIRE_TX");
+    ptrParticle->SetMaxTime(0.5f);
+</pre>
+</div>
+　のように、<b>エミッター、使用するテクスチャ、生存時間</b>を指定します。<br />
+　続いて、各<b>パーティクルスプライト</b>の設定に移ります。
+<div class="box1">
+<pre>
+    for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
+        rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
+        rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
+        rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
+        //各パーティクルの移動速度を指定
+        rParticleSprite.m_Velocity = Vec3(
+            rParticleSprite.m_LocalPos.x * 5.0f,
+            rParticleSprite.m_LocalPos.y * 5.0f,
+            rParticleSprite.m_LocalPos.z * 5.0f
+        );
+        //色の指定
+        rParticleSprite.m_Color = Col4(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+</pre>
+</div>
+　で、各スプライトに対して、初期のローカルポジション（エミッターから見たローカル位置です）、速度、色を設定します。<br /><br />
+　このように<b>パーティクルを発射する</b>という関数を記述したら、このクラスをステージ上に配置します。以下は、<b>GameStage::MultiFire()関数</b>です。
+<div class="box1">
+<pre>
+//炎の作成
+void GameStage::CreateFire() {
+    auto MultiFirePtr = AddGameObject&lt;MultiFire>();
+    //共有オブジェクトに炎を登録
+    SetSharedGameObject(L"MultiFire", MultiFirePtr);
+}
+</pre>
+</div>
+　ここで、<b>SetSharedGameObject()関数</b>を使って共有オブジェクトにしておきます。<br />
+　実際に発射するためには、例えば<b>MultiFire</b>は、<b>追いかけるオブジェクトが何かと衝突した時に</b>発射されますが、それは<b>SeekObject::OnCollisionEnter()関数</b>に記述します。
+<div class="box1">
+<pre>
+void SeekObject::OnCollisionEnter(shared_ptr&lt;GameObject>& Other) {
+    //ファイアの放出
+    auto ptriFire = GetStage()->GetSharedGameObject&lt;MultiFire>(L"MultiFire", false);
+    if (ptriFire) {
+        ptriFire->InsertFire(GetComponent&lt;Transform>()->GetPosition());
+    }
+}
+</pre>
+</div>
+<h4>エフェクトの更新を制御する</h4>
+　上記の<b>MultiFire</b>のように初期値のままの表現で良ければ更新処理は書かなくていいですが、更新時に変化させたい場合は<b>OnUpdate()関数</b>を多重定義します。以下は、プレイヤーが放出するエフェクトの<b>MultiSpark</b>クラスの<b>OnUpdate()関数</b>です。
+<div class="box1">
+<pre>
+void MultiSpark::OnUpdate() {
+    for (auto ptrParticle : GetParticleVec()) {
+        for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
+            if (rParticleSprite.m_Active) {
+                rParticleSprite.m_Color.z += 0.05f;
+                if (rParticleSprite.m_Color.z >= 1.0f) {
+                    rParticleSprite.m_Color.z = 1.0f;
+                }
+            }
+        }
+    }
+    //親クラスのOnUpdate()を呼ぶ
+    <span class="red">MultiParticle::OnUpdate();</span>
+}
+</pre>
+</div>
+　ここでは、各パーティクルスプライトの色を、動的に変更しています。<br />
+　また更新処理が終わったら
+<div class="box1">
+<pre>
+    //親クラスのOnUpdate()を呼ぶ
+    <span class="red">MultiParticle::OnUpdate();</span>
+</pre>
+</div>
+　と親クラスの<b>OnUpdate()</b>を呼び出すのを忘れないでおきましょう。MultiParticleのOnUpdateでは各パーティクルスプライトの速度や色設定をもとに描画に渡す情報を作り出します。
+<h4>オーディオ</h4>
+　このサンプルでは<b>オーディオ</b>が実装されています。<br />
+　<b>BaseCross64</b>ではバックミュージックを<b>ミュージック</b>、効果音を<b>サウンド</b>と称します。<br />
+　オーディオを実装するには<b>Scene::CreateResourses()</b>などで、リソース登録します。
+<div class="box1">
+<pre>
+    void Scene::CreateResourses() {
+        wstring dataDir;
+        //サンプルのためアセットディレクトリを取得
+        App::GetApp()->GetAssetsDirectory(dataDir);
+
+//中略
+        //以下オーディオ
+        //サウンド
+        wstring CursorWav = dataDir + L"cursor.wav";
+        App::GetApp()->RegisterWav(L"cursor", CursorWav);
+
+        //ミュージック
+        wstring strMusic = dataDir + L"nanika .wav";
+        App::GetApp()->RegisterWav(L"Nanika", strMusic);
+
+    }
+</pre>
+</div>
+<h4>ミュージック</h4>
+　ミュージックの再生は、<b>Scene::OnCreate()関数</b>などで以下のように記述します。
+<div class="box1">
+<pre>
+void Scene::OnCreate(){
+    try {
+        //リソース作成
+        CreateResourses();
+        //BGMの再生
+        auto ptrXA = App::GetApp()->GetXAudio2Manager();
+        m_BGM = ptrXA->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
+
+//中略
+
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　この際、<b>XAUDIO2_LOOP_INFINITE</b>は繰り返し、<b>0.1f</b>はボリュームです。例えば2回繰り返し再生を終了する場合は<b>XAUDIO2_LOOP_INFINITE</b>の部分を<b>1</b>と設定します。ここには<b>繰り返す回数</b>を設定するので、1回目はカウントしないで指定します。<br />
+　ここでは<b>シーン</b>で再生してますが、ステージで再生させることもできます。例えばタイトルステージとゲームステージでミュージックが変わる場合も多いと思いますが、そんな時は、ステージの<b>OnCreate()関数</b>で再生開始します。<br />
+　オーディオ関連で気を付けたいのは終了処理です。再生中にゲームを中断した時など、エラーが出ることがあります。<br />
+　これを回避するために、再生を開始したオブジェクト(ここではシーン）の<b>OnDestroy()関数</b>を多重定義し以下のように記述します。
+<div class="box1">
+<pre>
+void Scene::OnDestroy() {
+    //親クラスのOnDestroyを呼ぶ
+    SceneBase::OnDestroy();
+
+    auto ptrXA = App::GetApp()->GetXAudio2Manager();
+    ptrXA->Stop(m_BGM);
+
+}
+</pre>
+</div>
+<h4>サウンド</h4>
+　このサンプルのサウンド（効果音）は、プレイヤーがジャンプした時にエフェクトと同時に鳴ります。<br />
+　サウンドのデータもあらかじめリソース化しておきます。<br />
+　このサンプルでは<b>L"cursor"</b>という名前でリソース登録があります。その上で、プレイヤーがジャンプするタイミングで
+<div class="box1">
+<pre>
+//Aボタン
+void Player::OnPushA() {
+    auto grav = GetComponent&lt;Gravity>();
+    grav->StartJump(Vec3(0,4.0f,0));
+    //スパークの放出
+    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
+    if (PtrSpark) {
+        PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+    }
+    //サウンドの再生
+    <span class="red">auto ptrXA = App::GetApp()->GetXAudio2Manager();
+    ptrXA->Start(L"cursor", 0, 0.5f);</span>
+}
+</pre>
+</div>
+　赤くなってる部分のように記述します。繰り返さない（1度だけ再生）ので、繰り返し回数は<b>0</b>、ボリュームは<b>0.5</b>と指定しています。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="13_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

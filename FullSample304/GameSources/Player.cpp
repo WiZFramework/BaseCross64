@@ -137,8 +137,8 @@ namespace basecross{
 			PtrSpark->InsertSpark(GetComponent<Transform>()->GetPosition());
 		}
 		//サウンドの再生
-		auto XAPtr = App::GetApp()->GetXAudio2Manager();
-		XAPtr->Start(L"cursor", 0, 0.5f);
+		auto ptrXA = App::GetApp()->GetXAudio2Manager();
+		ptrXA->Start(L"cursor", 0, 0.5f);
 	}
 
 	//文字列の表示

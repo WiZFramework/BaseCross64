@@ -36,7 +36,7 @@ namespace basecross{
 		wstring CursorWav = dataDir + L"cursor.wav";
 		App::GetApp()->RegisterWav(L"cursor", CursorWav);
 
-		//BGM
+		//ミュージック
 		wstring strMusic = dataDir + L"nanika .wav";
 		App::GetApp()->RegisterWav(L"Nanika", strMusic);
 
@@ -47,8 +47,8 @@ namespace basecross{
 			//リソース作成
 			CreateResourses();
 			//BGMの再生
-			auto XAPtr = App::GetApp()->GetXAudio2Manager();
-			m_BGM = XAPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
+			auto ptrXA = App::GetApp()->GetXAudio2Manager();
+			m_BGM = ptrXA->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
 			//自分自身にイベントを送る
 			//これにより各ステージやオブジェクトがCreate時にシーンにアクセスできる
 			PostEvent(0.0f, GetThis<ObjectInterface>(), GetThis<Scene>(), L"ToGameStage");
@@ -72,8 +72,8 @@ namespace basecross{
 		//親クラスのOnDestroyを呼ぶ
 		SceneBase::OnDestroy();
 
-		auto XAPtr = App::GetApp()->GetXAudio2Manager();
-		XAPtr->Stop(m_BGM);
+		auto ptrXA = App::GetApp()->GetXAudio2Manager();
+		ptrXA->Stop(m_BGM);
 
 	}
 

@@ -75,12 +75,11 @@ namespace basecross{
 	}
 
 	void MultiFire::InsertFire(const Vec3& Pos) {
-		auto ParticlePtr = InsertParticle(4);
-		ParticlePtr->SetEmitterPos(Pos);
-		ParticlePtr->SetTextureResource(L"FIRE_TX");
-		ParticlePtr->SetMaxTime(0.5f);
-//		vector<ParticleSprite>& pSpriteVec = ParticlePtr->GetParticleSpriteVec();
-		for (auto& rParticleSprite : ParticlePtr->GetParticleSpriteVec()) {
+		auto ptrParticle = InsertParticle(4);
+		ptrParticle->SetEmitterPos(Pos);
+		ptrParticle->SetTextureResource(L"FIRE_TX");
+		ptrParticle->SetMaxTime(0.5f);
+		for (auto& rParticleSprite : ptrParticle->GetParticleSpriteVec()) {
 			rParticleSprite.m_LocalPos.x = Util::RandZeroToOne() * 0.1f - 0.05f;
 			rParticleSprite.m_LocalPos.y = Util::RandZeroToOne() * 0.1f;
 			rParticleSprite.m_LocalPos.z = Util::RandZeroToOne() * 0.1f - 0.05f;
