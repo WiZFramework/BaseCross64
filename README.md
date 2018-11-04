@@ -13,8 +13,8 @@ https://github.com/WiZFramework/BaseCross
 　VisualStudio2017のアップデートがおすみでない方は、「ツール」「ツールの機能を取得」でインストーラーを最新の状態にしてからSDKバージョン「10.0.17134.0」もセットアップしてください。  
 　とにかく、VisualStudio2017を2018年5月時点での最新の状態にしてください。  
 
-また、ドキュメント部分のみオンライン公開されています。
-https://wizframework.github.io/Documents/
+また、ドキュメント部分のみオンライン公開されています。  
+https://wizframework.github.io/Documents/  
 
 の「BaseCross64」を参照ください。
 ダウンロードする前に内容を確認したい場合などにご利用ください。
