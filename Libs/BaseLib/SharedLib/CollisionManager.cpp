@@ -269,7 +269,7 @@ namespace basecross {
 		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
 			m_CollisionPairVec[m_KeepIndex].push_back(v);
 		}
-
+		//--------------------------------------------------------
 		//キープ配列のソート
 		//--------------------------------------------------------
 		auto func = [](CollisionPair& Left, CollisionPair& Right)->bool {
@@ -307,7 +307,6 @@ namespace basecross {
 				EscapeFromDest(*it);
 			}
 		}
-
 		//衝突メッセージの送信
 		//Exit
 		for (auto& v : m_TempExitVec) {
