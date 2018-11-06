@@ -1695,11 +1695,14 @@ namespace basecross{
 		}
 	};
 
+#define HITTEST_INTERVAL_EPSILON 0.0005f
+
 	//--------------------------------------------------------------------------------------
 	///	衝突判定用のユーティリティ構造体
 	//--------------------------------------------------------------------------------------
 	struct HitTest{
-		HitTest(){}
+		HitTest()
+		{}
 		~HitTest(){}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2794,7 +2797,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestSphereRect(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -2803,7 +2805,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_COLRECT(SrcSp2, DestRect, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -2876,7 +2878,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestSphereTriangle(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const TRIANGLE& DestTri, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -2885,7 +2886,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_TRIANGLE(SrcSp2, DestTri, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -2912,7 +2913,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestObbRect(const OBB& SrcObb, const bsm::Vec3& SrcVelocity,
 			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			OBB SrcObb2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcObb2.m_Center = SrcObb.m_Center + SrcVelocity * mid;
@@ -2923,7 +2923,7 @@ namespace basecross{
 			if (!HitTest::OBB_COLRECT(SrcObb2, DestRect)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -2947,7 +2947,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestSphereSphere(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const SPHERE& DestSp, float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -2955,7 +2954,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_SPHERE(SrcSp2, DestSp)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -2980,7 +2979,6 @@ namespace basecross{
 		static bool CollisionTestSphereCylinder(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const CYLINDER& DestCy,
 			float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -2989,7 +2987,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_CYLINDER(SrcSp2, DestCy, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -3014,7 +3012,6 @@ namespace basecross{
 		static bool CollisionTestSphereCapsule(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const CAPSULE& DestCap,
 			float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -3023,7 +3020,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_CAPSULE(SrcSp2, DestCap, RetVec)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3047,8 +3044,6 @@ namespace basecross{
 		static bool CollisionTestCapsuleCapsule(const CAPSULE& SrcCapsule, const bsm::Vec3& SrcVelocity,
 			const CAPSULE& DestCap,
 			float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
-
 			CAPSULE SrcCapsule2 = SrcCapsule;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcCapsule2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcCapsule.m_Radius;
@@ -3071,7 +3066,7 @@ namespace basecross{
 			if (!HitTest::CAPSULE_CAPSULE(SrcCapsule2, DestCap, RetVec1, RetVec2)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3095,7 +3090,6 @@ namespace basecross{
 		static bool CollisionTestSphereAabb(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const AABB& DestAabb,
 			float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -3104,7 +3098,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_AABB(SrcSp2, DestAabb, RetVec)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3128,7 +3122,6 @@ namespace basecross{
 		static bool CollisionTestSphereObb(const SPHERE& SrcSp, const bsm::Vec3& SrcVelocity,
 			const OBB& DestObb,
 			float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			SPHERE SrcSp2;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcSp2.m_Center = SrcSp.m_Center + SrcVelocity * mid;
@@ -3137,7 +3130,7 @@ namespace basecross{
 			if (!HitTest::SPHERE_OBB(SrcSp2, DestObb, RetVec)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3287,7 +3280,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestCapsuleAabb(const CAPSULE& SrcCapsule, const bsm::Vec3& SrcVelocity,
 			const AABB& DestAabb, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			CAPSULE SrcCapsule2 = SrcCapsule;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcCapsule2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcCapsule.m_Radius;
@@ -3308,7 +3300,7 @@ namespace basecross{
 			if (!HitTest::CAPSULE_AABB(SrcCapsule2, DestAabb, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -3369,7 +3361,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestCapsuleObb(const CAPSULE& SrcCapsule, const bsm::Vec3& SrcVelocity,
 			const OBB& DestObb, float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			CAPSULE SrcCapsule2 = SrcCapsule;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcCapsule2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcCapsule.m_Radius;
@@ -3390,7 +3381,7 @@ namespace basecross{
 			if (!HitTest::CAPSULE_OBB(SrcCapsule2, DestObb, RetVec)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3458,7 +3449,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestCapsuleTriangle(const CAPSULE& SrcCapsule, const bsm::Vec3& SrcVelocity,
 			const TRIANGLE& DestTri, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			CAPSULE SrcCapsule2 = SrcCapsule;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcCapsule2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcCapsule.m_Radius;
@@ -3479,7 +3469,7 @@ namespace basecross{
 			if (!HitTest::CAPSULE_TRIANGLE(SrcCapsule2, DestTri, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -3549,7 +3539,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestCapsuleRect(const CAPSULE& SrcCapsule, const bsm::Vec3& SrcVelocity,
 			const COLRECT& DestRect, float StartTime, float EndTime, float& HitTime) {
-			const float m_EPSILON = 0.005f;
 			CAPSULE SrcCapsule2 = SrcCapsule;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcCapsule2.m_Radius = (mid - StartTime) * bsm::length(SrcVelocity) + SrcCapsule.m_Radius;
@@ -3570,7 +3559,7 @@ namespace basecross{
 			if (!HitTest::CAPSULE_COLRECT(SrcCapsule2, DestRect, RetVec)) {
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON) {
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON) {
 				HitTime = StartTime;
 				return true;
 			}
@@ -3593,7 +3582,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestObbObbSub(const OBB& SrcObb, const bsm::Vec3& SrcVelocity,
 			const OBB& DestObb, float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			OBB SrcObb2 = SrcObb;
 			float mid = (StartTime + EndTime) * 0.5f;
 			SrcObb2.m_Center = SrcObb.m_Center + SrcVelocity * mid;
@@ -3604,7 +3592,7 @@ namespace basecross{
 			if (!HitTest::OBB_OBB(SrcObb2, DestObb)){
 				return false;
 			}
-			if (EndTime - StartTime < m_EPSILON){
+			if (EndTime - StartTime < HITTEST_INTERVAL_EPSILON){
 				HitTime = StartTime;
 				return true;
 			}
@@ -3628,7 +3616,6 @@ namespace basecross{
 		//--------------------------------------------------------------------------------------
 		static bool CollisionTestObbObb(const OBB& SrcObb, const bsm::Vec3& SrcVelocity,
 			const OBB& DestObb, float StartTime, float EndTime, float& HitTime){
-			const float m_EPSILON = 0.005f;
 			SPHERE BeforeSrcSphere;
 			BeforeSrcSphere.m_Center = SrcObb.m_Center;
 			BeforeSrcSphere.m_Radius = bsm::length(SrcObb.m_Size);

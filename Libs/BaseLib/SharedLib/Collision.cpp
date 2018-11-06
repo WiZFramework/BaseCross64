@@ -27,7 +27,7 @@ namespace basecross {
 			m_Fixed(false),
 			m_AfterCollision(AfterCollision::Auto),
 			m_SolverBodySpan(0.001f),
-			m_SolverBodyMax(1000)
+			m_SolverBodyMax(2000)
 		{
 		}
 		~Impl() {}
@@ -283,6 +283,7 @@ namespace basecross {
 			DestChkSphere.m_Center += DestVelocity * HitTime;
 			pair.m_SrcHitNormal = SrcChkSphere.m_Center - DestChkSphere.m_Center;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = (DestChkSphere.m_Center + SrcChkSphere.m_Center) * 0.5f;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -321,6 +322,7 @@ namespace basecross {
 			//衝突した瞬間で法線を計算
 			pair.m_SrcHitNormal = SrcChkSphere.m_Center - ret;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -358,6 +360,7 @@ namespace basecross {
 			//衝突した瞬間で法線を計算
 			pair.m_SrcHitNormal = SrcChkSphere.m_Center - ret;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -389,12 +392,19 @@ namespace basecross {
 			if (IsHit) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
-					SrcSphere.m_Center += span * GetSolverBodySpan();
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のSPHEREをコピー
+				auto NowSp = SrcSphere;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcSphere.m_Center += span * MaxFloat;
+				if (!HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestSphereSphere(SrcSphere, velo, DestSphere, 0, MaxFloat, HitTime)) {
+						SrcSphere.m_Center += velo * HitTime;
+					}
+					else {
+						SrcSphere = NowSp;
 					}
 				}
 				SrcSphere.m_Center.floor(3);
@@ -410,12 +420,19 @@ namespace basecross {
 			if (Ishit) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret)) {
-					SrcSphere.m_Center += span * GetSolverBodySpan();
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のSPHEREをコピー
+				auto NowSp = SrcSphere;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcSphere.m_Center += span * MaxFloat;
+				if (!HitTest::SPHERE_CAPSULE(SrcSphere, DestCap, Ret)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestSphereCapsule(SrcSphere, velo, DestCap, 0, MaxFloat, HitTime)) {
+						SrcSphere.m_Center += velo * HitTime;
+					}
+					else {
+						SrcSphere = NowSp;
 					}
 				}
 				SrcSphere.m_Center.floor(3);
@@ -431,12 +448,19 @@ namespace basecross {
 			if (Ishit) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret)) {
-					SrcSphere.m_Center += span * GetSolverBodySpan();
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のSPHEREをコピー
+				auto NowSp = SrcSphere;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcSphere.m_Center += span * MaxFloat;
+				if (!HitTest::SPHERE_OBB(SrcSphere, DestObb, Ret)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestSphereObb(SrcSphere,velo, DestObb, 0, MaxFloat, HitTime)) {
+						SrcSphere.m_Center += velo * HitTime;
+					}
+					else {
+						SrcSphere = NowSp;
 					}
 				}
 				SrcSphere.m_Center.floor(3);
@@ -614,6 +638,7 @@ namespace basecross {
 			//衝突した瞬間で法線を計算
 			pair.m_SrcHitNormal = ret - DestChkSphere.m_Center;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -659,6 +684,7 @@ namespace basecross {
 			HitTest::ClosetPtPointSegment(ret1, Start, End, t, RetVec);
 			pair.m_SrcHitNormal = ret1 - RetVec;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret1;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -698,6 +724,7 @@ namespace basecross {
 			bsm::Vec3 SegPoint;
 			HitTest::ClosetPtPointSegment(RetVec, SrcChkCapsule.m_PointBottom, SrcChkCapsule.m_PointTop, t, SegPoint);
 			pair.m_SrcHitNormal = SegPoint - RetVec;
+			pair.m_CalcHitPoint = RetVec;
 			pair.m_SrcHitNormal.normalize();
 			GetCollisionManager()->InsertNewPair(pair);
 		}
@@ -755,18 +782,24 @@ namespace basecross {
 			if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
-					Center += span * GetSolverBodySpan();
-					SrcCap.SetCenter(Center);
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のCAPSULEをコピー
+				auto NowCap = SrcCap;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcCap.SetCenter(SrcCap.GetCenter() + span * MaxFloat);
+				if (!HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, Ret1, Ret2)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestCapsuleCapsule(SrcCap, velo, DestCap, 0, MaxFloat, HitTime)) {
+						SrcCap.SetCenter(SrcCap.GetCenter() + velo * HitTime);
+					}
+					else {
+						SrcCap = NowCap;
 					}
 				}
-				bsm::Vec3 v = SrcCap.GetCenter();
-				v.floor(3);
-				SrcCap.SetCenter(v);
+				auto Center = SrcCap.GetCenter();
+				Center.floor(3);
+				SrcCap.SetCenter(Center);
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
 				PtrTransform->ResetWorldPosition(SrcCap.GetCenter());
@@ -780,18 +813,24 @@ namespace basecross {
 			if (Ishit) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret)) {
-					Center += span * GetSolverBodySpan();
-					SrcCap.SetCenter(Center);
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のCAPSULEをコピー
+				auto NowCap = SrcCap;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcCap.SetCenter(SrcCap.GetCenter() + span * MaxFloat);
+				if (!HitTest::CAPSULE_OBB(SrcCap, DestObb, Ret)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestCapsuleObb(SrcCap, velo, DestObb, 0, MaxFloat, HitTime)) {
+						SrcCap.SetCenter(SrcCap.GetCenter() + velo * HitTime);
+					}
+					else {
+						SrcCap = NowCap;
 					}
 				}
-				bsm::Vec3 v = SrcCap.GetCenter();
-				v.floor(3);
-				SrcCap.SetCenter(v);
+				auto Center = SrcCap.GetCenter();
+				Center.floor(3);
+				SrcCap.SetCenter(Center);
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
 				PtrTransform->ResetWorldPosition(SrcCap.GetCenter());
@@ -928,6 +967,7 @@ namespace basecross {
 			HitTest::SPHERE_OBB(DestChkSphere, SrcChkObb, ret);
 			//衝突した瞬間で法線を計算
 			pair.m_SrcHitNormal = ret - DestChkSphere.m_Center;
+			pair.m_CalcHitPoint = ret;
 			pair.m_SrcHitNormal.normalize();
 			GetCollisionManager()->InsertNewPair(pair);
 		}
@@ -969,6 +1009,7 @@ namespace basecross {
 			HitTest::ClosetPtPointSegment(RetVec, DestChkCapsule.m_PointBottom, DestChkCapsule.m_PointTop, t, SegPoint);
 			pair.m_SrcHitNormal = RetVec - SegPoint;
 			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = RetVec;
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
@@ -1008,6 +1049,7 @@ namespace basecross {
 			//接点へのベクトル
 			//衝突した瞬間で法線を計算
 			pair.m_SrcHitNormal = SrcChkObb.m_Center - RetVec;
+			pair.m_CalcHitPoint = RetVec;
 			pair.m_SrcHitNormal.normalize();
 			GetCollisionManager()->InsertNewPair(pair);
 		}
@@ -1075,6 +1117,7 @@ namespace basecross {
 				auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 				//エスケープはリセット
 				PtrTransform->ResetWorldPosition(SrcObb.m_Center);
+
 			}
 		}
 		else if (ShDestObb) {
@@ -1083,12 +1126,19 @@ namespace basecross {
 			if (Ishit) {
 				bsm::Vec3 span = Pair.m_SrcHitNormal;
 				span.normalize();
-				int count = 0;
-				while (HitTest::OBB_OBB(SrcObb, DestObb)) {
-					SrcObb.m_Center += span * GetSolverBodySpan();
-					count++;
-					if (count > GetSolverBodyMax()) {
-						break;
+				//現在のOBBをコピー
+				auto NowObb = SrcObb;
+				//まず最大距離まで移動
+				auto MaxFloat = GetSolverBodySpan() * GetSolverBodyMax();
+				SrcObb.m_Center += span * MaxFloat;
+				if (!HitTest::OBB_OBB(SrcObb, DestObb)) {
+					auto velo = -span * MaxFloat;
+					float HitTime = 0;
+					if (HitTest::CollisionTestObbObb(SrcObb, velo, DestObb, 0, MaxFloat, HitTime)) {
+						SrcObb.m_Center += velo * HitTime;
+					}
+					else {
+						SrcObb = NowObb;
 					}
 				}
 				SrcObb.m_Center.floor(3);

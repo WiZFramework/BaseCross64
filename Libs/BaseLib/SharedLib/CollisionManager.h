@@ -13,10 +13,10 @@ namespace basecross {
 		weak_ptr<Collision> m_Src;
 		weak_ptr<Collision> m_Dest;
 		bsm::Vec3 m_SrcHitNormal;
-//		float m_SrcHitLength;
+		bsm::Vec3 m_CalcHitPoint;
 		CollisionPair():
-			m_SrcHitNormal(0)
-//			m_SrcHitLength(0)
+			m_SrcHitNormal(0),
+			m_CalcHitPoint(0)
 		{}
 	};
 
@@ -72,14 +72,14 @@ namespace basecross {
 			for (auto& v : m_CollisionPairVec[Index]) {
 				auto ShSrc = v.m_Src.lock();
 				auto ShDest = v.m_Dest.lock();
-				if (ShSrc == Src && ShDest == Dest) {
-					//ペアが逆は不可
-					return true;
-				}
-				//if ((ShSrc == Src && ShDest == Dest) || (ShSrc == Dest && ShDest == Src)) {
-				//	//ペアが逆でも可
+				//if (ShSrc == Src && ShDest == Dest) {
+				//	//ペアが逆は不可
 				//	return true;
 				//}
+				if ((ShSrc == Src && ShDest == Dest) || (ShSrc == Dest && ShDest == Src)) {
+					//ペアが逆でも可
+					return true;
+				}
 
 			}
 			return false;

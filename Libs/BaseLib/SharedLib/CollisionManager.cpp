@@ -183,7 +183,7 @@ namespace basecross {
 		if (!SrcColl || !DestColl) {
 			return false;
 		}
-		if (SrcColl->IsFixed() || !SrcColl->IsUpdateActive() || !DestColl->IsUpdateActive()) {
+		if (SrcColl->IsFixed()) {
 			return false;
 		}
 		if (SrcColl->IsExcludeCollisionObject(Dest) || DestColl->IsExcludeCollisionObject(Src)) {
@@ -260,7 +260,6 @@ namespace basecross {
 				}
 			}
 		}
-
 		//新規のペア配列のクリア
 		m_CollisionPairVec[m_NewIndex].clear();
 		//新規の衝突判定
@@ -269,6 +268,7 @@ namespace basecross {
 		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
 			m_CollisionPairVec[m_KeepIndex].push_back(v);
 		}
+
 		//--------------------------------------------------------
 		//キープ配列のソート
 		//--------------------------------------------------------
