@@ -129,8 +129,8 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 	//例外処理開始
 	try {
 		//COMの初期化
-		//サウンドで使用する
-		if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
+		//サウンドなどで使用する
+		if (FAILED(::CoInitialize(nullptr))) {
 			// 初期化失敗
 			throw exception("Com初期化に失敗しました。");
 		}
