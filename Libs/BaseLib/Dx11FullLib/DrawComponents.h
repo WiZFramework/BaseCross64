@@ -1040,6 +1040,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void DrawWireFrame(const shared_ptr<GameObject>& GameObj,
 			const shared_ptr<MeshResource>& Mesh,const bsm::Mat4x4& MeshToTransformMatrix = bsm::Mat4x4());
+
 	};
 
 	//--------------------------------------------------------------------------------------

@@ -130,8 +130,6 @@ namespace basecross{
 
 	}
 
-
-
 	//--------------------------------------------------------------------------------------
 	//	追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
@@ -153,8 +151,6 @@ namespace basecross{
 		ptrTransform->SetScale(0.125f, 0.25f, 0.25f);
 		ptrTransform->SetRotation(0.0f, 0.0f, 0.0f);
 
-		AddTag(L"SeekGroup");
-
 		//オブジェクトのグループを得る
 		auto group = GetStage()->GetSharedObjectGroup(L"SeekGroup");
 		//グループに自分自身を追加
@@ -164,23 +160,23 @@ namespace basecross{
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
 		//分離行動をつける
-		auto ptrSep = GetBehavior<SeparationSteering>();
-		ptrSep->SetGameObjectGroup(group);
+		auto PtrSep = GetBehavior<SeparationSteering>();
+		PtrSep->SetGameObjectGroup(group);
 		//影をつける
-		auto shadowPtr = AddComponent<Shadowmap>();
-		shadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
 
-		auto strDraw = AddComponent<BcPNTStaticDraw>();
-		strDraw->SetFogEnabled(true);
-		strDraw->SetMeshResource(L"DEFAULT_CUBE");
-		strDraw->SetTextureResource(L"TRACE_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetTextureResource(L"TRACE_TX");
 		//透明処理をする
 		SetAlphaActive(true);
 
 		//ステートマシンの構築
 		m_StateMachine.reset(new StateMachine<SeekObject>(GetThis<SeekObject>()));
 		//最初のステートをSeekFarStateに設定
-		m_StateMachine->ChangeState(FarState::Instance());
+		m_StateMachine->ChangeState(SeekFarState::Instance());
 	}
 
 
@@ -194,22 +190,20 @@ namespace basecross{
 		ptrUtil->RotToHead(1.0f);
 	}
 
-	void SeekObject::OnUpdate2() {
-	}
 
 	Vec3 SeekObject::GetTargetPos()const {
-		auto targetPtr = GetStage()->GetSharedObject(L"Player");
-		return targetPtr->GetComponent<Transform>()->GetPosition();
+		auto ptrTarget = GetStage()->GetSharedObject(L"Player");
+		return ptrTarget->GetComponent<Transform>()->GetPosition();
 	}
 
 
 	void SeekObject::ApplyForce() {
 		float elapsedTime = App::GetApp()->GetElapsedTime();
 		m_Velocity += m_Force * elapsedTime;
-		auto ptrTransform = GetComponent<Transform>();
-		auto pos = ptrTransform->GetPosition();
+		auto ptrTrans = GetComponent<Transform>();
+		auto pos = ptrTrans->GetPosition();
 		pos += m_Velocity * elapsedTime;
-		ptrTransform->SetPosition(pos);
+		ptrTrans->SetPosition(pos);
 	}
 
 
@@ -217,13 +211,13 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//	プレイヤーから遠いときの移動
 	//--------------------------------------------------------------------------------------
-	shared_ptr<FarState> FarState::Instance() {
-		static shared_ptr<FarState> instance(new FarState);
+	shared_ptr<SeekFarState> SeekFarState::Instance() {
+		static shared_ptr<SeekFarState> instance(new SeekFarState);
 		return instance;
 	}
-	void FarState::Enter(const shared_ptr<SeekObject>& Obj) {
+	void SeekFarState::Enter(const shared_ptr<SeekObject>& Obj) {
 	}
-	void FarState::Execute(const shared_ptr<SeekObject>& Obj) {
+	void SeekFarState::Execute(const shared_ptr<SeekObject>& Obj) {
 		auto ptrSeek = Obj->GetBehavior<SeekSteering>();
 		auto ptrSep = Obj->GetBehavior<SeparationSteering>();
 		auto force = Obj->GetForce();
@@ -233,23 +227,23 @@ namespace basecross{
 		Obj->ApplyForce();
 		float f = bsm::length(Obj->GetComponent<Transform>()->GetPosition() - Obj->GetTargetPos());
 		if (f < Obj->GetStateChangeSize()) {
-			Obj->GetStateMachine()->ChangeState(NearState::Instance());
+			Obj->GetStateMachine()->ChangeState(SeekNearState::Instance());
 		}
 	}
 
-	void FarState::Exit(const shared_ptr<SeekObject>& Obj) {
+	void SeekFarState::Exit(const shared_ptr<SeekObject>& Obj) {
 	}
 
 	//--------------------------------------------------------------------------------------
 	//	プレイヤーから近いときの移動
 	//--------------------------------------------------------------------------------------
-	shared_ptr<NearState> NearState::Instance() {
-		static shared_ptr<NearState> instance(new NearState);
+	shared_ptr<SeekNearState> SeekNearState::Instance() {
+		static shared_ptr<SeekNearState> instance(new SeekNearState);
 		return instance;
 	}
-	void NearState::Enter(const shared_ptr<SeekObject>& Obj) {
+	void SeekNearState::Enter(const shared_ptr<SeekObject>& Obj) {
 	}
-	void NearState::Execute(const shared_ptr<SeekObject>& Obj) {
+	void SeekNearState::Execute(const shared_ptr<SeekObject>& Obj) {
 		auto ptrArrive = Obj->GetBehavior<ArriveSteering>();
 		auto ptrSep = Obj->GetBehavior<SeparationSteering>();
 		auto force = Obj->GetForce();
@@ -259,12 +253,11 @@ namespace basecross{
 		Obj->ApplyForce();
 		float f = bsm::length(Obj->GetComponent<Transform>()->GetPosition() - Obj->GetTargetPos());
 		if (f >= Obj->GetStateChangeSize()) {
-			Obj->GetStateMachine()->ChangeState(FarState::Instance());
+			Obj->GetStateMachine()->ChangeState(SeekFarState::Instance());
 		}
 	}
-	void NearState::Exit(const shared_ptr<SeekObject>& Obj) {
+	void SeekNearState::Exit(const shared_ptr<SeekObject>& Obj) {
 	}
-
 
 
 	//--------------------------------------------------------------------------------------

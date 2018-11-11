@@ -28,7 +28,17 @@ namespace basecross {
 		m_KeepIndex(1),
 		m_RecursiveCount(0),
 		pImpl(new Impl())
-	{}
+	{
+		m_CollisionPairVec[0].resize(1024);
+		m_CollisionPairVec[0].clear();
+		m_CollisionPairVec[1].resize(1024);
+		m_CollisionPairVec[1].clear();
+		m_TempKeepVec.resize(1024);
+		m_TempKeepVec.clear();
+		m_TempExitVec.clear();
+
+
+	}
 	CollisionManager::~CollisionManager() {}
 
 	void CollisionManager::EscapePair(CollisionPair& Pair) {
@@ -72,12 +82,18 @@ namespace basecross {
 		auto SrcSp = Src->GetSphere();
 		if (ShDestSp) {
 			auto DestSp = ShDestSp->GetSphere();
+			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(),DestSp.GetWrappedAABB())) {
+				return false;
+			}
 			if (HitTest::SPHERE_SPHERE(SrcSp, DestSp)) {
 				return true;
 			}
 		}
 		else if (ShDestCap) {
 			auto DestCap = ShDestCap->GetCapsule();
+			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
+				return false;
+			}
 			bsm::Vec3 d;
 			if (HitTest::SPHERE_CAPSULE(SrcSp, DestCap, d)) {
 				return true;
@@ -85,6 +101,9 @@ namespace basecross {
 		}
 		else if (ShDestObb) {
 			auto DestObb = ShDestObb->GetObb();
+			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
+				return false;
+			}
 			bsm::Vec3 d;
 			if (HitTest::SPHERE_OBB(SrcSp, DestObb, d)) {
 				return true;
@@ -99,14 +118,20 @@ namespace basecross {
 		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
 		auto SrcCap = Src->GetCapsule();
 		if (ShDestSp) {
-			bsm::Vec3 d;
 			auto DestSp = ShDestSp->GetSphere();
+			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestSp.GetWrappedAABB())) {
+				return false;
+			}
+			bsm::Vec3 d;
 			if (HitTest::SPHERE_CAPSULE(DestSp, SrcCap, d)) {
 				return true;
 			}
 		}
 		else if (ShDestCap) {
 			auto DestCap = ShDestCap->GetCapsule();
+			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
+				return false;
+			}
 			bsm::Vec3 d1, d2;
 			if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, d1, d2)) {
 				return true;
@@ -114,6 +139,9 @@ namespace basecross {
 		}
 		else if (ShDestObb) {
 			auto DestObb = ShDestObb->GetObb();
+			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
+				return false;
+			}
 			bsm::Vec3 d;
 			if (HitTest::CAPSULE_OBB(SrcCap, DestObb, d)) {
 				return true;
@@ -129,12 +157,18 @@ namespace basecross {
 		if (ShDestSp) {
 			bsm::Vec3 d;
 			auto DestSp = ShDestSp->GetSphere();
+			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestSp.GetWrappedAABB())) {
+				return false;
+			}
 			if (HitTest::SPHERE_OBB(DestSp, SrcObb, d)) {
 				return true;
 			}
 		}
 		else if (ShDestCap) {
 			auto DestCap = ShDestCap->GetCapsule();
+			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
+				return false;
+			}
 			bsm::Vec3 d;
 			if (HitTest::CAPSULE_OBB(DestCap, SrcObb, d)) {
 				return true;
@@ -142,6 +176,9 @@ namespace basecross {
 		}
 		else if (ShDestObb) {
 			auto DestObb = ShDestObb->GetObb();
+			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
+				return false;
+			}
 			if (HitTest::OBB_OBB(SrcObb, DestObb)) {
 				return true;
 			}
@@ -344,6 +381,7 @@ namespace basecross {
 				}
 			}
 		}
+
 	}
 
 

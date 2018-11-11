@@ -1127,6 +1127,13 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		AABB GetWrappedAABB() const {
+			AABB ret;
+			if (IsRotIdentity()) {
+				ret.m_Min = bsm::Vec3(-m_Size.x, -m_Size.y, -m_Size.z);
+				ret.m_Max = bsm::Vec3(m_Size.x, m_Size.y, m_Size.z);
+				ret.Move(m_Center);
+				return ret;
+			}
 			float Half = 0.5f;
 			bsm::Vec3 Vec[] = {
 				bsm::Vec3(-Half,-Half,-Half),
@@ -1140,7 +1147,6 @@ namespace basecross{
 				bsm::Vec3(-Half,Half,Half),
 			};
 			bool First = true;
-			AABB ret;
 			auto m = GetWorldMatrix();
 			for (auto& v : Vec) {
 				v *= m;
@@ -3625,6 +3631,94 @@ namespace basecross{
 			}
 			return CollisionTestObbObbSub(SrcObb, SrcVelocity,DestObb, StartTime, EndTime,HitTime);
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREÇ∆SPHEREÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	sp1	SPHERE
+		@param[in]	sp2	SPHERE
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_SPHERE_BY_AABB(const SPHERE& sp1, const SPHERE& sp2) {
+			if (HitTest::AABB_AABB(sp1.GetWrappedAABB(), sp2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREÇ∆CAPSULEÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	sp	SPHERE
+		@param[in]	cp	CAPSULE
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_CAPSULE_BY_AABB(const SPHERE& sp, const CAPSULE& cp) {
+			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), cp.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREÇ∆OBBÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	sp	SPHERE
+		@param[in]	obb	OBB
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_OBB_BY_AABB(const SPHERE& sp, const OBB& obb) {
+			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), obb.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEÇ∆CAPSULEÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	cp1	CAPSULE
+		@param[in]	cp2	CAPSULE
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_CAPSULE_BY_AABB(const CAPSULE& cp1, const CAPSULE& cp2) {
+			if (HitTest::AABB_AABB(cp1.GetWrappedAABB(), cp2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEÇ∆OBBÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	cp	CAPSULE
+		@param[in]	obb	OBB
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_OBB_BY_AABB(const CAPSULE& cp, const OBB& obb) {
+			if (HitTest::AABB_AABB(cp.GetWrappedAABB(), obb.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBÇ∆OBBÇ∆ÇÃAABBè’ìÀîªíË
+		@param[in]	obb1 OBB
+		@param[in]	obb2 OBB
+		@return	è’ìÀÇµÇƒÇ¢ÇÍÇŒtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_OBB_BY_AABB(const OBB& obb1, const OBB& obb2) {
+			if (HitTest::AABB_AABB(obb1.GetWrappedAABB(), obb2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+
+
+
 	};
 
 	inline AABB CAPSULE::GetWrappedAABB() const {

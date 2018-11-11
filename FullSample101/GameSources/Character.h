@@ -108,53 +108,45 @@ namespace basecross{
 		void AddForce(const Vec3& f) {
 			m_Force += f;
 		}
-
-
 		const Vec3& GetVelocity()const {
 			return m_Velocity;
 		}
 		void SetVelocity(const Vec3& v) {
 			m_Velocity = v;
 		}
-
 		void ApplyForce();
-
 		Vec3 GetTargetPos()const;
-
-
 		//操作
 		virtual void OnUpdate() override;
-		virtual void OnUpdate2() override;
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class FarState : public ObjState<SeekObject>;
+	//	class SeekFarState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから遠いときの移動
 	//--------------------------------------------------------------------------------------
-	class FarState : public ObjState<SeekObject>
+	class SeekFarState : public ObjState<SeekObject>
 	{
-		FarState() {}
+		SeekFarState() {}
 	public:
-		static shared_ptr<FarState> Instance();
+		static shared_ptr<SeekFarState> Instance();
 		virtual void Enter(const shared_ptr<SeekObject>& Obj)override;
 		virtual void Execute(const shared_ptr<SeekObject>& Obj)override;
 		virtual void Exit(const shared_ptr<SeekObject>& Obj)override;
 	};
 
 	//--------------------------------------------------------------------------------------
-	//	class NearState : public ObjState<SeekObject>;
+	//	class SeekNearState : public ObjState<SeekObject>;
 	//	用途: プレイヤーから近いときの移動
 	//--------------------------------------------------------------------------------------
-	class NearState : public ObjState<SeekObject>
+	class SeekNearState : public ObjState<SeekObject>
 	{
-		NearState() {}
+		SeekNearState() {}
 	public:
-		static shared_ptr<NearState> Instance();
+		static shared_ptr<SeekNearState> Instance();
 		virtual void Enter(const shared_ptr<SeekObject>& Obj)override;
 		virtual void Execute(const shared_ptr<SeekObject>& Obj)override;
 		virtual void Exit(const shared_ptr<SeekObject>& Obj)override;
 	};
-
 
 
 	//--------------------------------------------------------------------------------------

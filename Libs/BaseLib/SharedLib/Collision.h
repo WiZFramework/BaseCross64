@@ -190,6 +190,13 @@ namespace basecross {
 		virtual SPHERE GetEnclosingSphere()const = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief 1つ前と現在の連結させたAABBを得る
+		@return	連結させたAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetEnclosingAabb()const = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief 自分と相手の連結したSPHEREの衝突判定（前処理用）
 		@tparam	T	相手のコリジョンの型
 		@param[in]	DestColl	相手のコリジョン
@@ -201,6 +208,21 @@ namespace basecross {
 			SPHERE Src = GetEnclosingSphere();
 			SPHERE Dest = DestColl->GetEnclosingSphere();
 			return HitTest::SPHERE_SPHERE(Src, Dest);
+		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 自分と相手の連結したAABBの衝突判定（前処理用）
+		@tparam	T	相手のコリジョンの型
+		@param[in]	DestColl	相手のコリジョン
+		@return	ヒットしてればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		template <typename T>
+		bool CillisionWrappedAabb(const shared_ptr<T>& DestColl) {
+			AABB Src = GetEnclosingAabb();
+			AABB Dest = DestColl->GetEnclosingAabb();
+			return HitTest::AABB_AABB(Src, Dest);
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -416,6 +438,13 @@ namespace basecross {
 		virtual SPHERE GetEnclosingSphere()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief 1つ前と現在の連結させたAABBを得る
+		@return	連結させたAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetEnclosingAabb()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
@@ -576,6 +605,13 @@ namespace basecross {
 		virtual SPHERE GetEnclosingSphere()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief 1つ前と現在の連結させたAABBを得る
+		@return	連結させたAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetEnclosingAabb()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数
 		@return	包み込むAABB(1つ前のターン時の内容は見ない)
 		*/
@@ -708,6 +744,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual SPHERE GetEnclosingSphere()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 1つ前と現在の連結させたAABBを得る
+		@return	連結させたAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetEnclosingAabb()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	現在の包み込むAABBを返す。仮想関数

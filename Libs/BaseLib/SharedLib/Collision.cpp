@@ -373,6 +373,14 @@ namespace basecross {
 		return Src;
 	}
 
+	AABB CollisionSphere::GetEnclosingAabb()const {
+		AABB SrcAabb = GetSphere().GetWrappedAABB();
+		AABB SrcBeforAabb = GetBeforeSphere().GetWrappedAABB();
+		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
+		return Src;
+	}
+
+
 	bsm::Vec3 CollisionSphere::GetCenterPosition()const {
 		SPHERE SrcSphere = GetSphere();
 		return SrcSphere.m_Center;
@@ -738,6 +746,14 @@ namespace basecross {
 		return Src;
 	}
 
+	AABB CollisionCapsule::GetEnclosingAabb()const {
+		AABB SrcAabb = GetCapsule().GetWrappedAABB();
+		AABB SrcBeforAabb = GetBeforeCapsule().GetWrappedAABB();
+		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
+		return Src;
+	}
+
+
 	bsm::Vec3 CollisionCapsule::GetCenterPosition()const {
 		CAPSULE SrcCapsule = GetCapsule();
 		return SrcCapsule.GetCenter();
@@ -1062,6 +1078,14 @@ namespace basecross {
 		SPHERE Src = HitTest::SphereEnclosingSphere(SrcObb.GetWrappedSPHERE(), SrcBeforeObb.GetWrappedSPHERE());
 		return Src;
 	}
+
+	AABB CollisionObb::GetEnclosingAabb()const {
+		AABB SrcAabb = GetObb().GetWrappedAABB();
+		AABB SrcBeforAabb = GetBeforeObb().GetWrappedAABB();
+		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
+		return Src;
+	}
+
 
 	bsm::Vec3 CollisionObb::GetCenterPosition()const {
 		OBB SrcObb = GetObb();
