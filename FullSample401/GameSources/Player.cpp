@@ -23,7 +23,7 @@ namespace basecross{
 			//補間係数が0以下なら何もしない
 			return;
 		}
-		auto ptrTransform = GetComponent<Transform>();
+		auto ptrTrans = GetComponent<Transform>();
 		//回転の更新
 		if (Velocity.length() > 0.0f) {
 			Vec3 temp = Velocity;
@@ -33,7 +33,7 @@ namespace basecross{
 			qt.rotationRollPitchYawFromVector(Vec3(0, toAngle, 0));
 			qt.normalize();
 			//現在の回転を取得
-			Quat nowQt = ptrTransform->GetQuaternion();
+			Quat nowQt = ptrTrans->GetQuaternion();
 			//現在と目標を補間
 			if (LerpFact >= 1.0f) {
 				nowQt = qt;
@@ -42,7 +42,7 @@ namespace basecross{
 				//クオータニオンの補間処理
 				nowQt = XMQuaternionSlerp(nowQt, qt, LerpFact);
 			}
-			ptrTransform->SetQuaternion(nowQt);
+			ptrTrans->SetQuaternion(nowQt);
 		}
 	}
 
@@ -174,14 +174,14 @@ namespace basecross{
 
 	//Aボタンハンドラ
 	void  Player::OnPushA() {
-		auto Ptr = GetComponent<Transform>();
-		if (Ptr->GetPosition().y > 0.125f) {
+		auto ptrTrans = GetComponent<Transform>();
+		if (ptrTrans->GetPosition().y > 0.125f) {
 			return;
 		}
-		auto PtrPs = GetComponent<RigidbodySphere>();
-		auto Velo = PtrPs->GetLinearVelocity();
-		Velo += Vec3(0, 4.0f, 0.0);
-		PtrPs->SetLinearVelocity(Velo);
+		auto ptrPs = GetComponent<RigidbodySphere>();
+		auto velo = ptrPs->GetLinearVelocity();
+		velo += Vec3(0, 4.0f, 0.0);
+		ptrPs->SetLinearVelocity(velo);
 	}
 
 	//Bボタンハンドラ
@@ -194,77 +194,77 @@ namespace basecross{
 
 	//Xボタンハンドラ
 	void Player::OnPushX() {
-		auto Ptr = GetComponent<Transform>();
-		Vec3 Pos = Ptr->GetPosition();
-		Pos.y += 0.5f;
-		Quat Qt = Ptr->GetQuaternion();
-		Vec3 Rot = Qt.toRotVec();
-		float RotY = Rot.y;
-		Vec3 velo(sin(RotY), 0.05f, cos(RotY));
+		auto ptrTrans = GetComponent<Transform>();
+		Vec3 pos = ptrTrans->GetPosition();
+		pos.y += 0.5f;
+		Quat qt = ptrTrans->GetQuaternion();
+		Vec3 rot = qt.toRotVec();
+		float rotY = rot.y;
+		Vec3 velo(sin(rotY), 0.05f, cos(rotY));
 		velo.normalize();
 		velo *= 20.0f;
 
-		auto ShPtr = GetStage()->GetSharedGameObject<FireSphere>(L"FireSphere", false);
-		if (ShPtr) {
-			ShPtr->Reset(Pos, velo);
+		auto ptrSh = GetStage()->GetSharedGameObject<FireSphere>(L"FireSphere", false);
+		if (ptrSh) {
+			ptrSh->Reset(pos, velo);
 		}
 		else {
-			GetStage()->AddGameObject<FireSphere>(Pos, velo);
+			GetStage()->AddGameObject<FireSphere>(pos, velo);
 		}
 	}
 
 	//Yボタンハンドラ(押した瞬間)
 	void Player::OnPushY() {
 		//ホールドしたオブジェクトがなければ何もしない
-		auto HoldPtr = m_HoldObject.lock();
-		if (!HoldPtr) {
+		auto ptrHold = m_HoldObject.lock();
+		if (!ptrHold) {
 			return;
 		}
-		auto ActionLinePtr = m_ActionLine.lock();
-		if (ActionLinePtr) {
-			auto Check = ActionLinePtr->GetEndObj();
-			auto CheckHold = dynamic_pointer_cast<GameObject>(HoldPtr);
+		auto ptrActionLine = m_ActionLine.lock();
+		if (ptrActionLine) {
+			auto Check = ptrActionLine->GetEndObj();
+			auto CheckHold = dynamic_pointer_cast<GameObject>(ptrHold);
 			if (Check != CheckHold) {
-				ActionLinePtr->SetEndObj(HoldPtr);
+				ptrActionLine->SetEndObj(ptrHold);
 			}
-			ActionLinePtr->SetDrawActive(true);
+			ptrActionLine->SetDrawActive(true);
 		}
 		else {
 			//ラインの作成
-			auto LinePtr = GetStage()->AddGameObject<ActionLine>(GetThis<GameObject>(), HoldPtr);
-			LinePtr->SetDrawActive(true);
-			m_ActionLine = LinePtr;
+			auto ptrLine = GetStage()->AddGameObject<ActionLine>(GetThis<GameObject>(), ptrHold);
+			ptrLine->SetDrawActive(true);
+			m_ActionLine = ptrLine;
 		}
 	}
 
 
 	//Yボタンハンドラ(押し続け)
 	void Player::OnPressY() {
-		auto Ptr = GetComponent<Transform>();
-		auto PlayerPos = Ptr->GetPosition();
-		auto HoldPtr = m_HoldObject.lock();
-		if (HoldPtr) {
-			auto PsPtr = HoldPtr->GetDynamicComponent<RigidbodySingle>(false);
-			if (PsPtr) {
-				auto PsPos = PsPtr->GetPosition();
-				float ToY = 2.0f;
-				if (PsPos.y > 5.0f) {
-					ToY = 0.0f;
+		auto ptrTrans = GetComponent<Transform>();
+		auto playerPos = ptrTrans->GetPosition();
+		auto ptrHold = m_HoldObject.lock();
+		if (ptrHold) {
+			auto ptrPs = ptrHold->GetDynamicComponent<RigidbodySingle>(false);
+			if (ptrPs) {
+				auto psPos = ptrPs->GetPosition();
+				float toY = 2.0f;
+				if (psPos.y > 5.0f) {
+					toY = 0.0f;
 				}
-				PsPos.y = 0;
-				PlayerPos.y = 0;
-				Vec3 ToPlayerVec = PlayerPos - PsPos;
-				PsPtr->WakeUp();
-				PsPtr->SetLinearVelocity(Vec3(ToPlayerVec.x, ToY, ToPlayerVec.z));
+				psPos.y = 0;
+				playerPos.y = 0;
+				Vec3 toPlayerVec = playerPos - psPos;
+				ptrPs->WakeUp();
+				ptrPs->SetLinearVelocity(Vec3(toPlayerVec.x, toY, toPlayerVec.z));
 			}
 		}
 	}
 
 	//Yボタンハンドラ(離した瞬間)
 	void Player::OnReleaseY() {
-		auto ActionLinePtr = m_ActionLine.lock();
-		if (ActionLinePtr) {
-			ActionLinePtr->SetDrawActive(false);
+		auto ptrActionLine = m_ActionLine.lock();
+		if (ptrActionLine) {
+			ptrActionLine->SetDrawActive(false);
 		}
 	}
 
@@ -274,28 +274,28 @@ namespace basecross{
 		//文字列表示
 		wstring mess(L"Bボタンで再読み込み\nXボタンで発射\nホールド後Yボタンで運搬\n");
 		//オブジェクト数
-		auto ObjCount = GetStage()->GetGameObjectVec().size();
-		wstring OBJ_COUNT(L"OBJ_COUNT: ");
-		OBJ_COUNT += Util::SizeTToWStr(ObjCount);
-		OBJ_COUNT += L"\n";
+		auto objCount = GetStage()->GetGameObjectVec().size();
+		wstring objCountStr(L"OBJ_COUNT: ");
+		objCountStr += Util::SizeTToWStr(objCount);
+		objCountStr += L"\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
-		wstring FPS(L"FPS: ");
-		FPS += Util::UintToWStr(fps);
-		FPS += L"\nElapsedTime: ";
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		FPS += Util::FloatToWStr(ElapsedTime);
-		FPS += L"\n";
+		wstring fpsStr(L"FPS: ");
+		fpsStr += Util::UintToWStr(fps);
+		fpsStr += L"\nElapsedTime: ";
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		fpsStr += Util::FloatToWStr(elapsedTime);
+		fpsStr += L"\n";
 
-		auto Pos = GetComponent<Transform>()->GetPosition();
-		wstring PositionStr(L"Position:\t");
-		PositionStr += L"X=" + Util::FloatToWStr(Pos.x, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Y=" + Util::FloatToWStr(Pos.y, 6, Util::FloatModify::Fixed) + L",\t";
-		PositionStr += L"Z=" + Util::FloatToWStr(Pos.z, 6, Util::FloatModify::Fixed) + L"\n";
+		auto pos = GetComponent<Transform>()->GetPosition();
+		wstring positionStr(L"Position:\t");
+		positionStr += L"X=" + Util::FloatToWStr(pos.x, 6, Util::FloatModify::Fixed) + L",\t";
+		positionStr += L"Y=" + Util::FloatToWStr(pos.y, 6, Util::FloatModify::Fixed) + L",\t";
+		positionStr += L"Z=" + Util::FloatToWStr(pos.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring str = mess + OBJ_COUNT + FPS + PositionStr;
+		wstring str = mess + objCountStr + fpsStr + positionStr;
 		//文字列をつける
-		auto PtrString = GetComponent<StringSprite>();
-		PtrString->SetText(str);
+		auto ptrString = GetComponent<StringSprite>();
+		ptrString->SetText(str);
 	}
 
 }

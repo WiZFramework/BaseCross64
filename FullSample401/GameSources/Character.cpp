@@ -272,13 +272,13 @@ namespace basecross{
 	}
 
 	void ActivePsSphere::SetHoldBehavior(bool b) {
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		if (b) {
-			PtrDraw->SetEmissive(Col4(1.0f, 1.0f, 0, 0));
+			ptrDraw->SetEmissive(Col4(1.0f, 1.0f, 0, 0));
 
 		}
 		else {
-			PtrDraw->SetEmissive(Col4(0.0f, 0.0f, 0, 0));
+			ptrDraw->SetEmissive(Col4(0.0f, 0.0f, 0, 0));
 		}
 	}
 
@@ -345,18 +345,18 @@ namespace basecross{
 		param.m_MotionType = PsMotionType::MotionTypeActive;
 		param.m_Quat = m_Qt;
 		param.m_Pos = m_Position;
-		auto PsPtr = AddComponent<RigidbodyCapsule>(param);
-		PsPtr->SetDrawActive(true);
+		auto ptrPs = AddComponent<RigidbodyCapsule>(param);
+		ptrPs->SetDrawActive(true);
 	}
 
 	void ActivePsCapsule::SetHoldBehavior(bool b) {
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		if (b) {
-			PtrDraw->SetEmissive(Col4(1.0f, 1.0f, 0, 0));
+			ptrDraw->SetEmissive(Col4(1.0f, 1.0f, 0, 0));
 
 		}
 		else {
-			PtrDraw->SetEmissive(Col4(0.0f, 0.0f, 0, 0));
+			ptrDraw->SetEmissive(Col4(0.0f, 0.0f, 0, 0));
 		}
 	}
 
@@ -374,77 +374,78 @@ namespace basecross{
 	FireSphere::~FireSphere() {}
 
 	void FireSphere::OnCreate() {
-		auto PtrTransform = GetComponent<Transform>();
+		auto ptrTrans = GetComponent<Transform>();
 
-		PtrTransform->SetScale(Vec3(m_Scale));
-		PtrTransform->SetQuaternion(Quat());
-		PtrTransform->SetPosition(m_Emitter);
+		ptrTrans->SetScale(Vec3(m_Scale));
+		ptrTrans->SetQuaternion(Quat());
+		ptrTrans->SetPosition(m_Emitter);
 		//コリジョンを付ける（ボリューム取得のため）
-		auto PtrColl = AddComponent<CollisionSphere>();
-		PtrColl->SetAfterCollision(AfterCollision::None);
+		auto ptrColl = AddComponent<CollisionSphere>();
+		ptrColl->SetAfterCollision(AfterCollision::None);
 
 		//影をつける
-		auto ShadowPtr = AddComponent<Shadowmap>();
-		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		auto ptrShadow = AddComponent<Shadowmap>();
+		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 
-		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
-		PtrDraw->SetFogEnabled(true);
-		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		PtrDraw->SetTextureResource(L"SKY_TX");
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		ptrDraw->SetTextureResource(L"SKY_TX");
 
 		GetStage()->SetSharedGameObject(L"FireSphere", GetThis<GameObject>());
 	}
 
 	void FireSphere::OnUpdate() {
-		auto PtrTransform = GetComponent<Transform>();
-		if (PtrTransform->GetPosition().y > -20.0f) {
-			float ElapsedTime = App::GetApp()->GetElapsedTime();
+		auto ptrTrans = GetComponent<Transform>();
+		if (ptrTrans->GetPosition().y > -20.0f) {
+			float elapsedTime = App::GetApp()->GetElapsedTime();
 			Vec3 Ac = Vec3(0, -9.8f, 0) * 1.0f;
-			m_Velocity += Ac * ElapsedTime;
-			auto Pos = PtrTransform->GetPosition();
-			Pos += m_Velocity * ElapsedTime;
-			PtrTransform->SetPosition(Pos);
+			m_Velocity += Ac * elapsedTime;
+			auto Pos = ptrTrans->GetPosition();
+			Pos += m_Velocity * elapsedTime;
+			ptrTrans->SetPosition(Pos);
 		}
 		else {
 			//じっとしている
-			PtrTransform->SetPosition(Vec3(0, -20.0f, 0));
+			ptrTrans->SetPosition(Vec3(0, -20.0f, 0));
+			return;
 		}
-		auto Coll = GetComponent<CollisionSphere>();
+		auto ptrColl = GetComponent<CollisionSphere>();
 		//物理オブジェクトを持つ配列の取得
 		vector<shared_ptr<Rigidbody>> PsComptVec;
 		GetStage()->GetUsedDynamicCompoentVec<Rigidbody>(PsComptVec);
 		for (auto& v : PsComptVec) {
-			auto g_ptr = dynamic_pointer_cast<ActivePsObject>(v->GetGameObject());
-			if (g_ptr) {
+			auto ptrG = dynamic_pointer_cast<ActivePsObject>(v->GetGameObject());
+			if (ptrG) {
 				auto ptrRegSp = dynamic_pointer_cast<RigidbodySphere>(v);
 				auto ptrRegBox = dynamic_pointer_cast<RigidbodyBox>(v);
 				auto ptrRegCap = dynamic_pointer_cast<RigidbodyCapsule>(v);
 				bool hold = false;
 				if (ptrRegSp) {
-					if (HitTest::SPHERE_SPHERE(ptrRegSp->GetSPHERE(), Coll->GetSphere())) {
+					if (HitTest::SPHERE_SPHERE(ptrRegSp->GetSPHERE(), ptrColl->GetSphere())) {
 						hold = true;
 					}
 				}
 				else if (ptrRegBox) {
 					Vec3 ret;
-					if (HitTest::SPHERE_OBB(Coll->GetSphere(), ptrRegBox->GetOBB(), ret)) {
+					if (HitTest::SPHERE_OBB(ptrColl->GetSphere(), ptrRegBox->GetOBB(), ret)) {
 						hold = true;
 					}
 				}
 				else if (ptrRegCap) {
 					Vec3 ret;
-					if (HitTest::SPHERE_CAPSULE(Coll->GetSphere(), ptrRegCap->GetCAPSULE(), ret)) {
+					if (HitTest::SPHERE_CAPSULE(ptrColl->GetSphere(), ptrRegCap->GetCAPSULE(), ret)) {
 						hold = true;
 					}
 				}
 				if (hold) {
-					auto h_ptr = m_HoldObject.lock();
-					if (h_ptr) {
-						h_ptr->SetHold(false);
+					auto ptrHold = m_HoldObject.lock();
+					if (ptrHold) {
+						ptrHold->SetHold(false);
 					}
-					m_HoldObject = g_ptr;
-					g_ptr->SetHold(true);
-					PtrTransform->SetPosition(Vec3(0, -20, 0));
+					m_HoldObject = ptrG;
+					ptrG->SetHold(true);
+					ptrTrans->ResetPosition(Vec3(0, -20, 0));
 					break;
 				}
 			}
@@ -452,8 +453,8 @@ namespace basecross{
 	}
 
 	void FireSphere::Reset(const Vec3& Emitter, const Vec3& Velocity) {
-		auto PtrTransform = GetComponent<Transform>();
-		PtrTransform->SetPosition(Emitter);
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->ResetPosition(Emitter);
 		m_Velocity = Velocity;
 
 	}
