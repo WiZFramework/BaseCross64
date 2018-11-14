@@ -33,11 +33,11 @@ namespace basecross {
 		/*!
 		@brief ワイアフレームの描画
 		@param[in]	res	メッシュリソース
-		@param[in]	world	ワールド行列
+		@param[in]	meshtotrans	メッシュとトランスフォームの差分
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& world);
+		void DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& meshtotrans);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

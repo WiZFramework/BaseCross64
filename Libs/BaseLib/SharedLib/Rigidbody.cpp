@@ -19,17 +19,9 @@ namespace basecross {
 	}
 	Rigidbody::~Rigidbody() {}
 
-	void Rigidbody::DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& world) {
+	void Rigidbody::DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& meshtotrans) {
 		GenericDraw Draw;
-		bsm::Vec3 scale(0.5f);
-		bsm::Mat4x4 mat;
-		mat.affineTransformation(
-			bsm::Vec3(0.5f),
-			bsm::Vec3(0.0f),
-			bsm::Quat(),
-			bsm::Vec3(0.0f)
-		);
-		Draw.DrawWireFrame(GetGameObject(), res,mat);
+		Draw.DrawWireFrame(GetGameObject(), res, meshtotrans);
 	}
 
 	shared_ptr<MeshResource> Rigidbody::CreateCapsuleMesh(const PsCapsuleParam& param) {
@@ -256,31 +248,16 @@ namespace basecross {
 	}
 
 	void RigidbodySphere::OnDraw() {
-		auto index = GetIndex();
-		//行列の定義
-		bsm::Mat4x4 World, Local;
-		PsBodyStatus Status;
-		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		//トランスフォームからの差分
+		bsm::Mat4x4 meshtotrans;
+		meshtotrans.affineTransformation(
+			bsm::Vec3(0.5f),			//スケーリングは0.5f
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Quat(),				//回転角度
+			bsm::Vec3(0, 0, 0)				//位置
+		);
 		auto MeshRes = App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_SPHERE");
-		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
-		);
-		bsm::Vec3 LocalPos;
-		bsm::Quat LocalQt;
-		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		Local.affineTransformation(
-			bsm::Vec3(m_PsSphere->GetParam().m_Radius),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			LocalQt,				//回転角度
-			LocalPos				//位置
-		);
-		bsm::Mat4x4 DrawWorld = Local * World;
-		DrawShapeWireFrame(MeshRes, DrawWorld);
+		DrawShapeWireFrame(MeshRes, meshtotrans);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -312,31 +289,16 @@ namespace basecross {
 	}
 
 	void RigidbodyBox::OnDraw() {
-		auto index = GetIndex();
-		//行列の定義
-		bsm::Mat4x4 World, Local;
-		PsBodyStatus Status;
-		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
 		auto MeshRes = App::GetApp()->GetResource<MeshResource>(L"PSWIRE_PC_CUBE");
-		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
+		//トランスフォームからの差分
+		bsm::Mat4x4 meshtotrans;
+		meshtotrans.affineTransformation(
+			bsm::Vec3(0.5f),			//スケーリングは0.5f
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
+			Quat(),				//回転角度
+			bsm::Vec3(0, 0, 0)				//位置
 		);
-		bsm::Vec3 LocalPos;
-		bsm::Quat LocalQt;
-		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		Local.affineTransformation(
-			m_PsBox->GetParam().m_HalfSize,			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			LocalQt,				//回転角度
-			LocalPos				//位置
-		);
-		bsm::Mat4x4 DrawWorld = Local * World;
-		DrawShapeWireFrame(MeshRes, DrawWorld);
+		DrawShapeWireFrame(MeshRes, meshtotrans);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -383,32 +345,16 @@ namespace basecross {
 
 
 	void RigidbodyCapsule::OnDraw() {
-		auto index = GetIndex();
-		//行列の定義
-		bsm::Mat4x4 World, Local;
-		PsBodyStatus Status;
-		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
-		auto MeshRes = m_CapsuleMesh;
-		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
-		);
-		bsm::Vec3 LocalPos;
-		bsm::Quat LocalQt;
-		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-
-		Local.affineTransformation(
+		//トランスフォームからの差分
+		bsm::Mat4x4 meshtotrans;
+		meshtotrans.affineTransformation(
 			bsm::Vec3(1.0f),			//スケーリングは1.0f
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			LocalQt,				//回転角度
-			LocalPos				//位置
+			Quat(),				//回転角度
+			bsm::Vec3(0, 0, 0)				//位置
 		);
-		bsm::Mat4x4 DrawWorld = Local * World;
-		DrawShapeWireFrame(MeshRes, DrawWorld);
+		auto MeshRes = m_CapsuleMesh;
+		DrawShapeWireFrame(MeshRes, meshtotrans);
 
 	}
 
@@ -438,31 +384,16 @@ namespace basecross {
 	}
 
 	void RigidbodyCylinder::OnDraw() {
-		auto index = GetIndex();
-		//行列の定義
-		bsm::Mat4x4 World, Local;
-		PsBodyStatus Status;
-		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
+		//トランスフォームからの差分
+		bsm::Mat4x4 meshtotrans;
+		meshtotrans.affineTransformation(
+			bsm::Vec3(0.5f),			//スケーリングは0.5f
+			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
+			Quat(),				//回転角度
+			bsm::Vec3(0, 0, 0)				//位置
+		);
 		auto MeshRes = m_CylinderMesh;
-		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
-		);
-		bsm::Vec3 LocalPos;
-		bsm::Quat LocalQt;
-		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-		Local.affineTransformation(
-			bsm::Vec3(1.0f),			//スケーリングは1.0f
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			LocalQt,				//回転角度
-			LocalPos				//位置
-		);
-		bsm::Mat4x4 DrawWorld = Local * World;
-		DrawShapeWireFrame(MeshRes, DrawWorld);
+		DrawShapeWireFrame(MeshRes, meshtotrans);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -490,33 +421,15 @@ namespace basecross {
 	}
 
 	void RigidbodyConvex::OnDraw() {
-		auto index = GetIndex();
-		//行列の定義
-		bsm::Mat4x4 World, Local;
-		PsBodyStatus Status;
-		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
-		auto MeshRes = m_ConvexMesh;
-		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
-		);
-		bsm::Vec3 LocalPos;
-		bsm::Quat LocalQt;
-		BasePs.GetShapeOffsetQuatPos(index, 0, LocalQt, LocalPos);
-
-		Local.affineTransformation(
+		//トランスフォームからの差分
+		bsm::Mat4x4 meshtotrans;
+		meshtotrans.affineTransformation(
 			bsm::Vec3(1.0f),			//スケーリングは1.0f
 			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			LocalQt,				//回転角度
-			LocalPos				//位置
+			Quat(),				//回転角度
+			bsm::Vec3(0, 0, 0)				//位置
 		);
-		bsm::Mat4x4 DrawWorld = Local * World;
-		DrawShapeWireFrame(MeshRes, DrawWorld);
-
+		DrawShapeWireFrame(m_ConvexMesh, meshtotrans);
 	}
 
 	//--------------------------------------------------------------------------------------
@@ -608,18 +521,10 @@ namespace basecross {
 	void RigidbodyCombined::OnDraw() {
 		auto index = GetIndex();
 		//行列の定義
-		bsm::Mat4x4 World, Local;
+		bsm::Mat4x4 Local;
 		PsBodyStatus Status;
 		auto& BasePs = GetGameObject()->GetStage()->GetBasePhysics();
 		BasePs.GetBodyStatus(index, Status);
-		//ワールド行列の決定
-		World.affineTransformation(
-			bsm::Vec3(1.0, 1.0, 1.0),			//スケーリング
-			bsm::Vec3(0, 0, 0),		//回転の中心（重心）
-			Status.m_Orientation,				//回転角度
-			Status.m_Position			//位置
-		);
-
 		auto& param = m_PsCombined->GetParam();
 		for (size_t i = 0; i < param.m_Primitives.size(); i++) {
 			auto& prim = param.m_Primitives[i];
@@ -659,8 +564,8 @@ namespace basecross {
 				}
 				break;
 			}
-			bsm::Mat4x4 DrawWorld = Local * World;
-			DrawShapeWireFrame(m_CombinedMeshVec[i], DrawWorld);
+			bsm::Mat4x4 DrawWorld = Local;
+			DrawShapeWireFrame(m_CombinedMeshVec[i], Local);
 		}
 	}
 
