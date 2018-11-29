@@ -19,19 +19,8 @@ namespace basecross {
 		virtual ~AbstractFactory() {}
 		//ビューの作成
 		void CreateViewLight();
-		//固定のボックスの作成
-		virtual void CreateFixedBox() = 0;
-		//障害物球の作成
-		virtual void CreateFixedSphere() = 0;
-		//追いかけるオブジェクトの作成
-		virtual void CreateSeekObject() = 0;
-		//追跡するオブジェクトの作成
-		virtual void CreatePursuitObject() = 0;
 		//プレイヤーの作成
-		virtual void CreatePlayer() = 0;
-	public:
-		//初期化
-		virtual void OnCreate() override;
+		void CreatePlayer();
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -44,17 +33,8 @@ namespace basecross {
 			AbstractFactory(StagePtr)
 		{}
 		virtual ~Factory1() {}
-		//固定のボックスの作成
-		virtual void CreateFixedBox() override;
-		//障害物球の作成
-		virtual void CreateFixedSphere() override;
-		//追いかけるオブジェクトの作成
-		virtual void CreateSeekObject() override;
-		//追跡するオブジェクトの作成
-		virtual void CreatePursuitObject() override;
-		//プレイヤーの作成
-		virtual void CreatePlayer() override;
-
+		//初期化
+		virtual void OnCreate() override;
 	};
 
 	//--------------------------------------------------------------------------------------
@@ -68,16 +48,7 @@ namespace basecross {
 		{}
 		virtual ~Factory2() {}
 		//初期化
-		//固定のボックスの作成
-		virtual void CreateFixedBox() override;
-		//障害物球の作成
-		virtual void CreateFixedSphere() override;
-		//追いかけるオブジェクトの作成
-		virtual void CreateSeekObject() override;
-		//追跡するオブジェクトの作成
-		virtual void CreatePursuitObject() override;
-		//プレイヤーの作成
-		virtual void CreatePlayer() override;
+		virtual void OnCreate() override;
 	};
 
 

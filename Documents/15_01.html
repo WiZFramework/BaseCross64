@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１５．パターン集</h2>
+<h3>１５０１．AbstractFactory</h3>
+　この章は<b>パターン集</b>です。今日では<b>デザインパターン（いわゆるGoF）</b>をはじめ、いろんな<b>パターン</b>（つまりはクラス設計などの型）が紹介されていますが、それらを、実際のアプリ（ゲームもアプリです）で使う場合、どのようにしたらいいのか、ぴんと来ないこともあるかと思います。<br />
+　そこでこの章では<b>BaseCross64</b>で<b>パターン</b>を使う場合の例を紹介したいと思います。<br />
+　とはいえ、<b>BaseCross64</b>は、全体の構造も<b>パターン</b>のかたまりのようなもので、例えばこの項で紹介する、<b>AbstractFactory</b>も<b>Stageクラスとその派生クラス（GameStageなど）</b>の関係のようなものです。<br />
+　ですが、その関係を<b>GemaObjectの派生</b>として作成することで<b>AbstractFactoryとは何か</b>を確認することが可能です。<br />
+<br />
+　このサンプルは<b>FullSample501</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面のいずれかが出ます。
+<p>&nbsp;</p>
+<img src="img/1501a.png" width="80%"/>
+<p>図1501a</p>
+<p>&nbsp;</p>
+<img src="img/1501b.png" width="80%"/>
+<p>図1501b</p>
+<p>&nbsp;</p>
+　<b>AbstractFactory</b>というパターンは<b>Factory（いわゆる工場）クラス</b>を選択することで、<b>別のオブジェクトの組み合わせ</b>を作成するパターンです。<br />
+　それを<b>BaseCross64</b>で考えた場合は、<b>別のオブジェクトの組み合わせ</b>というのは、<b>別のゲームステージ</b>のように考えることができます。<br />
+　ということは<b>Stageを親に持つGameStageクラス群</b>というのも、<b>AbstractFactory</b>と考えることができます。<br />
+　しかしそれではあまり面白くないので、<b>GameStageクラス</b>の中で<b>GameObjectの派生クラス</b>の形で<b>AbstractFactory</b>を作成してみました。<br />
+<h4>AbstractFactoryクラス</h4>
+　<b>GameStage.h/cpp</b>にある、<b>AbstractFactoryクラス</b>を見てください。以下はヘッダ部です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  親ファクトリー
+//--------------------------------------------------------------------------------------
+class AbstractFactory : public GameObject {
+protected:
+    //構築と破棄
+    AbstractFactory(const shared_ptr&lt;Stage>& StagePtr)
+        :GameObject(StagePtr) {}
+    virtual ~AbstractFactory() {}
+    //ビューの作成
+    void CreateViewLight();
+    //プレイヤーの作成
+    void CreatePlayer();
+};
+</pre>
+</div>
+　このクラスは<b>Factory</b>の親クラスです。この派生クラスとして<b>Factory1およびFactory2クラス</b>があります。
+<h4>Factoryクラス（派生クラス）</h4>
+　<b>Factory1およびFactory2クラス</b>は以下の様な構造です。<b>Factory1</b>ですが
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  ファクトリー1
+//--------------------------------------------------------------------------------------
+class Factory1 : public AbstractFactory {
+public:
+    //構築と破棄
+    Factory1(const shared_ptr&lt;Stage>& StagePtr) :
+        AbstractFactory(StagePtr)
+    {}
+    virtual ~Factory1() {}
+    //初期化
+    virtual void OnCreate() override;
+};
+</pre>
+</div>
+　このように<b>OnCreate()関数</b>だけを持ってます。<b>Factory2</b>も同様です。<br />
+　以下は、<b>Factory1::OnCreate()</b>の実体ですが
+<div class="box1">
+<pre>
+void Factory1::OnCreate() {
+    //ビューとライトの作成
+    CreateViewLight();
+    //配列の初期化
+    vector&lt; vector&lt;Vec3> > vecBox = {
+        {
+            Vec3(50.0f, 1.0f, 50.0f),
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(0.0f, -0.5f, 0.0f)
+        },
+    };
+    //ボックスの作成
+    for (auto v : vecBox) {
+        GetStage()->AddGameObject&lt;FixedBox>(v[0], v[1], v[2]);
+    }
+    //配列の初期化
+    vector&lt; vector&lt;Vec3> > vecSp = {
+        {
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(5.0f, 0.0f, 10.0f)
+        },
+        {
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(-5.0f, 0.0f, 10.0f)
+        },
+        {
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(5.0f, 0.0f, -10.0f)
+        },
+        {
+            Vec3(0.0f, 0.0f, 0.0f),
+            Vec3(-.0f, 0.0f, -10.0f)
+        },
+    };
+    //障害物球の作成
+    for (auto v : vecSp) {
+        GetStage()->AddGameObject&lt;FixedSphere>(1.0f, v[0], v[1]);
+    }
+    //オブジェクトのグループを作成する
+    auto group = GetStage()->CreateSharedObjectGroup(L"ObjGroup");
+    //配列の初期化
+    vector&lt;Vec3> vecSeek = {
+        { 0, 0.125f, 10.0f },
+        { 10.0f, 0.125f, 0.0f },
+        { -10.0f, 0.125f, 0.0f },
+        { 0, 0.125f, -10.0f },
+    };
+    //追いかけるオブジェクトの作成
+    for (auto v : vecSeek) {
+        GetStage()->AddGameObject&lt;SeekObject>(v);
+    }
+    //配列の初期化
+    vector&lt;Vec3> vecPursuit = {
+        { 10.0f, 0.125f, 10.0f },
+    };
+    //追跡するオブジェクトの作成
+    for (auto v : vecPursuit) {
+        GetStage()->AddGameObject&lt;PursuitObject>(v);
+    }
+    //プレーヤーの作成
+    CreatePlayer();
+}
+</pre>
+</div>
+　<b>CreateViewLight()とCreatePlayer()</b>は親クラス側に実体があるので、その関数を呼び出します。あとは<b>Factory1</b>で実装すべきオブジェクトを追加しています。<br />
+　<b>Factory2</b>も似たような感じです。<b>Factory1</b>がイージーなステージだとすれば<b>Factory2</b>はハードなステージという想定です。
+<h4>どちらの工場を使うか</h4>
+　このサンプルでは<b>Factory1とFactory2</b>という2つのステージ設計がクラス化されているわあ家ですが、通常はイージーなステージを最初に作成して、たとえばそのステージをクリアした時に、よりハードなステージに行きます。<br />
+　とじゃいえサンプルなので、単に乱数で<b>偶数か奇数か</b>を取り出し、それにより<b>Factory1かFactory2</b>を選択します。その部分は以下です。<b>GameStage::OnCreate()</b>です。
+
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  ゲームステージクラス実体
+//--------------------------------------------------------------------------------------
+void GameStage::OnCreate() {
+    try {
+        //2分の1の確率の乱数を発生
+        if (rand() % 2) {
+            AddGameObject&lt;Factory2>();
+        }
+        else {
+            AddGameObject&lt;Factory1>();
+        }
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　乱数により、どちらかのファクトリが選択されます。<br />
+　このように、例えば<b>難易度</b>によってクラスを変えるのが<b>AbstractFactory</b>の特徴です。<b>ステージナンバー</b>などによって<b>パラメータの違い</b>でステージを作成するのではなく、<b>Factoryクラスそのもの</b>を変えるので、整理しやすくなります。<br/>
+　その反面、たくさんステージがある場合（たとえば100とか）、100個のファクトリクラスを作成する形なので、これは現実的ではありません。このような場合は、ステージデータはCSVなどの形で外に出すべきでしょう。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+<li><a href="15_02.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

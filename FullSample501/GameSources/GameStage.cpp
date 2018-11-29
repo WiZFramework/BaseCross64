@@ -26,107 +26,8 @@ namespace basecross {
 		ptrMultiLight->SetDefaultLighting();
 	}
 
-	void AbstractFactory::OnCreate() {
-		//ビューとライトの作成
-		CreateViewLight();
-		//固定のボックスの作成
-		CreateFixedBox();
-		//障害物球の作成
-		CreateFixedSphere();
-		//追いかけるオブジェクトの作成
-		CreateSeekObject();
-		//追跡するオブジェクトの作成
-		CreatePursuitObject();
-		//プレーヤーの作成
-		CreatePlayer();
-	}
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	ファクトリー1
-	//--------------------------------------------------------------------------------------
-	//固定のボックスの作成
-	void Factory1::CreateFixedBox() {
-		//配列の初期化
-		vector< vector<Vec3> > vec = {
-			{
-				Vec3(50.0f, 1.0f, 50.0f),
-				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(0.0f, -0.5f, 0.0f)
-			},
-		};
-		//オブジェクトの作成
-		for (auto v : vec) {
-			GetStage()->AddGameObject<FixedBox>(v[0], v[1], v[2]);
-		}
-	}
-
-	//障害物球の作成
-	void Factory1::CreateFixedSphere() {
-		//配列の初期化
-		vector< vector<Vec3> > vec = {
-			{
-				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(5.0f, 0.0f, 10.0f)
-			},
-			{
-				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(-5.0f, 0.0f, 10.0f)
-			},
-			{
-				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(5.0f, 0.0f, -10.0f)
-			},
-			{
-				Vec3(0.0f, 0.0f, 0.0f),
-				Vec3(-.0f, 0.0f, -10.0f)
-			},
-		};
-		//オブジェクトの作成
-		for (auto v : vec) {
-			GetStage()->AddGameObject<FixedSphere>(1.0f, v[0], v[1]);
-		}
-
-	}
-
-
-
-	//追いかけるオブジェクトの作成
-	void Factory1::CreateSeekObject() {
-		//オブジェクトのグループを作成する
-		auto group = GetStage()->CreateSharedObjectGroup(L"ObjGroup");
-		//配列の初期化
-		vector<Vec3> vec = {
-			{ 0, 0.125f, 10.0f },
-			{ 10.0f, 0.125f, 0.0f },
-			{ -10.0f, 0.125f, 0.0f },
-			{ 0, 0.125f, -10.0f },
-		};
-
-		//配置オブジェクトの作成
-		for (size_t count = 0; count < vec.size(); count++) {
-			GetStage()->AddGameObject<SeekObject>(vec[count]);
-		}
-
-	}
-
-	//追跡するオブジェクトの作成
-	void Factory1::CreatePursuitObject() {
-		//配列の初期化
-		vector<Vec3> vec = {
-			{ 10.0f, 0.125f, 10.0f },
-		};
-
-		//配置オブジェクトの作成
-		for (size_t count = 0; count < vec.size(); count++) {
-			GetStage()->AddGameObject<PursuitObject>(vec[count]);
-		}
-
-	}
-
 	//プレイヤーの作成
-	void Factory1::CreatePlayer() {
+	void AbstractFactory::CreatePlayer() {
 		//プレーヤーの作成
 		auto ptrPlayer = GetStage()->AddGameObject<Player>();
 		//シェア配列にプレイヤーを追加
@@ -135,31 +36,26 @@ namespace basecross {
 	}
 
 
-
-
 	//--------------------------------------------------------------------------------------
-	//	ファクトリー2
+	//	ファクトリー1
 	//--------------------------------------------------------------------------------------
-	//固定のボックスの作成
-	void Factory2::CreateFixedBox() {
+	void Factory1::OnCreate() {
+		//ビューとライトの作成
+		CreateViewLight();
 		//配列の初期化
-		vector< vector<Vec3> > vec = {
+		vector< vector<Vec3> > vecBox = {
 			{
 				Vec3(50.0f, 1.0f, 50.0f),
 				Vec3(0.0f, 0.0f, 0.0f),
 				Vec3(0.0f, -0.5f, 0.0f)
 			},
 		};
-		//オブジェクトの作成
-		for (auto v : vec) {
+		//ボックスの作成
+		for (auto v : vecBox) {
 			GetStage()->AddGameObject<FixedBox>(v[0], v[1], v[2]);
 		}
-	}
-
-	//障害物球の作成
-	void Factory2::CreateFixedSphere() {
 		//配列の初期化
-		vector< vector<Vec3> > vec = {
+		vector< vector<Vec3> > vecSp = {
 			{
 				Vec3(0.0f, 0.0f, 0.0f),
 				Vec3(5.0f, 0.0f, 10.0f)
@@ -177,21 +73,81 @@ namespace basecross {
 				Vec3(-.0f, 0.0f, -10.0f)
 			},
 		};
-		//オブジェクトの作成
-		for (auto v : vec) {
+		//障害物球の作成
+		for (auto v : vecSp) {
 			GetStage()->AddGameObject<FixedSphere>(1.0f, v[0], v[1]);
 		}
-
-	}
-
-
-
-	//追いかけるオブジェクトの作成
-	void Factory2::CreateSeekObject() {
 		//オブジェクトのグループを作成する
 		auto group = GetStage()->CreateSharedObjectGroup(L"ObjGroup");
 		//配列の初期化
-		vector<Vec3> vec = {
+		vector<Vec3> vecSeek = {
+			{ 0, 0.125f, 10.0f },
+			{ 10.0f, 0.125f, 0.0f },
+			{ -10.0f, 0.125f, 0.0f },
+			{ 0, 0.125f, -10.0f },
+		};
+		//追いかけるオブジェクトの作成
+		for (auto v : vecSeek) {
+			GetStage()->AddGameObject<SeekObject>(v);
+		}
+		//配列の初期化
+		vector<Vec3> vecPursuit = {
+			{ 10.0f, 0.125f, 10.0f },
+		};
+		//追跡するオブジェクトの作成
+		for (auto v : vecPursuit) {
+			GetStage()->AddGameObject<PursuitObject>(v);
+		}
+		//プレーヤーの作成
+		CreatePlayer();
+	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	ファクトリー2
+	//--------------------------------------------------------------------------------------
+	void Factory2::OnCreate() {
+		//ビューとライトの作成
+		CreateViewLight();
+		//配列の初期化
+		vector< vector<Vec3> > vecBox = {
+			{
+				Vec3(50.0f, 1.0f, 50.0f),
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(0.0f, -0.5f, 0.0f)
+			},
+		};
+		//ボックスの作成
+		for (auto v : vecBox) {
+			GetStage()->AddGameObject<FixedBox>(v[0], v[1], v[2]);
+		}
+		//配列の初期化
+		vector< vector<Vec3> > vecSp = {
+			{
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(5.0f, 0.0f, 10.0f)
+			},
+			{
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-5.0f, 0.0f, 10.0f)
+			},
+			{
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(5.0f, 0.0f, -10.0f)
+			},
+			{
+				Vec3(0.0f, 0.0f, 0.0f),
+				Vec3(-.0f, 0.0f, -10.0f)
+			},
+		};
+		//障害物球の作成
+		for (auto v : vecSp) {
+			GetStage()->AddGameObject<FixedSphere>(1.0f, v[0], v[1]);
+		}
+		//オブジェクトのグループを作成する
+		auto group = GetStage()->CreateSharedObjectGroup(L"ObjGroup");
+		//配列の初期化
+		vector<Vec3> vecSeek = {
 			{ 0, 0.125f, 10.0f },
 			{ 10.0f, 0.125f, 0.0f },
 			{ -10.0f, 0.125f, 0.0f },
@@ -201,39 +157,25 @@ namespace basecross {
 			{ -10.0f, 0.125f, 10.0f },
 			{ -10.0f, 0.125f, -10.0f },
 		};
-
-		//配置オブジェクトの作成
-		for (size_t count = 0; count < vec.size(); count++) {
-			GetStage()->AddGameObject<SeekObject>(vec[count]);
+		//追いかけるオブジェクトの作成
+		for (auto v : vecSeek) {
+			GetStage()->AddGameObject<SeekObject>(v);
 		}
-
-	}
-
-	//追跡するオブジェクトの作成
-	void Factory2::CreatePursuitObject() {
 		//配列の初期化
-		vector<Vec3> vec = {
+		vector<Vec3> vecPursuit = {
 			{ 20.0f, 0.125f, 20.0f },
 			{ 20.0f, 0.125f, -20.0f },
 			{ -20.0f, 0.125f, 20.0f },
 			{ -20.0f, 0.125f, -20.0f },
 		};
-
-		//配置オブジェクトの作成
-		for (size_t count = 0; count < vec.size(); count++) {
-			GetStage()->AddGameObject<PursuitObject>(vec[count]);
+		//追跡するオブジェクトの作成
+		for (auto v : vecPursuit) {
+			GetStage()->AddGameObject<PursuitObject>(v);
 		}
-
-	}
-
-	//プレイヤーの作成
-	void Factory2::CreatePlayer() {
 		//プレーヤーの作成
-		auto ptrPlayer = GetStage()->AddGameObject<Player>();
-		//シェア配列にプレイヤーを追加
-		GetStage()->SetSharedGameObject(L"Player", ptrPlayer);
-		ptrPlayer->AddTag(L"Player");
+		CreatePlayer();
 	}
+
 
 
 	//--------------------------------------------------------------------------------------
