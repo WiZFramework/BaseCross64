@@ -10,6 +10,10 @@ namespace basecross {
 
 	//各シェーダ
 	DECLARE_DX12SHADER(VSShadowmap)
+	//スプライト
+	DECLARE_DX12SHADER(VSPTSprite)
+	DECLARE_DX12SHADER(PSPTSprite)
+
 
 	DECLARE_DX12SHADER(VSPNStatic)
 	DECLARE_DX12SHADER(PSPNStatic)
@@ -750,6 +754,38 @@ namespace basecross {
 
 
 	//--------------------------------------------------------------------------------------
+	///	Dx12描画リソースクラス
+	//--------------------------------------------------------------------------------------
+	template<typename ContType>
+	struct Dx12DrawResources {
+		///ルートシグネチャ
+		ComPtr<ID3D12RootSignature> m_RootSignature;
+		///デスクプリタハンドルのインクリメントサイズ
+		UINT m_DescriptorHandleIncrementSize{ 0 };
+		///Samplerのデスクプリタハンドルのインクリメントサイズ
+		UINT m_SamplerDescriptorHandleIncrementSize{ 0 };
+		///デスクプリタヒープ
+		ComPtr<ID3D12DescriptorHeap> m_DescriptorHeap;
+		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
+		///GPU側デスクプリタのハンドルの配列
+		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
+		///コンスタントバッファ
+		Dx12Constants<ContType> m_Dx12Constants;
+		///コンスタントバッファのGPU側変数
+		void* m_pConstantBuffer{ nullptr };
+		void* m_pConstantBufferWithShadow{ nullptr };
+		///パイプラインステート
+		D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PineLineDesc;
+		//一般用
+		ComPtr<ID3D12PipelineState> m_PipelineState;
+		//正面のみ
+		ComPtr<ID3D12PipelineState> m_CullBackPipelineState;
+		//背面のみ
+		ComPtr<ID3D12PipelineState> m_CullFrontPipelineState;
+		///コマンドリスト
+		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
+	};
+	//--------------------------------------------------------------------------------------
 	///	スプライト用コンスタントバッファ構造体
 	//--------------------------------------------------------------------------------------
 	struct SpriteConstants
@@ -772,6 +808,70 @@ namespace basecross {
 	///	Sprite描画オブジェクトの親
 	//--------------------------------------------------------------------------------------
 	class SpriteBaseDraw : public DrawComponent {
+		///Dx12描画リソースの取得
+		Dx12DrawResources<SpriteConstants>& GetDx12DrawResources();
+		///シェーダーリソースビュー作成
+		void CreateShaderResourceView();
+		//コンスタントバッファ更新
+		void UpdateConstantBuffer();
+		///プロパティ変更
+		void RefreshTrace();
+		///描画処理
+		template<typename VertexType>
+		void DrawObject() {
+			auto ShMesh = GetMeshResource();
+			auto ShTex = GetTextureResource();
+			if (!ShMesh) {
+				return;
+			}
+			//透明処理
+			RefreshTrace();
+			//コマンドリストのリセット
+			if (GetGameObject()->IsAlphaActive()) {
+				CommandList::Reset(GetDx12DrawResources().m_CullFrontPipelineState, GetDx12DrawResources().m_CommandList);
+			}
+			else {
+				CommandList::Reset(GetDx12DrawResources().m_CullBackPipelineState, GetDx12DrawResources().m_CommandList);
+			}
+			ShMesh->UpdateResources<VertexType>(GetDx12DrawResources().m_CommandList);
+			if (ShTex) {
+				ShTex->UpdateResources(GetDx12DrawResources().m_CommandList);
+			}
+			//描画
+			GetDx12DrawResources().m_CommandList->SetGraphicsRootSignature(GetDx12DrawResources().m_RootSignature.Get());
+			ID3D12DescriptorHeap* ppHeaps[] = { GetDx12DrawResources().m_DescriptorHeap.Get(), GetDx12DrawResources().m_SamplerDescriptorHeap.Get() };
+			GetDx12DrawResources().m_CommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+			for (size_t i = 0; i < GetDx12DrawResources().m_GPUDescriptorHandleVec.size(); i++) {
+				GetDx12DrawResources().m_CommandList->SetGraphicsRootDescriptorTable((UINT)i, GetDx12DrawResources().m_GPUDescriptorHandleVec[i]);
+			}
+			auto Dev = App::GetApp()->GetDeviceResources();
+			GetDx12DrawResources().m_CommandList->RSSetViewports(1, &Dev->GetViewport());
+			GetDx12DrawResources().m_CommandList->RSSetScissorRects(1, &Dev->GetScissorRect());
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(
+				Dev->GetRtvHeap()->GetCPUDescriptorHandleForHeapStart(),
+				Dev->GetFrameIndex(),
+				Dev->GetRtvDescriptorSize());
+			CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(
+				Dev->GetDsvHeap()->GetCPUDescriptorHandleForHeapStart()
+			);
+			GetDx12DrawResources().m_CommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+			GetDx12DrawResources().m_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			GetDx12DrawResources().m_CommandList->IASetIndexBuffer(&ShMesh->GetIndexBufferView());
+			GetDx12DrawResources().m_CommandList->IASetVertexBuffers(0, 1, &ShMesh->GetVertexBufferView());
+
+
+			GetDx12DrawResources().m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
+			if (GetGameObject()->IsAlphaActive()) {
+				GetDx12DrawResources().m_CommandList->SetPipelineState(GetDx12DrawResources().m_CullBackPipelineState.Get());
+				GetDx12DrawResources().m_CommandList->DrawIndexedInstanced(ShMesh->GetNumIndicis(), 1, 0, 0, 0);
+			}
+			//コマンドリストのクローズ
+			CommandList::Close(GetDx12DrawResources().m_CommandList);
+			//デバイスにコマンドリストを送る
+			Dev->InsertDrawCommandLists(GetDx12DrawResources().m_CommandList.Get());
+		}
 	protected:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -793,7 +893,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetConstants(SpriteConstants& SpCb);
+		void SetConstants(Dx12Constants<SpriteConstants>& SpCb);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -822,7 +922,6 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T>
 		void UpdateVertices(const vector<T>& Vertices) {
-/*
 			auto SpriteMesh = GetMeshResource();
 			if (!SpriteMesh) {
 				throw BaseException(
@@ -839,31 +938,7 @@ namespace basecross {
 					L"SpriteBaseDraw::UpdateVertices()"
 				);
 			}
-			auto Dev = App::GetApp()->GetDeviceResources();
-			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-
-			//頂点の変更
-			//D3D11_MAP_WRITE_DISCARDは重要。この処理により、GPUに邪魔されない
-			D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
-			D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-			//頂点のマップ
-			if (FAILED(pD3D11DeviceContext->Map(SpriteMesh->GetVertexBuffer().Get(), 0, mapType, 0, &mappedBuffer))) {
-				// Map失敗
-				throw BaseException(
-					L"頂点のMapに失敗しました。",
-					L"if(FAILED(pID3D11DeviceContext->Map()))",
-					L"SpriteBaseDraw::UpdateVertices()"
-				);
-			}
-			//頂点の変更
-			T* vertices
-				= (T*)mappedBuffer.pData;
-			for (size_t i = 0; i < SpriteMesh->GetNumVertices(); i++) {
-				vertices[i] = Vertices[i];
-			}
-			//アンマップ
-			pD3D11DeviceContext->Unmap(SpriteMesh->GetVertexBuffer().Get(), 0);
-*/
+			SpriteMesh->UpdateVirtex(Vertices);
 		}
 
 		//--------------------------------------------------------------------------------------
@@ -1008,6 +1083,21 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SetDiffuse(const bsm::Col4& col);
+		//描画コンポーネント個別処理
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	PT描画リソースの作成
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void CreatePT();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	PT描画
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void DrawPT();
 	private:
 		// pImplイディオム
 		struct Impl;
@@ -1407,38 +1497,6 @@ namespace basecross {
 		};
 	};
 
-	//--------------------------------------------------------------------------------------
-	///	Dx12描画リソースクラス
-	//--------------------------------------------------------------------------------------
-	template<typename ContType>
-	struct Dx12DrawResources {
-		///ルートシグネチャ
-		ComPtr<ID3D12RootSignature> m_RootSignature;
-		///デスクプリタハンドルのインクリメントサイズ
-		UINT m_DescriptorHandleIncrementSize{ 0 };
-		///Samplerのデスクプリタハンドルのインクリメントサイズ
-		UINT m_SamplerDescriptorHandleIncrementSize{ 0 };
-		///デスクプリタヒープ
-		ComPtr<ID3D12DescriptorHeap> m_DescriptorHeap;
-		ComPtr<ID3D12DescriptorHeap> m_SamplerDescriptorHeap;
-		///GPU側デスクプリタのハンドルの配列
-		vector<CD3DX12_GPU_DESCRIPTOR_HANDLE> m_GPUDescriptorHandleVec;
-		///コンスタントバッファ
-		Dx12Constants<ContType> m_Dx12Constants;
-		///コンスタントバッファのGPU側変数
-		void* m_pConstantBuffer{ nullptr };
-		void* m_pConstantBufferWithShadow{ nullptr };
-		///パイプラインステート
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC m_PineLineDesc;
-		//一般用
-		ComPtr<ID3D12PipelineState> m_PipelineState;
-		//正面のみ
-		ComPtr<ID3D12PipelineState> m_CullBackPipelineState;
-		//背面のみ
-		ComPtr<ID3D12PipelineState> m_CullFrontPipelineState;
-		///コマンドリスト
-		ComPtr<ID3D12GraphicsCommandList> m_CommandList;
-	};
 
 	//--------------------------------------------------------------------------------------
 	///	Simple描画オブジェクトの親

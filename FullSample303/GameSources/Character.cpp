@@ -498,7 +498,8 @@ namespace basecross{
 	BoneMultiMeshChara::BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse) :
 		GameObject(StagePtr),
 		m_StartPos(StartPos),
-		m_TamgentUse(TamgentUse)
+		m_TamgentUse(TamgentUse),
+		m_DrawFlg(true)
 	{
 	}
 	BoneMultiMeshChara::~BoneMultiMeshChara() {}
@@ -554,6 +555,8 @@ namespace basecross{
 
 	//更新
 	void BoneMultiMeshChara::OnUpdate() {
+		//コントローラチェックして入力があればコマンド呼び出し
+		m_InputHandler.PushHandle(GetThis<BoneMultiMeshChara>());
 		float elapsedTime = App::GetApp()->GetElapsedTime();
 		//アニメーションを更新する
 		if (m_TamgentUse) {
@@ -567,6 +570,29 @@ namespace basecross{
 		}
 	}
 
+	//描画スイッチ
+	void BoneMultiMeshChara::DrawSwitch() {
+		//もしm_DrawFlgがfalseならマルチメッシュのID==0を消す
+		//まず、影を消す
+		auto ptrShadow = GetComponent<Shadowmap>();
+		ptrShadow->SetMultiMeshIsDraw(1, m_DrawFlg);
+
+		if (m_TamgentUse) {
+			auto ptrDraw = GetComponent<BcPNTnTBoneModelDraw>();
+			ptrDraw->SetMultiMeshIsDraw(1,m_DrawFlg);
+		}
+		else {
+			auto ptrDraw = GetComponent<BcPNTBoneModelDraw>();
+			ptrDraw->SetMultiMeshIsDraw(1, m_DrawFlg);
+		}
+	}
+
+
+	//Aボタン
+	void BoneMultiMeshChara::OnPushA() {
+		m_DrawFlg = m_DrawFlg ? false : true;
+		DrawSwitch();
+	}
 
 
 }

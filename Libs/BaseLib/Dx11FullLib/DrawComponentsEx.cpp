@@ -330,10 +330,37 @@ namespace basecross {
 
 	void BcBaseDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
 		pImpl->m_BcDrawObject.m_MultiMeshResource = MeshResourcePtr;
+		pImpl->m_BcDrawObject.m_MultiMeshDrawVec.clear();
+		for (size_t i = 0; i < MeshResourcePtr->GetMeshVecCount(); i++) {
+			//最初はすべてのマルチメッシュを描画
+			pImpl->m_BcDrawObject.m_MultiMeshDrawVec.push_back(true);
+		}
 	}
 	void BcBaseDraw::SetMultiMeshResource(const wstring& ResKey) {
 		this->SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
 	}
+
+	bool BcBaseDraw::GetMultiMeshIsDraw(size_t index) const {
+		if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size())",
+				L"BcBaseDraw::GetMultiMeshIsDraw()"
+			);
+		}
+		return pImpl->m_BcDrawObject.m_MultiMeshDrawVec[index];
+	}
+	void BcBaseDraw::SetMultiMeshIsDraw(size_t index, bool b) {
+		if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size())",
+				L"BcBaseDraw::SetMultiMeshIsDraw()"
+			);
+		}
+		pImpl->m_BcDrawObject.m_MultiMeshDrawVec[index] = b;
+	}
+
 
 
 	bsm::Col4 BcBaseDraw::GetEmissive() const {
@@ -1009,7 +1036,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<BcVSPCStatic, BcPSPCStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<BcVSPCStatic, BcPSPCStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1054,7 +1083,9 @@ namespace basecross {
 				//シェーダの設定
 				//頂点ライティング
 				//バイアス無し
-				DrawStatic<BcVSPNStatic, BcPSPNStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<BcVSPNStatic, BcPSPNStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1091,7 +1122,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<BcVSPTStatic, BcPSPTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<BcVSPTStatic, BcPSPTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1128,7 +1161,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<BcVSPCTStatic, BcPSPTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<BcVSPCTStatic, BcPSPTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1222,54 +1257,56 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//シェーダの設定
-				if (IsPerPixelLighting()) {
-					//ピクセルライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawStatic<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//シェーダの設定
+					if (IsPerPixelLighting()) {
+						//ピクセルライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawStatic<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawStatic<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawStatic<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawStatic<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawStatic<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
+							}
 						}
 					}
 					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawStatic<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+						//頂点ライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawStatic<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawStatic<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawStatic<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
-						}
-					}
-				}
-				else {
-					//頂点ライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawStatic<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawStatic<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-					}
-					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawStatic<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawStatic<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawStatic<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawStatic<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+							}
 						}
 					}
 				}
@@ -1364,54 +1401,56 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//シェーダの設定
-				if (IsPerPixelLighting()) {
-					//ピクセルライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//シェーダの設定
+					if (IsPerPixelLighting()) {
+						//ピクセルライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTStaticPLBnShadow, BcPSPNTPLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawModel<BcVSPNTStaticPLShadow, BcPSPNTPLShadow>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
+							}
 						}
 					}
 					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTStaticPLBn, BcPSPNTPL>(vec[i]);
+						//頂点ライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawModel<BcVSPNTStaticPL, BcPSPNTPL>(vec[i]);
-						}
-					}
-				}
-				else {
-					//頂点ライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTStaticVLBnShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawModel<BcVSPNTStaticVLShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-					}
-					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawModel<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTStaticVLBn, BcPSPNTVL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTStaticVL, BcPSPNTVL>(vec[i]);
+							}
 						}
 					}
 				}
@@ -1523,54 +1562,56 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//シェーダの設定
-				if (IsPerPixelLighting()) {
-					//ピクセルライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTBonePLBnShadow, BcPSPNTPLShadow>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//シェーダの設定
+					if (IsPerPixelLighting()) {
+						//ピクセルライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTBonePLBnShadow, BcPSPNTPLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTBonePLShadow, BcPSPNTPLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawModel<BcVSPNTBonePLShadow, BcPSPNTPLShadow>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTBonePLBn, BcPSPNTPL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTBonePL, BcPSPNTPL>(vec[i]);
+							}
 						}
 					}
 					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTBonePLBn, BcPSPNTPL>(vec[i]);
+						//頂点ライティング
+						if (IsOwnShadowActive()) {
+							//影付き
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTBoneVLBnShadow, BcPSPNTVLShadow>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTBoneVLShadow, BcPSPNTVLShadow>(vec[i]);
+							}
 						}
 						else {
-							//バイアス無し
-							DrawModel<BcVSPNTBonePL, BcPSPNTPL>(vec[i]);
-						}
-					}
-				}
-				else {
-					//頂点ライティング
-					if (IsOwnShadowActive()) {
-						//影付き
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTBoneVLBnShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawModel<BcVSPNTBoneVLShadow, BcPSPNTVLShadow>(vec[i]);
-						}
-					}
-					else {
-						//影無し
-						if (IsBiasedNormals()) {
-							//バイアス付き
-							DrawModel<BcVSPNTBoneVLBn, BcPSPNTVL>(vec[i]);
-						}
-						else {
-							//バイアス無し
-							DrawModel<BcVSPNTBoneVL, BcPSPNTVL>(vec[i]);
+							//影無し
+							if (IsBiasedNormals()) {
+								//バイアス付き
+								DrawModel<BcVSPNTBoneVLBn, BcPSPNTVL>(vec[i]);
+							}
+							else {
+								//バイアス無し
+								DrawModel<BcVSPNTBoneVL, BcPSPNTVL>(vec[i]);
+							}
 						}
 					}
 				}
@@ -1623,16 +1664,18 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//ピクセルライティングのみ
-				if (IsOwnShadowActive()) {
-					//影付き
-					//バイアス無し
-					DrawStatic<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
-				}
-				else {
-					//影無し
-					//バイアス無し
-					DrawStatic<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//ピクセルライティングのみ
+					if (IsOwnShadowActive()) {
+						//影付き
+						//バイアス無し
+						DrawStatic<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
+					}
+					else {
+						//影無し
+						//バイアス無し
+						DrawStatic<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
+					}
 				}
 			}
 		}
@@ -1686,17 +1729,19 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//シェーダの設定
-				//ピクセルライティングのみ
-				if (IsOwnShadowActive()) {
-					//影付き
-					//バイアス無しのみ
-					DrawModel<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
-				}
-				else {
-					//影無し
-					//バイアス無しのみ
-					DrawModel<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//シェーダの設定
+					//ピクセルライティングのみ
+					if (IsOwnShadowActive()) {
+						//影付き
+						//バイアス無しのみ
+						DrawModel<BcVSPNTnTStaticPLShadow, BcPSPNTnTPLShadow>(vec[i]);
+					}
+					else {
+						//影無し
+						//バイアス無しのみ
+						DrawModel<BcVSPNTnTStaticPL, BcPSPNTnTPL>(vec[i]);
+					}
 				}
 			}
 		}
@@ -1767,17 +1812,19 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				//シェーダの設定
-				//ピクセルライティングのみ
-				if (IsOwnShadowActive()) {
-					//影付き
-					//バイアス無しのみ
-					DrawModel<BcVSPNTnTBonePLShadow, BcPSPNTnTPLShadow>(vec[i]);
-				}
-				else {
-					//影無し
-					//バイアス無しのみ
-					DrawModel<BcVSPNTnTBonePL, BcPSPNTnTPL>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					//シェーダの設定
+					//ピクセルライティングのみ
+					if (IsOwnShadowActive()) {
+						//影付き
+						//バイアス無しのみ
+						DrawModel<BcVSPNTnTBonePLShadow, BcPSPNTnTPLShadow>(vec[i]);
+					}
+					else {
+						//影無し
+						//バイアス無しのみ
+						DrawModel<BcVSPNTnTBonePL, BcPSPNTnTPL>(vec[i]);
+					}
 				}
 			}
 		}
@@ -1785,9 +1832,6 @@ namespace basecross {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		Dev->InitializeStates();
 	}
-
-
-
 
 }
 

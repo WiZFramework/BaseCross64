@@ -176,6 +176,12 @@ namespace basecross{
 	class BoneMultiMeshChara : public GameObject {
 		Vec3 m_StartPos;
 		bool m_TamgentUse;
+		//入力ハンドラー
+		InputHandler<BoneMultiMeshChara> m_InputHandler;
+		//マルチメッシュの表示フラグ
+		bool m_DrawFlg;
+		//描画スイッチ
+		void DrawSwitch();
 	public:
 		//構築と破棄
 		BoneMultiMeshChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos, bool TamgentUse);
@@ -183,6 +189,8 @@ namespace basecross{
 		//初期化
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;
+		//Aボタン
+		void OnPushA();
 	};
 
 

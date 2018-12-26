@@ -245,6 +245,8 @@ namespace basecross {
 		weak_ptr<MeshResource> m_MeshResource;
 		//マルチメッシュリソース
 		weak_ptr<MultiMeshResource> m_MultiMeshResource;
+		//マルチメッシュ用の描画するインデックス
+		vector<bool> m_MultiMeshDrawVec;
 
 
 		Impl()
@@ -341,24 +343,41 @@ namespace basecross {
 		}
 		return nullptr;
 	}
-	void Shadowmap::SetMultiMeshResource(const wstring& ResKey) {
-		try {
-			if (ResKey == L"") {
-				throw BaseException(
-					L"メッシュキーが空白です",
-					L"if (ResKey == L\"\"",
-					L"ShadowmapComp::SetMultiMeshResource()"
-				);
-			}
-			pImpl->m_MultiMeshResource = App::GetApp()->GetResource<MultiMeshResource>(ResKey);
-		}
-		catch (...) {
-			throw;
-		}
-	}
+
 	void Shadowmap::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
 		pImpl->m_MultiMeshResource = MeshResourcePtr;
+		pImpl->m_MultiMeshDrawVec.clear();
+		for (size_t i = 0; i < MeshResourcePtr->GetMeshVecCount(); i++) {
+			//最初はすべてのマルチメッシュを描画
+			pImpl->m_MultiMeshDrawVec.push_back(true);
+		}
 	}
+
+	void Shadowmap::SetMultiMeshResource(const wstring& ResKey) {
+		this->SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
+	}
+
+	bool Shadowmap::GetMultiMeshIsDraw(size_t index) const {
+		if (index >= pImpl->m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_MultiMeshDrawVec.size())",
+				L"Shadowmap::GetMultiMeshIsDraw()"
+			);
+		}
+		return pImpl->m_MultiMeshDrawVec[index];
+	}
+	void Shadowmap::SetMultiMeshIsDraw(size_t index, bool b) {
+		if (index >= pImpl->m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_MultiMeshDrawVec.size())",
+				L"Shadowmap::SetMultiMeshIsDraw()"
+			);
+		}
+		pImpl->m_MultiMeshDrawVec[index] = b;
+	}
+
 
 	void Shadowmap::DrawSigle(const MeshPrimData& data) {
 		auto PtrGameObject = GetGameObject();
@@ -533,7 +552,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawSigle(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawSigle(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1453,6 +1474,11 @@ namespace basecross {
 
 	void SmBaseDraw::SetMultiMeshResource(const shared_ptr<MultiMeshResource>& MeshResourcePtr) {
 		pImpl->m_SmDrawObject.m_MultiMeshResource = MeshResourcePtr;
+		pImpl->m_SmDrawObject.m_MultiMeshDrawVec.clear();
+		for (size_t i = 0; i < MeshResourcePtr->GetMeshVecCount(); i++) {
+			//最初はすべてのマルチメッシュを描画
+			pImpl->m_SmDrawObject.m_MultiMeshDrawVec.push_back(true);
+		}
 
 	}
 
@@ -1460,6 +1486,28 @@ namespace basecross {
 		this->SetMultiMeshResource(App::GetApp()->GetResource<MultiMeshResource>(ResKey));
 
 	}
+
+	bool SmBaseDraw::GetMultiMeshIsDraw(size_t index) const {
+		if (index >= pImpl->m_SmDrawObject.m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size())",
+				L"SmBaseDraw::GetMultiMeshIsDraw()"
+			);
+		}
+		return pImpl->m_SmDrawObject.m_MultiMeshDrawVec[index];
+	}
+	void SmBaseDraw::SetMultiMeshIsDraw(size_t index, bool b) {
+		if (index >= pImpl->m_SmDrawObject.m_MultiMeshDrawVec.size()) {
+			throw BaseException(
+				L"インデックスがマルチメッシュのメッシュ数を超えてます",
+				L"if (index >= pImpl->m_BcDrawObject.m_MultiMeshDrawVec.size())",
+				L"SmBaseDraw::SetMultiMeshIsDraw()"
+			);
+		}
+		pImpl->m_SmDrawObject.m_MultiMeshDrawVec[index] = b;
+	}
+
 
 	bsm::Col4 SmBaseDraw::GetEmissive() const {
 		return pImpl->m_SmDrawObject.m_Emissive;
@@ -1813,7 +1861,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<VSPCStatic, PSPCStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<VSPCStatic, PSPCStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1851,7 +1901,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<VSPNStatic, PSPNStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<VSPNStatic, PSPNStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1891,7 +1943,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<VSPTStatic, PSPTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<VSPTStatic, PSPTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1929,7 +1983,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStatic<VSPCTStatic, PSPCTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStatic<VSPCTStatic, PSPCTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -1976,16 +2032,18 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				if (GetOwnShadowActive()) {
-					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
-						DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow2>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					if (GetOwnShadowActive()) {
+						if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+							DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow2>(vec[i]);
+						}
+						else {
+							DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow>(vec[i]);
+						}
 					}
 					else {
-						DrawStatic<VSPNTStaticShadow, PSPNTStaticShadow>(vec[i]);
+						DrawStatic<VSPNTStatic, PSPNTStatic>(vec[i]);
 					}
-				}
-				else {
-					DrawStatic<VSPNTStatic, PSPNTStatic>(vec[i]);
 				}
 			}
 		}
@@ -2038,16 +2096,18 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				if (GetOwnShadowActive()) {
-					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
-						DrawModel<VSPNTStaticShadow, PSPNTStaticShadow2>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					if (GetOwnShadowActive()) {
+						if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+							DrawModel<VSPNTStaticShadow, PSPNTStaticShadow2>(vec[i]);
+						}
+						else {
+							DrawModel<VSPNTStaticShadow, PSPNTStaticShadow>(vec[i]);
+						}
 					}
 					else {
-						DrawModel<VSPNTStaticShadow, PSPNTStaticShadow>(vec[i]);
+						DrawModel<VSPNTStatic, PSPNTStatic>(vec[i]);
 					}
-				}
-				else {
-					DrawModel<VSPNTStatic, PSPNTStatic>(vec[i]);
 				}
 			}
 		}
@@ -2122,16 +2182,18 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				if (GetOwnShadowActive()) {
-					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
-						DrawModel<VSPNTBoneShadow, PSPNTStaticShadow2>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					if (GetOwnShadowActive()) {
+						if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+							DrawModel<VSPNTBoneShadow, PSPNTStaticShadow2>(vec[i]);
+						}
+						else {
+							DrawModel<VSPNTBoneShadow, PSPNTStaticShadow>(vec[i]);
+						}
 					}
 					else {
-						DrawModel<VSPNTBoneShadow, PSPNTStaticShadow>(vec[i]);
+						DrawModel<VSPNTBone, PSPNTStatic>(vec[i]);
 					}
-				}
-				else {
-					DrawModel<VSPNTBone, PSPNTStatic>(vec[i]);
 				}
 			}
 		}
@@ -2174,7 +2236,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStaticInstance<VSPCStaticInstance, PSPCStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStaticInstance<VSPCStaticInstance, PSPCStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -2220,7 +2284,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStaticInstance<VSPTStaticInstance, PSPTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStaticInstance<VSPTStaticInstance, PSPTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -2266,7 +2332,9 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				DrawStaticInstance<VSPCTStaticInstance, PSPCTStatic>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					DrawStaticInstance<VSPCTStaticInstance, PSPCTStatic>(vec[i]);
+				}
 			}
 		}
 		//後始末
@@ -2325,16 +2393,18 @@ namespace basecross {
 			size_t count = PtrMultiMeshResource->GetMeshVecCount();
 			auto& vec = PtrMultiMeshResource->GetMeshVec();
 			for (size_t i = 0; i < count; i++) {
-				if (GetOwnShadowActive()) {
-					if (GetGameObject()->GetComponent<Shadowmap>(false)) {
-						DrawStaticInstance<VSPNTStaticInstanceShadow, PSPNTStaticShadow2>(vec[i]);
+				if (GetMultiMeshIsDraw(i)) {
+					if (GetOwnShadowActive()) {
+						if (GetGameObject()->GetComponent<Shadowmap>(false)) {
+							DrawStaticInstance<VSPNTStaticInstanceShadow, PSPNTStaticShadow2>(vec[i]);
+						}
+						else {
+							DrawStaticInstance<VSPNTStaticInstanceShadow, PSPNTStaticShadow>(vec[i]);
+						}
 					}
 					else {
-						DrawStaticInstance<VSPNTStaticInstanceShadow, PSPNTStaticShadow>(vec[i]);
+						DrawStaticInstance<VSPNTStaticInstance, PSPNTStatic>(vec[i]);
 					}
-				}
-				else {
-					DrawStaticInstance<VSPNTStaticInstance, PSPNTStatic>(vec[i]);
 				}
 			}
 		}
