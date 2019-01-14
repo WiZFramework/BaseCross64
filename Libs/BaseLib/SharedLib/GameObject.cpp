@@ -670,6 +670,8 @@ namespace basecross {
 		vector< shared_ptr<GameObject> > m_Object3DAlphaVec;
 		//物理計算
 		BasePhysics m_BasePhysics;
+		//物理計算で使う空物理オブジェクトのset
+		set<uint16_t> m_VacantPhysicsIndices;
 		//現在Drawされているビューのインデックス
 		size_t m_DrawViewIndex;
 		//ビューのポインタ
@@ -799,11 +801,26 @@ namespace basecross {
 		pImpl->m_IsPhysicsActive = b;
 	}
 
+
+	uint16_t Stage::GetVacantPhysicsIndex(){
+		uint16_t ret = UINT16_MAX;
+		if (pImpl->m_VacantPhysicsIndices.size() > 0) {
+			//空いているIDがある。先頭を取得
+			auto it = pImpl->m_VacantPhysicsIndices.begin();
+			ret = *it;
+			//IDを使うのでそのIDを削除
+			pImpl->m_VacantPhysicsIndices.erase(ret);
+		}
+		return ret;
+	}
+
+	void Stage::SetVacantPhysicsIndex(uint16_t index) {
+		pImpl->m_VacantPhysicsIndices.insert(index);
+	}
+
 	shared_ptr<CollisionManager> Stage::GetCollisionManager() const {
 		return pImpl->m_CollisionManager;
 	}
-
-
 
 
 	vector< shared_ptr<GameObject> >& Stage::GetGameObjectVec() { return pImpl->m_GameObjectVec; }

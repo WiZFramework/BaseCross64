@@ -9,6 +9,52 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
+	///	物理計算する落下するボール
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	FallingBall::FallingBall(const shared_ptr<Stage>& StagePtr, const Vec3& Position, const Vec3& Velocity) :
+		GameObject(StagePtr),
+		m_Pos(Position),
+		m_Velocity(Velocity)
+	{}
+
+	FallingBall::~FallingBall() {}
+
+	//初期化
+	void FallingBall::OnCreate() {
+		auto ptrTransform = GetComponent<Transform>();
+
+		ptrTransform->SetScale(0.5f, 0.5f,0.5f);
+		ptrTransform->SetRotation(0, 0, 0);
+		ptrTransform->SetPosition(m_Pos);
+
+		//WorldMatrixをもとにRigidbodySphereのパラメータを作成
+		PsSphereParam param(ptrTransform->GetWorldMatrix(), 1.0f, false, PsMotionType::MotionTypeActive);
+		//Rigidbodyをつける
+		auto  ptrRigid = AddComponent<RigidbodySphere>(param);
+		ptrRigid->SetLinearVelocity(m_Velocity);
+
+		//影をつける
+		auto ShadowPtr = AddComponent<Shadowmap>();
+		ShadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		PtrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+
+	}
+
+	void FallingBall::OnUpdate() {
+		auto PtrTransform = GetComponent<Transform>();
+		if (abs(PtrTransform->GetPosition().y) > 25.0f) {
+			//範囲外に出たら消す
+			GetStage()->RemoveGameObject<GameObject>(GetThis<GameObject>());
+		}
+	}
+
+
+
+
+	//--------------------------------------------------------------------------------------
 	///	物理計算する固定のボックス
 	//--------------------------------------------------------------------------------------
 	//構築と破棄

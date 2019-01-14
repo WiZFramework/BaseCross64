@@ -196,6 +196,9 @@ namespace basecross{
 		auto ObjCount = GetStage()->GetGameObjectVec().size();
 		wstring  strObjCount(L"OBJ_COUNT: ");
 		strObjCount += Util::SizeTToWStr(ObjCount);
+		auto bodyCount = GetStage()->GetBasePhysics().GetNumBodies();
+		strObjCount += L", BODY_COUNT: ";
+		strObjCount += Util::SizeTToWStr(bodyCount);
 		strObjCount += L"\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring strFps(L"FPS: ");

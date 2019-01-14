@@ -82,5 +82,15 @@ namespace basecross {
 		}
 	}
 
+	void GameStage::OnUpdate() {
+		if (Util::DivProbability(10)) {
+			float x = Util::RandZeroToOne() * 10.0f - 5.0f;
+			float z = Util::RandZeroToOne() * 10.0f - 5.0f;
+			Vec3 velo(x * 2, 0, z * 2);
+			AddGameObject<FallingBall>(Vec3(x,10.0f,z), velo);
+		}
+	}
+
+
 }
 //end basecross

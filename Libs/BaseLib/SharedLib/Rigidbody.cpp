@@ -210,6 +210,8 @@ namespace basecross {
 		//計算や衝突をしないようにする
 		SetContactFilterTarget(0);
 		SetMotionType(PsMotionType::MotionTypeFixed);
+		//空IDにセット
+		GetGameObject()->GetStage()->SetVacantPhysicsIndex(GetIndex());
 	}
 
 
@@ -222,7 +224,9 @@ namespace basecross {
 	RigidbodySphere::RigidbodySphere(const shared_ptr<GameObject>& GameObjectPtr, const PsSphereParam& param):
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSphere(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsSphere = GameObjectPtr->GetStage()->GetBasePhysics().AddSphere(param, index);
 	}
 
 	uint16_t RigidbodySphere::GetIndex() const {
@@ -266,7 +270,9 @@ namespace basecross {
 	RigidbodyBox::RigidbodyBox(const shared_ptr<GameObject>& GameObjectPtr, const PsBoxParam& param) :
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsBox = GameObjectPtr->GetStage()->GetBasePhysics().AddBox(param, index);
 	}
 
 	uint16_t RigidbodyBox::GetIndex() const {
@@ -307,7 +313,9 @@ namespace basecross {
 	RigidbodyCapsule::RigidbodyCapsule(const shared_ptr<GameObject>& GameObjectPtr, const PsCapsuleParam& param):
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
 		m_CapsuleMesh = Rigidbody::CreateCapsuleMesh(param);
 	}
 
@@ -364,7 +372,9 @@ namespace basecross {
 	RigidbodyCylinder::RigidbodyCylinder(const shared_ptr<GameObject>& GameObjectPtr, const PsCylinderParam& param):
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsCylinder = GetGameObject()->GetStage()->GetBasePhysics().AddCylinder(param, index);
 		m_CylinderMesh = Rigidbody::CreateCylinderMesh(param);
 	}
 
@@ -402,7 +412,9 @@ namespace basecross {
 	RigidbodyConvex::RigidbodyConvex(const shared_ptr<GameObject>& GameObjectPtr, const PsConvexParam& param):
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsConvex = GetGameObject()->GetStage()->GetBasePhysics().AddConvex(param, index);
 		m_ConvexMesh = Rigidbody::CreateConvexMesh(param);
 	}
 
@@ -438,7 +450,9 @@ namespace basecross {
 	RigidbodyCombined::RigidbodyCombined(const shared_ptr<GameObject>& GameObjectPtr, const PsCombinedParam& param):
 		RigidbodySingle(GameObjectPtr)
 	{
-		m_PsCombined = GetGameObject()->GetStage()->GetBasePhysics().AddCombined(param);
+		//空IDの取得
+		auto index = GameObjectPtr->GetStage()->GetVacantPhysicsIndex();
+		m_PsCombined = GetGameObject()->GetStage()->GetBasePhysics().AddCombined(param, index);
 		CreateMesh(param);
 	}
 

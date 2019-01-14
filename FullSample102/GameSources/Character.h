@@ -9,6 +9,23 @@
 namespace basecross{
 
 	//--------------------------------------------------------------------------------------
+	///	物理計算する落下するボール
+	//--------------------------------------------------------------------------------------
+	class FallingBall : public GameObject {
+		Vec3 m_Pos;
+		Vec3 m_Velocity;
+	public:
+		//構築と破棄
+		FallingBall(const shared_ptr<Stage>& StagePtr, const Vec3& Position, const Vec3& Velocity);
+		virtual ~FallingBall();
+		//初期化
+		virtual void OnCreate() override;
+		//操作
+		virtual void OnUpdate() override;
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	物理計算する固定のボックス
 	//--------------------------------------------------------------------------------------
 	class FixedPsBox : public GameObject {
