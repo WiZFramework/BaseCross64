@@ -128,7 +128,7 @@ namespace basecross{
 
 	void FireSphere::OnCollisionExcute(const CollisionPair& Pair) {
 		//Œ¸‘¬
-		m_Velocity *= 0.95f;
+		m_Velocity *= 0.99f;
 		if (m_Velocity.length() < 0.1f) {
 			m_Velocity = Vec3(0);
 		}
