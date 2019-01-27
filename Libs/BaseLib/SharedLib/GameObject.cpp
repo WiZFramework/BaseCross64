@@ -63,6 +63,11 @@ namespace basecross {
 		return nullptr;
 	}
 
+	void GameObject::TransformInit() {
+		auto Transptr = GetComponent<Transform>();
+		Transptr->SetToBefore();
+	}
+
 	void GameObject::ComponentUpdate() {
 		auto Transptr = GetComponent<Transform>();
 		auto RightPtr = GetComponent<Rigidbody>(false);
@@ -731,6 +736,7 @@ namespace basecross {
 			//クリエイト前
 			pImpl->m_GameObjectVec.push_back(Ptr);
 		}
+		Ptr->TransformInit();
 	}
 
 	//削除オブジェクトの設定
@@ -1304,37 +1310,6 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	///	シーン親クラス
 	//--------------------------------------------------------------------------------------
-	//void SceneBase::ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
-	//	vector<VertexPositionColor>& new_pc_vertices,
-	//	vector<VertexPositionTexture>& new_pt_vertices, vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices) {
-	//	new_pc_vertices.clear();
-	//	new_pt_vertices.clear();
-	//	new_pntnt_vertices.clear();
-	//	for (size_t i = 0; i < vertices.size(); i++) {
-	//		VertexPositionColor new_pc_v;
-	//		VertexPositionTexture new_pt_v;
-	//		VertexPositionNormalTangentTexture new_pntnt_v;
-
-	//		new_pc_v.position = vertices[i].position;
-	//		new_pc_v.color = bsm::Col4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	//		new_pt_v.position = vertices[i].position;
-	//		new_pt_v.textureCoordinate = vertices[i].textureCoordinate;
-
-	//		new_pntnt_v.position = vertices[i].position;
-	//		new_pntnt_v.normal = vertices[i].normal;
-	//		new_pntnt_v.textureCoordinate = vertices[i].textureCoordinate;
-	//		bsm::Vec3 n = bsm::cross((bsm::Vec3)new_pntnt_v.normal, bsm::Vec3(0, 1, 0));
-	//		new_pntnt_v.tangent = bsm::Vec4(n.x,n.y,n.z,0.0f);
-	//		new_pntnt_v.tangent.w = 0.0f;
-
-	//		new_pc_vertices.push_back(new_pc_v);
-	//		new_pt_vertices.push_back(new_pt_v);
-	//		new_pntnt_vertices.push_back(new_pntnt_v);
-
-	//	}
-	//}
-
 	void SceneBase::ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
 		vector<VertexPositionColor>& new_pc_vertices,
 		vector<VertexPositionNormal>& new_pn_vertices,

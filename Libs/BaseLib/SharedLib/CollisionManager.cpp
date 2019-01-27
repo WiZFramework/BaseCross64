@@ -26,7 +26,10 @@ namespace basecross {
 		GameObject(StagePtr),
 		m_NewIndex(0),
 		m_KeepIndex(1),
-		m_RecursiveCount(0),
+		m_PriorityUnderEscapeY(false),
+		m_EscapeSpan(0.002f),
+		m_EscapeMax(500),
+		m_EscapeFloor(3),
 		pImpl(new Impl())
 	{
 		m_CollisionPairVec[0].resize(1024);
@@ -36,174 +39,17 @@ namespace basecross {
 		m_TempKeepVec.resize(1024);
 		m_TempKeepVec.clear();
 		m_TempExitVec.clear();
-
-
 	}
 	CollisionManager::~CollisionManager() {}
-
-	void CollisionManager::EscapePair(CollisionPair& Pair) {
-		float ElapsedTime = App::GetApp()->GetElapsedTime();
-		auto SrcSh = Pair.m_Src.lock();
-		auto DestSh = Pair.m_Dest.lock();
-		if (SrcSh && DestSh) {
-			if (!SrcSh->IsFixed()) {
-				SrcSh->EscapeCollisionPair(Pair);
-			}
-		}
-	}
-
-	void CollisionManager::EscapeFromDest(CollisionPair& Pair) {
-		if (m_RecursiveCount > 5) {
-			//再帰が深くなったら今回のターンでは、これ以上行わない
-			return;
-		}
-		m_RecursiveCount++;
-		EscapePair(Pair);
-		auto SrcSh = Pair.m_Src.lock();
-		auto DestSh = Pair.m_Dest.lock();
-		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
-			auto TgtSrcSh = v.m_Src.lock();
-			auto TgtDestSh = v.m_Dest.lock();
-			if ((SrcSh == TgtSrcSh && DestSh == TgtDestSh) || (SrcSh == TgtDestSh && DestSh == TgtSrcSh)) {
-				continue;
-			}
-			if (SrcSh == TgtDestSh) {
-				EscapeFromDest(v);
-				break;
-			}
-		}
-		m_RecursiveCount--;
-	}
-
-	bool CollisionManager::SimpleCollisionPairSub(const shared_ptr<CollisionSphere>& Src, const shared_ptr<Collision>& Dest) {
-		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
-		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
-		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
-		auto SrcSp = Src->GetSphere();
-		if (ShDestSp) {
-			auto DestSp = ShDestSp->GetSphere();
-			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(),DestSp.GetWrappedAABB())) {
-				return false;
-			}
-			if (HitTest::SPHERE_SPHERE(SrcSp, DestSp)) {
-				return true;
-			}
-		}
-		else if (ShDestCap) {
-			auto DestCap = ShDestCap->GetCapsule();
-			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d;
-			if (HitTest::SPHERE_CAPSULE(SrcSp, DestCap, d)) {
-				return true;
-			}
-		}
-		else if (ShDestObb) {
-			auto DestObb = ShDestObb->GetObb();
-			if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d;
-			if (HitTest::SPHERE_OBB(SrcSp, DestObb, d)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool CollisionManager::SimpleCollisionPairSub(const shared_ptr<CollisionCapsule>& Src, const shared_ptr<Collision>& Dest) {
-		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
-		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
-		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
-		auto SrcCap = Src->GetCapsule();
-		if (ShDestSp) {
-			auto DestSp = ShDestSp->GetSphere();
-			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestSp.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d;
-			if (HitTest::SPHERE_CAPSULE(DestSp, SrcCap, d)) {
-				return true;
-			}
-		}
-		else if (ShDestCap) {
-			auto DestCap = ShDestCap->GetCapsule();
-			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d1, d2;
-			if (HitTest::CAPSULE_CAPSULE(SrcCap, DestCap, d1, d2)) {
-				return true;
-			}
-		}
-		else if (ShDestObb) {
-			auto DestObb = ShDestObb->GetObb();
-			if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d;
-			if (HitTest::CAPSULE_OBB(SrcCap, DestObb, d)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	bool CollisionManager::SimpleCollisionPairSub(const shared_ptr<CollisionObb>& Src, const shared_ptr<Collision>& Dest) {
-		auto ShDestSp = dynamic_pointer_cast<CollisionSphere>(Dest);
-		auto ShDestCap = dynamic_pointer_cast<CollisionCapsule>(Dest);
-		auto ShDestObb = dynamic_pointer_cast<CollisionObb>(Dest);
-		auto SrcObb = Src->GetObb();
-		if (ShDestSp) {
-			bsm::Vec3 d;
-			auto DestSp = ShDestSp->GetSphere();
-			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestSp.GetWrappedAABB())) {
-				return false;
-			}
-			if (HitTest::SPHERE_OBB(DestSp, SrcObb, d)) {
-				return true;
-			}
-		}
-		else if (ShDestCap) {
-			auto DestCap = ShDestCap->GetCapsule();
-			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestCap.GetWrappedAABB())) {
-				return false;
-			}
-			bsm::Vec3 d;
-			if (HitTest::CAPSULE_OBB(DestCap, SrcObb, d)) {
-				return true;
-			}
-		}
-		else if (ShDestObb) {
-			auto DestObb = ShDestObb->GetObb();
-			if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestObb.GetWrappedAABB())) {
-				return false;
-			}
-			if (HitTest::OBB_OBB(SrcObb, DestObb)) {
-				return true;
-			}
-		}
-		return false;
-
-	}
-
 
 	bool CollisionManager::SimpleCollisionPair(CollisionPair& Pair) {
 		auto Src = Pair.m_Src.lock();
 		auto Dest = Pair.m_Dest.lock();
 		if (Src && Dest) {
-			auto ShSrcSp = dynamic_pointer_cast<CollisionSphere>(Src);
-			auto ShSrcCap = dynamic_pointer_cast<CollisionCapsule>(Src);
-			auto ShSrcObb = dynamic_pointer_cast<CollisionObb>(Src);
-			if (ShSrcSp) {
-				return SimpleCollisionPairSub(ShSrcSp, Dest);
+			if (Src->IsSleep()) {
+				return false;
 			}
-			else if (ShSrcCap) {
-				return SimpleCollisionPairSub(ShSrcCap, Dest);
-			}
-			else if (ShSrcObb) {
-				return SimpleCollisionPairSub(ShSrcObb, Dest);
-			}
+			return Dest->SimpleCollisionCall(Src);
 		}
 		return false;
 	}
@@ -221,6 +67,9 @@ namespace basecross {
 			return false;
 		}
 		if (SrcColl->IsFixed()) {
+			return false;
+		}
+		if (SrcColl->IsSleep()) {
 			return false;
 		}
 		if (SrcColl->IsExcludeCollisionObject(Dest) || DestColl->IsExcludeCollisionObject(Src)) {
@@ -256,16 +105,62 @@ namespace basecross {
 		m_CollisionPairVec[m_NewIndex].push_back(NewPair);
 	}
 
+	void CollisionManager::EscapeCollisionPair(CollisionPair& Pair) {
+		auto ShSrc = Pair.m_Src.lock();
+		auto ShDest = Pair.m_Dest.lock();
+		if (ShSrc->GetAfterCollision() == AfterCollision::None || ShDest->GetAfterCollision() == AfterCollision::None) {
+			return;
+		}
+		bsm::Vec3 SrcCenter = ShSrc->GetCenterPosition();
+		bsm::Vec3 DestCenter = ShDest->GetCenterPosition();
+		int count = 0;
+		while (1) {
+			SrcCenter += Pair.m_SrcHitNormal * GetEscapeSpan();
+			bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
+			float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);
+			if (SrcV >= 0) {
+				break;
+			}
+			if (!ShDest->IsFixed()) {
+				DestCenter += -Pair.m_SrcHitNormal * GetEscapeSpan();
+				bsm::Vec3 DestLocalVec = DestCenter - Pair.m_SrcCalcHitCenter;
+				float DestV = bsm::dot(DestLocalVec, Pair.m_SrcHitNormal);
+				if (DestV >= 0) {
+					break;
+				}
+			}
+			count++;
+			if (count > GetEscapeMax()) {
+				break;
+			}
+		}
+		SrcCenter.floor(GetEscapeFloor());
+		auto PtrSrcTransform = ShSrc->GetGameObject()->GetComponent<Transform>();
+		//エスケープはリセット
+		PtrSrcTransform->ResetWorldPosition(SrcCenter);
+		if (!ShDest->IsFixed()) {
+			DestCenter.floor(GetEscapeFloor());
+			auto PtrDestTransform = ShDest->GetGameObject()->GetComponent<Transform>();
+			//エスケープはリセット
+			PtrDestTransform->ResetWorldPosition(DestCenter);
+		}
+	}
 
-
-
-	void CollisionManager::OnCreate() {
-
+	void CollisionManager::SleepCheckSet() {
+		auto& ObjVec = GetStage()->GetGameObjectVec();
+		for (auto& v : ObjVec) {
+			auto ptrColl = v->GetComponent<Collision>(false);
+			if (ptrColl) {
+				ptrColl->SleepCheckSet();
+			}
+		}
 	}
 
 
-	void CollisionManager::OnUpdate() {
+	void CollisionManager::OnCreate() {
+	}
 
+	void CollisionManager::OnUpdate() {
 		//keepのチェック
 		m_TempKeepVec.clear();
 		m_TempExitVec.clear();
@@ -281,7 +176,6 @@ namespace basecross {
 		//テンポラリの内容をkeepペアにコピー
 		m_CollisionPairVec[m_KeepIndex].resize(m_TempKeepVec.size());
 		m_CollisionPairVec[m_KeepIndex] = m_TempKeepVec;
-
 		//キープされているペアのSrcにもしGravityがセットされていたら0にする
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
 			auto ShSrc = v.m_Src.lock();
@@ -307,41 +201,31 @@ namespace basecross {
 		}
 
 		//--------------------------------------------------------
-		//キープ配列のソート
+		//キープ配列のソート(IsPriorityUnderEscapeY())の場合Yが小さい優先
 		//--------------------------------------------------------
-		auto func = [](CollisionPair& Left, CollisionPair& Right)->bool {
-			auto ShLeftDest = Left.m_Dest.lock();
-			auto ShRightDest = Right.m_Dest.lock();
-			if (!ShLeftDest->IsFixed() && !ShRightDest->IsFixed()) {
-				auto LeftMove = bsm::length(ShLeftDest->GetGameObject()->GetComponent<Transform>()->GetVelocity());
-				auto RightMove = bsm::length(ShRightDest->GetGameObject()->GetComponent<Transform>()->GetVelocity());
-				if (LeftMove > RightMove) {
+		auto func = [&](CollisionPair& Left, CollisionPair& Right)->bool {
+			if (IsPriorityUnderEscapeY()) {
+				if (Left.m_CalcHitPoint.y < Right.m_CalcHitPoint.y) {
+					return true;
+				}
+			}
+			else {
+				if (Left.m_CalcHitPoint.y > Right.m_CalcHitPoint.y) {
 					return true;
 				}
 			}
 			return false;
 		};
-		//動きのある物優先にソート
+		//衝突点でソート
 		std::sort(m_CollisionPairVec[m_KeepIndex].begin(), m_CollisionPairVec[m_KeepIndex].end(), func);
-
-		///Fixedに関係ないオブジェクトのエスケープ
+		//エスケープ
 		for (auto& v : m_CollisionPairVec[m_KeepIndex]) {
-			auto TgtSrcSh = v.m_Src.lock();
-			auto TgtDestSh = v.m_Dest.lock();
-			if (!TgtSrcSh->IsFixed() && !TgtDestSh->IsFixed()) {
-				EscapePair(v);
-			}
-		}
-
-		m_RecursiveCount = 0;
-		//Fixedに衝突している
-		//逆順に検証
-		for (auto it = m_CollisionPairVec[m_KeepIndex].rbegin(); it != m_CollisionPairVec[m_KeepIndex].rend(); it++) {
-			auto TgtSrcSh = it->m_Src.lock();
-			auto TgtDestSh = it->m_Dest.lock();
-			if (TgtDestSh->IsFixed()) {
-				//再帰呼び出し
-				EscapeFromDest(*it);
+			auto SrcSh = v.m_Src.lock();
+			auto DestSh = v.m_Dest.lock();
+			if (SrcSh && DestSh) {
+				if (!SrcSh->IsFixed()) {
+					EscapeCollisionPair(v);
+				}
 			}
 		}
 		//衝突メッセージの送信
@@ -354,6 +238,7 @@ namespace basecross {
 				auto ShDestObj = ShDest->GetGameObject();
 				if (ShSrcObj && ShDestObj) {
 					ShSrcObj->OnCollisionExit(ShDestObj);
+					ShSrcObj->OnCollisionExit(v);
 				}
 			}
 		}
@@ -366,6 +251,7 @@ namespace basecross {
 				auto ShDestObj = ShDest->GetGameObject();
 				if (ShSrcObj && ShDestObj) {
 					ShSrcObj->OnCollisionExcute(ShDestObj);
+					ShSrcObj->OnCollisionExcute(v);
 				}
 			}
 		}
@@ -378,13 +264,12 @@ namespace basecross {
 				auto ShDestObj = ShDest->GetGameObject();
 				if (ShSrcObj && ShDestObj) {
 					ShSrcObj->OnCollisionEnter(ShDestObj);
+					ShSrcObj->OnCollisionEnter(v);
 				}
 			}
 		}
-
+		SleepCheckSet();
 	}
-
-
 
 }
 // end basecross

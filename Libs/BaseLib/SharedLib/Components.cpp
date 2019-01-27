@@ -79,7 +79,6 @@ namespace basecross {
 	//	用途: コンポーネントImplクラス
 	//--------------------------------------------------------------------------------------
 	struct Transform::Impl {
-		bool m_Init{ false };	//初期化済みかどうか（1回目のUpdateで、Beforeに値を入れる）
 		//1つ前の変数
 		bsm::Vec3 m_BeforeScale;
 		bsm::Vec3 m_BeforePivot;
@@ -410,10 +409,6 @@ namespace basecross {
 
 	//操作
 	void Transform::OnUpdate() {
-		if (!pImpl->m_Init) {
-			SetToBefore();
-			pImpl->m_Init = true;
-		}
 	}
 
 	struct CellNode {
@@ -769,6 +764,11 @@ namespace basecross {
 
 
 	void Gravity::OnUpdate() {
+		//コリジョンがあって、スリープ状態なら更新しない
+		auto PtrCollision = GetGameObject()->GetComponent<Collision>(false);
+		if (PtrCollision && PtrCollision->IsSleep()) {
+			return;
+		}
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();

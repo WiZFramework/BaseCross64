@@ -2154,6 +2154,15 @@ namespace bsm {
 		inline bool equalInt(const Mat4x4& other)const;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	Mat4x4と近似チェック
+		@param[in]	other	相手
+		@param[in]	epsilon	近似制限値
+		@return	近似ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		inline bool nearEqual(const Mat4x4& other,float epsilon)const;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	3x3の部分にセット
 		@param[in]	mat3	相手
 		@return	*thisの参照

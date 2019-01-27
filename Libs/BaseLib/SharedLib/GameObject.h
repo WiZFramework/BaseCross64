@@ -8,6 +8,7 @@
 
 namespace basecross {
 	class Stage;
+	struct CollisionPair;
 
 	//--------------------------------------------------------------------------------------
 	///	ゲーム配置オブジェクト親クラス
@@ -575,6 +576,13 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	Transformの初期化処理を行う(内部でSetToBeforが呼ばれる)
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void TransformInit();
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	コンポーネントの更新処理
 		@return	なし
 		*/
@@ -625,12 +633,28 @@ namespace basecross {
 		virtual void OnCollisionEnter(shared_ptr<GameObject>& Other) {}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	衝突発生時時のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
+		@param[in]	Pair ペア
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCollisionEnter(const CollisionPair& Pair) {}
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	衝突し続ける相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
-		@param[in]	OtherVec	衝突し続けた相手の配列
+		@param[in]	OtherVec	衝突し続けた相手
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnCollisionExcute(shared_ptr<GameObject>& Other) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	衝突し続ける相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
+		@param[in]	Pair ペア
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCollisionExcute(const CollisionPair& Pair) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突を抜けた相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
@@ -639,6 +663,14 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	衝突を抜けた相手があった場合のイベント（デフォルトは何もしない）。複数あった場合は複数回呼ばれる
+		@param[in]	Pair ペア
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCollisionExit(const CollisionPair& Pair) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	描画前準備（デフォルトは何もしない）
@@ -1843,11 +1875,6 @@ namespace basecross {
 	class SceneBase :public SceneInterface {
 		void SetActiveStage(const shared_ptr<Stage>& stage);
 
-		//void ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
-		//	vector<VertexPositionColor>& new_pc_vertices,
-		//	vector<VertexPositionTexture>& new_pt_vertices,
-		//	vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices
-		//	);
 		void ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
 			vector<VertexPositionColor>& new_pc_vertices,
 			vector<VertexPositionNormal>& new_pn_vertices,

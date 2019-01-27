@@ -1674,8 +1674,16 @@ namespace bsm {
 		return true;
 	}
 
+	inline bool Mat4x4::nearEqual(const Mat4x4& other, float epsilon)const {
+		Flt4 temp(epsilon, epsilon, epsilon, epsilon);
+		for (int i = 0; i < 4; i++) {
+			if (!XMVector4NearEqual(getMajor(i), other.getMajor(i), temp)) {
+				return false;
+			}
+		}
+		return true;
 
-
+	}
 
 	inline Mat4x4::Mat4x4(const Quat & unitQuat) :
 		XMFLOAT4X4()
