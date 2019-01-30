@@ -7,10 +7,6 @@
 #include "stdafx.h"
 
 namespace basecross {
-
-
-#ifdef test
-
 	//ƒ[ƒJƒ‹ŠÖ”
 
 	//---------------------------------------------------------------------------
@@ -2168,8 +2164,6 @@ namespace basecross {
 			}
 		}
 	}
-#endif
-
 
 }
 //endof  basecross

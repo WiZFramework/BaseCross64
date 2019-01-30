@@ -67,6 +67,11 @@ namespace basecross {
 		pImpl->m_AfterCollision = a;
 	}
 
+	bsm::Vec3 Collision::GetVelocity() const {
+		return GetGameObject()->GetComponent<Transform>()->GetVelocity();
+	}
+
+
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
 		auto shptr = pImpl->m_ExcludeCollisionGroup.lock();
 		if (shptr) {
@@ -180,10 +185,12 @@ namespace basecross {
 		if (!IsSleepActive() || IsFixed()) {
 			return;
 		}
-		auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
-		pImpl->m_IsSleep = false;
-		pImpl->m_SleepCheckWorldMatrix = WorldMat;
-		pImpl->m_SleepCheckTimer = 0.0f;
+		if (pImpl->m_IsSleep) {
+			auto WorldMat = GetGameObject()->GetComponent<Transform>()->GetWorldMatrix();
+			pImpl->m_IsSleep = false;
+			pImpl->m_SleepCheckWorldMatrix = WorldMat;
+			pImpl->m_SleepCheckTimer = 0.0f;
+		}
 	}
 
 

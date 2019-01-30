@@ -122,15 +122,24 @@ namespace basecross{
 	}
 
 	void FireSphere::OnCollisionEnter(const CollisionPair& Pair) {
-		//”½”­
+		auto ptrTrans = GetComponent<Transform>();
+		auto shDest = Pair.m_Dest.lock();
+		m_Velocity -= shDest->GetVelocity();
 		m_Velocity.reflect(Pair.m_SrcHitNormal);
+		if (m_Velocity.length() > 20.0f) {
+			m_Velocity.normalize();
+			m_Velocity *= 20.0f;
+		}
 	}
 
 	void FireSphere::OnCollisionExcute(const CollisionPair& Pair) {
-		//Œ¸‘¬
-		m_Velocity *= 0.99f;
-		if (m_Velocity.length() < 0.1f) {
-			m_Velocity = Vec3(0);
+		auto shDest = Pair.m_Dest.lock();
+		if (shDest->IsFixed()) {
+			//Œ¸‘¬
+			m_Velocity *= 0.95f;
+			if (m_Velocity.length() < 0.05f) {
+				m_Velocity = Vec3(0);
+			}
 		}
 	}
 

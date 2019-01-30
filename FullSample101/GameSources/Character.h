@@ -156,6 +156,7 @@ namespace basecross{
 		Vec3 m_Scale;
 		Vec3 m_Rotation;
 		Vec3 m_Position;
+		Vec3 m_Velocity;
 	public:
 		//\’z‚Æ”jŠü
 		MoveBox(const shared_ptr<Stage>& StagePtr,
@@ -167,6 +168,9 @@ namespace basecross{
 		//‰Šú‰»
 		virtual void OnCreate() override;
 		//‘€ì
+		virtual void OnUpdate() override;
+		virtual void OnCollisionExcute(const CollisionPair& Pair) override;
+		virtual void OnCollisionExit(const CollisionPair& Pair)override;
 	};
 
 

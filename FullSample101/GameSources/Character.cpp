@@ -272,7 +272,8 @@ namespace basecross{
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),
-		m_Position(Position)
+		m_Position(Position),
+		m_Velocity(0)
 	{
 	}
 	MoveBox::~MoveBox() {}
@@ -298,7 +299,37 @@ namespace basecross{
 		ptrDraw->SetOwnShadowActive(true);
 	}
 
+	void MoveBox::OnUpdate() {
+		auto ptrTransform = GetComponent<Transform>();
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		auto Pos = ptrTransform->GetPosition();
+		Pos += m_Velocity * elapsedTime;
+		ptrTransform->SetPosition(Pos);
 
+	}
+
+	void MoveBox::OnCollisionExcute(const CollisionPair& Pair) {
+		auto shDest = Pair.m_Dest.lock();
+		if (shDest->IsFixed()) {
+			//Œ¸‘¬
+			m_Velocity *= 0.95f;
+			if (m_Velocity.length() < 0.05f) {
+				m_Velocity = Vec3(0);
+			}
+		}
+	}
+
+	void MoveBox::OnCollisionExit(const CollisionPair& Pair) {
+		auto ptrTrans = GetComponent<Transform>();
+		auto shDest = Pair.m_Dest.lock();
+		m_Velocity -= shDest->GetVelocity();
+		m_Velocity.reflect(Pair.m_SrcHitNormal);
+		if (m_Velocity.length() > 5.0f) {
+			m_Velocity.normalize();
+			m_Velocity *= 5.0f;
+		}
+
+	}
 
 }
 //end basecross

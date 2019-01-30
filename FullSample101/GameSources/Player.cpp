@@ -77,9 +77,12 @@ namespace basecross{
 		auto ptr = AddComponent<Transform>();
 		ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		ptr->SetRotation(0.0f, 0.0f, 0.0f);
-		ptr->SetPosition(0, 0.125f, 0);
+//		ptr->SetPosition(0, 0.25f, 0);
+		ptr->SetPosition(Vec3(0, 0.125f, 0));
 
 		//CollisionSphere衝突判定を付ける
+//		auto ptrColl = AddComponent<CollisionObb>();
+//		auto ptrColl = AddComponent<CollisionCapsule>();
 		auto ptrColl = AddComponent<CollisionSphere>();
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
@@ -98,6 +101,8 @@ namespace basecross{
 		//描画コンポーネントの設定
 		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
+//		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+//		ptrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
 		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		ptrDraw->SetFogEnabled(true);
 		//描画するテクスチャを設定
@@ -119,6 +124,10 @@ namespace basecross{
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
 		MovePlayer();
+		auto ptr = GetComponent<Transform>();
+		auto bpos = ptr->GetBeforePosition();
+		auto pos = ptr->GetPosition();
+
 	}
 
 	void Player::OnUpdate2() {
@@ -155,6 +164,7 @@ namespace basecross{
 		gravStr += L"X=" + Util::FloatToWStr(gravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
+
 		wstring str = fpsStr + positionStr + gravStr;
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();

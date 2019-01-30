@@ -8,9 +8,6 @@
 
 namespace basecross {
 
-#ifdef test
-
-
 	//---------------------------------------------------------------
 	/// ソートモード
 	struct SsPartsSortMode
@@ -935,10 +932,6 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
-
-#endif
-
-
 
 }
 //end of namespace bascross.

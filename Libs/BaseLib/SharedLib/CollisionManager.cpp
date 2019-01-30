@@ -26,9 +26,7 @@ namespace basecross {
 		GameObject(StagePtr),
 		m_NewIndex(0),
 		m_KeepIndex(1),
-		m_PriorityUnderEscapeY(false),
-		m_EscapeSpan(0.002f),
-		m_EscapeMax(500),
+		m_PriorityUnderEscapeY(true),
 		m_EscapeFloor(3),
 		pImpl(new Impl())
 	{
@@ -113,36 +111,31 @@ namespace basecross {
 		}
 		bsm::Vec3 SrcCenter = ShSrc->GetCenterPosition();
 		bsm::Vec3 DestCenter = ShDest->GetCenterPosition();
-		int count = 0;
-		while (1) {
-			SrcCenter += Pair.m_SrcHitNormal * GetEscapeSpan();
-			bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
-			float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);
-			if (SrcV >= 0) {
-				break;
-			}
+
+		bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
+		float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);
+		if (SrcV < 0.0f) {
+			//まだ衝突していたら
+			float EscapeLen = abs(SrcV);
 			if (!ShDest->IsFixed()) {
-				DestCenter += -Pair.m_SrcHitNormal * GetEscapeSpan();
-				bsm::Vec3 DestLocalVec = DestCenter - Pair.m_SrcCalcHitCenter;
-				float DestV = bsm::dot(DestLocalVec, Pair.m_SrcHitNormal);
-				if (DestV >= 0) {
-					break;
-				}
+				EscapeLen *= 0.5f;
 			}
-			count++;
-			if (count > GetEscapeMax()) {
-				break;
+			//Srcのエスケープ
+			SrcCenter += Pair.m_SrcHitNormal * EscapeLen;
+			if (!ShDest->IsFixed()) {
+				//Destのエスケープ
+				DestCenter += -Pair.m_SrcHitNormal * EscapeLen;
 			}
-		}
-		SrcCenter.floor(GetEscapeFloor());
-		auto PtrSrcTransform = ShSrc->GetGameObject()->GetComponent<Transform>();
-		//エスケープはリセット
-		PtrSrcTransform->ResetWorldPosition(SrcCenter);
-		if (!ShDest->IsFixed()) {
-			DestCenter.floor(GetEscapeFloor());
-			auto PtrDestTransform = ShDest->GetGameObject()->GetComponent<Transform>();
-			//エスケープはリセット
-			PtrDestTransform->ResetWorldPosition(DestCenter);
+			SrcCenter.floor(GetEscapeFloor());
+			auto PtrSrcTransform = ShSrc->GetGameObject()->GetComponent<Transform>();
+			//Srcのエスケープ
+			PtrSrcTransform->SetWorldPosition(SrcCenter);
+			if (!ShDest->IsFixed()) {
+				DestCenter.floor(GetEscapeFloor());
+				auto PtrDestTransform = ShDest->GetGameObject()->GetComponent<Transform>();
+				//Destのエスケープ
+				PtrDestTransform->SetWorldPosition(DestCenter);
+			}
 		}
 	}
 
@@ -197,6 +190,17 @@ namespace basecross {
 		SetNewCollision();
 		//追加されたペアをキープに追加
 		for (auto& v : m_CollisionPairVec[m_NewIndex]) {
+			//追加ペアのSrcにもしGravityがセットされていたら0にする
+			auto ShSrc = v.m_Src.lock();
+			if (ShSrc) {
+				auto Gr = ShSrc->GetGameObject()->GetComponent<Gravity>(false);
+				if (Gr) {
+					auto f = bsm::angleBetweenNormals(v.m_SrcHitNormal, Vec3(0, 1, 0));
+					if (abs(f) < XM_PIDIV4) {
+						Gr->SetGravityVerocityZero();
+					}
+				}
+			}
 			m_CollisionPairVec[m_KeepIndex].push_back(v);
 		}
 
