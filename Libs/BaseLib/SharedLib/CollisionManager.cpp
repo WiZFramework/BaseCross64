@@ -111,8 +111,8 @@ namespace basecross {
 		}
 		bsm::Vec3 SrcCenter = ShSrc->GetCenterPosition();
 		bsm::Vec3 DestCenter = ShDest->GetCenterPosition();
-
-		bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
+		bsm::Vec3 DestMoveVec = DestCenter - Pair.m_DestCalcHitCenter;
+		bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter - DestMoveVec;
 		float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);
 		if (SrcV < 0.0f) {
 			//‚Ü‚¾Õ“Ë‚µ‚Ä‚¢‚½‚ç

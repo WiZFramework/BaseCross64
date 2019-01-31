@@ -157,8 +157,9 @@ void CollisionManager::EscapeCollisionPair(CollisionPair& Pair) {
     }
     bsm::Vec3 SrcCenter = ShSrc->GetCenterPosition();
     bsm::Vec3 DestCenter = ShDest->GetCenterPosition();
+    bsm::Vec3 DestMoveVec = DestCenter - Pair.m_DestCalcHitCenter;
 
-    <span class="red">bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
+    <span class="red">bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter - DestMoveVec;
     float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);</span>
     if (SrcV &lt; 0.0f) {
         //まだ衝突していたら
@@ -187,6 +188,7 @@ void CollisionManager::EscapeCollisionPair(CollisionPair& Pair) {
 </pre>
 </div>
 　赤くなっているところがこれまで説明してきた計算の部分です。相手が<b>IsFixed()</b>でなければ、相手を逆方向に移動させます。（半分づつ移動させます）。<br />
+　また、相手が衝突した瞬間より移動した場合に備え、DestMoveVecという変数で衝突位置をずらしています。
 <h4>コリジョンのスリープ</h4>
 　また、衝突判定では、そもそも<b>判定そのもの</b>にコストがかかります。<br />
 　ステージ上に配置されるオブジェクトすべてで判定を行うと、５０個くらいまではいいのですが、１００個２００個となっていきますと処理落ちするようになります。<br />
