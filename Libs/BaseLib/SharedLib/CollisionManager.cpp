@@ -26,7 +26,7 @@ namespace basecross {
 		GameObject(StagePtr),
 		m_NewIndex(0),
 		m_KeepIndex(1),
-		m_PriorityUnderEscapeY(true),
+		m_PriorityUnderEscapeY(false),
 		m_EscapeFloor(3),
 		pImpl(new Impl())
 	{
