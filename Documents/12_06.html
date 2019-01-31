@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０６．コリジョンの検証</h3>
+　このサンプルは<b>FullSample206</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1206a.png" width="80%"/>
+<p>図1206a</p>
+<p>&nbsp;</p>
+　この画面で<b>Aボタン</b>を押すといつものようにジャンプします。<br />
+　<b>Xボタン</b>を押すと、砲弾に見立てた球体を発射します。この球体（砲弾）は際限なく発射します。デバッグ文字列にある<b>OBJ_COUNT:</b>というところにある数は、現在実装されているゲームオブジェクト数です。砲弾を発射するたびにその数も増えます。しかし、砲弾がステージの外に出てしまって、一定の高さより下になると、更新や描画はしなくなります。<br />
+　そのように<b>更新や描画をしない</b>オブジェクトは、次に<b>Xボタン</b>が押されたときに再利用されます。<br />
+　ステージの上に散乱した場合、砲弾はそのまま放置されますが、動かなくなって、一定の時間がたつと<b>黒く</b>なります。この状態を<b>スリープ</b>といいます。<b>スリープ状態</b>になると<b>衝突判定</b>はしなくなります。しかし、別の砲弾がぶつかったり、プレイヤーに触れたりすると<b>ウェイクアップ（起きる）</b>状態になり、また、<b>衝突判定</b>をするようになります。<br />
+　このように<b>使いまわし</b>と<b>スリープ</b>の機能により、ステージ上では、ある程度遅いマシンでも<b>200個くらい</b>はオブジェクトを配置することが可能となります。<br />
+　しかし、この<b>２００個くらい</b>という制限も<b>描画処理</b>のコストの積み上げでそうなります。<br />
+　<b>インスタンス描画</b>を実装すれば、もっとたくさんのオブジェクトを配置できるでしょう。
+<h4>コリジョンとは何か</h4>
+　この項のテーマは<b>コリジョン</b>、つまり<b>衝突判定</b>です。<br />
+　<b>BaseCross64</b>には、2系統のコリジョンが実装されています。<br />
+　一つは物理処理（Rigidbidyコンポーネント）が行う判定であり、もう一つはこの項で紹介する、単純な判定です。<br />
+　単純とはいえ、<b>オブジェクト同士がぶつかる</b>ということは、なかなか奥深い領域であり、よく考えて実装しないとオブジェクト同士が埋まったりしてうまくいきません。<br />
+　この項では<b>ライブラリ内</b>で行っている処理を解説するとともに、例えばコリジョンを完全に自作する場合のヒントになるような説明をしたいと思います。
+<h4>衝突の仕組み</h4>
+　３Ｄ環境で<b>衝突</b>を表現するには<b>ボリューム境界</b>という考え方が必要です。<br />
+　<b>ボリューム境界</b>というのは単純化された３Ｄの形状と考えてもらっていいと思います。<b>BaseCross64</b>では<b>球体、カプセル、直方体</b>の３つの<b>ボリューム境界</b>を持っています。モデルなどの複雑な形状では各頂点で判定を行うとコストがかかりすぎます。そのためこのように単純化さえた形状で判定を行います。<br />
+　<b>物理世界</b>の場合もう少し複雑な形状も扱えます。<br />
+　まず大前提として、ステージのクリエイト時は各オブジェクトは<b>衝突してないか、それぞれの表面で接している</b>状態で始まります。以下のような状態で始まると思ってください。例としてこのドキュメントでは<b>球体と直方体</b>の衝突を考えます。
+<p>&nbsp;</p>
+<img src="img/1206b.png" width="80%"/>
+<p>図1206b</p>
+<p>&nbsp;</p>
+　この状態から、以下の状態になります。横移動と、重力が実装されているとします。次のターンというのは<b>BaseCross64</b>の場合、<b>約６０分の１秒後</b>です。
+<p>&nbsp;</p>
+<img src="img/1206c.png" width="80%"/>
+<p>図1206c</p>
+<p>&nbsp;</p>
+　<b>次のターン</b>の状態では、球体は二つのボックスと衝突しています。しかしオブジェクトに埋まってしまってますので、以下のように修正しなければいけません。
+<p>&nbsp;</p>
+<img src="img/1206d.png" width="80%"/>
+<p>図1206d</p>
+<p>&nbsp;</p>
+　埋まっている状態から、埋まっていない状態に持っていくことを<b>拘束を解く</b>といいます。<br />
+　それでは順序立てて説明します。
+<h4>衝突まで</h4>
+　<b>衝突していない状態</b>から<b>衝突している状態</b>を判定するには、以下の様な手順で行います。<br />
+　まず、移動する物体は、移動する前と移動後の大きな球と見立てます。
+<p>&nbsp;</p>
+<img src="img/1206e.png" width="80%"/>
+<p>図1206e</p>
+<p>&nbsp;</p>
+　この場合、大きな球とボックスは衝突しています。<br />
+　次に、その球を半分にし、前半分と後半分のどちらで当たっているか検証します。そして後ろ半分で当たっていれば、さらに半分して、・・・と続けていって、<b>衝突した瞬間</b>を見つけ出します。<br />
+　以下の様な感じです
+<p>&nbsp;</p>
+<img src="img/1206f.png" width="80%"/>
+<p>図1206f</p>
+<p>&nbsp;</p>
+　そして、今回の例の場合、以下の２つの状態（衝突した瞬間）が存在する形となります。
+<p>&nbsp;</p>
+<img src="img/1206g.png" width="80%"/>
+<p>図1206g</p>
+<p>&nbsp;</p>
+　衝突した瞬間を導き出す低レベルの関数は、ライブラリ中<b>DxLib</b>にある<b>TransHelper.h</b>に記述があります。<br />
+　<b>HitTest::CollisionTestSphereObb()関数</b>です。この関数で、<b>図1206f</b>のアルゴリズムを実装しています。<br />
+　これを<b>コリジョンコンポーネント</b>から呼び出すわけですが、それは<b>SharedLib</b>内の<br />
+<b>CollisionSphere::CollisionTest(const shared_ptr&lt;CollisionObb>& DestColl)</b>関数になります。以下がその実体です。
+<div class="box1">
+<pre>
+void CollisionSphere::CollisionTest(const shared_ptr&lt;CollisionObb>& DestColl) {
+    if (!HitTest::AABB_AABB(GetSphere().GetWrappedAABB(), DestColl->GetObb().GetWrappedAABB())) {
+        //現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+        return;
+    }
+    auto PtrTransform = GetGameObject()->GetComponent&lt;Transform>();
+    auto PtrDestTransform = DestColl->GetGameObject()->GetComponent&lt;Transform>();
+    bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+    bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
+    //前回のターンからの時間
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    //移動以外変化なし
+    SPHERE SrcSphere = GetSphere();
+    SPHERE SrcBeforSphere = GetBeforeSphere();
+    //相手
+    OBB DestObb = DestColl->GetObb();
+    OBB DestBeforeObb = DestColl->GetBeforeObb();
+    bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
+    float HitTime = 0;
+    if (HitTest::CollisionTestSphereObb(SrcBeforSphere, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
+        CollisionPair pair;
+        pair.m_Src = GetThis&lt;Collision>();
+        pair.m_Dest = DestColl;
+        SPHERE SrcChkSphere = SrcBeforSphere;
+        SrcChkSphere.m_Center += SrcVelocity * HitTime;
+        pair.m_SrcCalcHitCenter = SrcChkSphere.m_Center;
+        OBB DestChkObb = DestBeforeObb;
+        DestChkObb.m_Center += DestVelocity * HitTime;
+        pair.m_DestCalcHitCenter = DestChkObb.m_Center;
+        bsm::Vec3 ret;
+        HitTest::SPHERE_OBB(SrcChkSphere, DestChkObb, ret);
+        //衝突した瞬間で法線を計算
+        pair.m_SrcHitNormal = SrcChkSphere.m_Center - ret;
+        pair.m_SrcHitNormal.normalize();
+        pair.m_CalcHitPoint = ret;
+        GetCollisionManager()->InsertNewPair(pair);
+    }
+}
+</pre>
+</div>
+　この中で呼んでいる<b>HitTest::CollisionTestSphereObb()関数</b>は移動中に衝突があれば、trueを返し、<b>HitTime</b>に指定した範囲内の時間を返します。その情報により、<b>衝突した瞬間</b>が導き出せます。<br />
+　導き出したら、その場所に球体を移動させて、その位置から<b>衝突法線</b>と<b>衝突した瞬間の球の中心</b>を導き<b>CollisionPair構造体</b>の変数に初期化し、<b>GetCollisionManager()->InsertNewPair(pair);</b>と<b>衝突判定マネージャ</b>に渡します。<br />
+　このようにして、ステージ上にある<b>コリジョンコンポーネント</b>がついているもの同士の判定を行い、<b>衝突ペア</b>の配列を作成します。
+<h4>拘束の解消</h4>
+　一通りの判定を行い、新規に発生した<b>衝突ペア</b>の拘束をひとつづつ解消していくわけですが、<b>衝突ペア</b>の配列はもう一組ありまして、それは<b>前回のターンで解消したにもかかわらず相変わらず衝突したまま</b>のペアが存在します。これを<b>キープペア</b>といいます。<br />
+　なぜこのような形になるかというと、コリジョンの操作が終わった後、次のターンでは<b>コントローラ</b>による移動があったり、重力による落下があったりします。<br />
+　これらはターンをまたいで<b>キープ</b>されている形となるため、これも一緒に<b>拘束の解消</b>を行う必要があります。<br />
+　具体的には<b>キープされているペア</b>の配列に<b>新規のペア</b>の配列を追加し、それらの<b>拘束を解消</b>します。<br />
+　<b>拘束を解消</b>のアルゴリズムは<b>内積</b>を使います。原理は以下の形です。
+<p>&nbsp;</p>
+<img src="img/1206h.png" width="80%"/>
+<p>図1206h</p>
+<p>&nbsp;</p>
+　球Xが衝突した瞬間です。球Aは埋まってる状態、球Bが拘束を解消する位置です。下のグラフが単純化したものです。<br />
+　球Aの中心から球Xの中心を引き算すると、緑色のベクトルになります。<br />
+　それと衝突法線の内積を計算すると、下図のように、内積は正規化されたベクトルへの投影を行いますので、マイナスの数値になります。もしこの値が０か正の数になれば、衝突してないことになります。ですので
+<div class="box1">
+<pre>
+１、球Aの中心から球Xの中心を引いてベクトルを作り出す。
+２、それと衝突法線の内積をとる
+３、それがマイナスだったら、その距離のぶんだけ、衝突法線方向に球Aを移動させる。
+</pre>
+</div>
+　この方法で、球Aは球Bの位置に移動します。これを実装しているのは、<b>SharedLib</b>内の<b>CollisionManager.cpp</b>にあります、<b>CollisionManager::EscapeCollisionPair()関数</b>です。以下がそのコードです。
+<div class="box1">
+<pre>
+void CollisionManager::EscapeCollisionPair(CollisionPair& Pair) {
+    auto ShSrc = Pair.m_Src.lock();
+    auto ShDest = Pair.m_Dest.lock();
+    if (ShSrc->GetAfterCollision() == AfterCollision::None || ShDest->GetAfterCollision() == AfterCollision::None) {
+        return;
+    }
+    bsm::Vec3 SrcCenter = ShSrc->GetCenterPosition();
+    bsm::Vec3 DestCenter = ShDest->GetCenterPosition();
+
+    <span class="red">bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter;
+    float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);</span>
+    if (SrcV &lt; 0.0f) {
+        //まだ衝突していたら
+        float EscapeLen = abs(SrcV);
+        if (!ShDest->IsFixed()) {
+            EscapeLen *= 0.5f;
+        }
+        //Srcのエスケープ
+        SrcCenter += Pair.m_SrcHitNormal * EscapeLen;
+        if (!ShDest->IsFixed()) {
+            //Destのエスケープ
+            DestCenter += -Pair.m_SrcHitNormal * EscapeLen;
+        }
+        SrcCenter.floor(GetEscapeFloor());
+        auto PtrSrcTransform = ShSrc->GetGameObject()->GetComponent&lt;Transform>();
+        //Srcのエスケープ
+        PtrSrcTransform->SetWorldPosition(SrcCenter);
+        if (!ShDest->IsFixed()) {
+            DestCenter.floor(GetEscapeFloor());
+            auto PtrDestTransform = ShDest->GetGameObject()->GetComponent&lt;Transform>();
+            //Destのエスケープ
+            PtrDestTransform->SetWorldPosition(DestCenter);
+        }
+    }
+}
+</pre>
+</div>
+　赤くなっているところがこれまで説明してきた計算の部分です。相手が<b>IsFixed()</b>でなければ、相手を逆方向に移動させます。（半分づつ移動させます）。<br />
+<h4>コリジョンのスリープ</h4>
+　また、衝突判定では、そもそも<b>判定そのもの</b>にコストがかかります。<br />
+　ステージ上に配置されるオブジェクトすべてで判定を行うと、５０個くらいまではいいのですが、１００個２００個となっていきますと処理落ちするようになります。<br />
+　そのため、ある一定時間動きがないオブジェクト同士は判定しないようにします。これを<b>スリープ（眠る）</b>といいます。<br />
+　このサンプルではスリープ状態にある砲弾は色が黒くなります。発射直後はオレンジですが、ステージ上で止まると、いずれ黒くなります。この形だと、速いマシンだと250個くらいは配置できます。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
