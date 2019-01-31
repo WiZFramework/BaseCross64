@@ -179,6 +179,7 @@ void CollisionManager::EscapeCollisionPair(CollisionPair& Pair) {
         PtrSrcTransform->SetWorldPosition(SrcCenter);
         if (!ShDest->IsFixed()) {
             DestCenter.floor(GetEscapeFloor());
+            ShDest->WakeUp();
             auto PtrDestTransform = ShDest->GetGameObject()->GetComponent&lt;Transform>();
             //Destのエスケープ
             PtrDestTransform->SetWorldPosition(DestCenter);

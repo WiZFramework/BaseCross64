@@ -132,6 +132,7 @@ namespace basecross {
 			PtrSrcTransform->SetWorldPosition(SrcCenter);
 			if (!ShDest->IsFixed()) {
 				DestCenter.floor(GetEscapeFloor());
+				ShDest->WakeUp();
 				auto PtrDestTransform = ShDest->GetGameObject()->GetComponent<Transform>();
 				//Destのエスケープ
 				PtrDestTransform->SetWorldPosition(DestCenter);
