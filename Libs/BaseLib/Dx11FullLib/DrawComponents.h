@@ -2339,6 +2339,17 @@ namespace basecross {
 		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	球体とメッシュのワールド頂点の衝突判定
+		@param[in]	StartSp	球体の開始点
+		@param[in]	EndSp	球体の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestStaticMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	スキン処理済みのメッシュのローカル頂点配列を得る
 		@param[out]	vertices	受け取る頂点の配列
 		@return	なし（ボーンがなければ例外）
@@ -2364,6 +2375,17 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	球体とスキンメッシュのワールド頂点の衝突判定
+		@param[in]	StartSp	球体の開始点
+		@param[in]	EndSp	球体の終了点
+		@param[out]	HitPoint	衝突していた場合の衝突点
+		@param[out]	RetTri	衝突していた場合の三角形
+		@return	衝突していたらtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool HitTestSkinedMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
 	private:
 		// pImplイディオム
 		struct Impl;

@@ -272,48 +272,6 @@ namespace basecross {
 		virtual void OnUpdate()override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 1つ前と現在の連結させたSPHEREを得る
-		@return	連結させたSPHERE
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual SPHERE GetEnclosingSphere()const = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前と現在の連結させたAABBを得る
-		@return	連結させたAABB
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual AABB GetEnclosingAabb()const = 0;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 自分と相手の連結したSPHEREの衝突判定（前処理用）
-		@tparam	T	相手のコリジョンの型
-		@param[in]	DestColl	相手のコリジョン
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		template <typename T>
-		bool CillisionWrappedSphere(const shared_ptr<T>& DestColl) {
-			SPHERE Src = GetEnclosingSphere();
-			SPHERE Dest = DestColl->GetEnclosingSphere();
-			return HitTest::SPHERE_SPHERE(Src, Dest);
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 自分と相手の連結したAABBの衝突判定（前処理用）
-		@tparam	T	相手のコリジョンの型
-		@param[in]	DestColl	相手のコリジョン
-		@return	ヒットしてればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		template <typename T>
-		bool CillisionWrappedAabb(const shared_ptr<T>& DestColl) {
-			AABB Src = GetEnclosingAabb();
-			AABB Dest = DestColl->GetEnclosingAabb();
-			return HitTest::AABB_AABB(Src, Dest);
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -354,6 +312,7 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
 
 	//--------------------------------------------------------------------------------------
 	//	class CollisionSphere : public Collision ;
@@ -503,20 +462,6 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前と現在の連結させたSPHEREを得る
-		@return	連結させたSPHERE
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual SPHERE GetEnclosingSphere()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前と現在の連結させたAABBを得る
-		@return	連結させたAABB
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual AABB GetEnclosingAabb()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	中心位置を返す。仮想関数
@@ -687,20 +632,6 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 1つ前と現在の連結させたSPHEREを得る
-		@return	連結させたSPHERE
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual SPHERE GetEnclosingSphere()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前と現在の連結させたAABBを得る
-		@return	連結させたAABB
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual AABB GetEnclosingAabb()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -843,20 +774,6 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief 1つ前と現在の連結させたSPHEREを得る
-		@return	連結させたSPHERE
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual SPHERE GetEnclosingSphere()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief 1つ前と現在の連結させたAABBを得る
-		@return	連結させたAABB
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual AABB GetEnclosingAabb()const override;
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -874,7 +791,6 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
-
 
 
 

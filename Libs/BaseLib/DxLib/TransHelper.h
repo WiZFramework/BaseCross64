@@ -786,7 +786,23 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		SPHERE GetWrappedSPHERE() const;
-
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	もう一つのAABBを包み込むで大きくする
+		@return	包み込んだAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		AABB& UnionAABB(const AABB& other) {
+			for (int i = 0; i < 3; i++) {
+				if (other.m_Min[i] < m_Min[i]) {
+					m_Min[i] = other.m_Min[i];
+				}
+				if (other.m_Max[i] > m_Max[i]) {
+					m_Max[i] = other.m_Max[i];
+				}
+			}
+			return *this;
+		}
 	};
 
 
@@ -1469,6 +1485,7 @@ namespace basecross{
 					m_B - m_A,
 					m_C - m_A
 				);
+			Ret.normalize();
 			return Ret;
 		}
 		PLANE GetPLANE() const {
@@ -1521,6 +1538,36 @@ namespace basecross{
 			}
 			return ret;
 		}
+
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	包み込むAABBを得る
+		@return	AABB
+		*/
+		//--------------------------------------------------------------------------------------
+		AABB GetWrappedAABB() const {
+			AABB ret;
+			ret.m_Min = m_A;
+			ret.m_Max = m_A;
+			for (int i = 0; i < 3; i++) {
+				if (m_B[i] < ret.m_Min[i]) {
+					ret.m_Min[i] = m_B[i];
+				}
+				if (m_B[i] > ret.m_Max[i]) {
+					ret.m_Max[i] = m_B[i];
+				}
+			}
+			for (int i = 0; i < 3; i++) {
+				if (m_C[i] < ret.m_Min[i]) {
+					ret.m_Min[i] = m_C[i];
+				}
+				if (m_C[i] > ret.m_Max[i]) {
+					ret.m_Max[i] = m_C[i];
+				}
+			}
+			return ret;
+		}
+
 	};
 
 
@@ -1879,8 +1926,6 @@ namespace basecross{
 			}
 			d = a + (ab * t);
 		}
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	点cとプレーンの最近接点を返す
@@ -1895,8 +1940,6 @@ namespace basecross{
 			float t = (bsm::dot(pl.m_Normal, c) - pl.m_DotValue) / bsm::dot(pl.m_Normal, pl.m_Normal);
 			d = c - pl.m_Normal * t;
 		}
-
-
 
 		static SPHERE SphereEnclosingSphere(const SPHERE& s0, const SPHERE& s1) {
 			const float EPSILON = 1.175494e-37f;
@@ -1927,7 +1970,159 @@ namespace basecross{
 			}
 			return s;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	pointから見た三角形の最近接点を得る
+		@param[in]	point	基準点
+		@param[in]	t	三角形
+		@param[out]	retvec	最近接点を返す参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointTriangle(const bsm::Vec3& point, const TRIANGLE& t, bsm::Vec3& retvec) {
+			bsm::Vec3 ab = t.m_B - t.m_A;
+			bsm::Vec3 ac = t.m_C - t.m_A;
+			bsm::Vec3 ap = point - t.m_A;
+			float d1 = bsm::dot(ab, ap);
+			float d2 = bsm::dot(ac, ap);
+			if (d1 <= 0.0f && d2 <= 0.0f) {
+				retvec = t.m_A;
+				return;
+			}
+			bsm::Vec3 bp = point - t.m_B;
+			float d3 = bsm::dot(ab, bp);
+			float d4 = bsm::dot(ac, bp);
+			if (d3 >= 0.0f && d4 <= d3) {
+				retvec = t.m_B;
+				return;
+			}
+			float vc = d1 * d4 - d3 * d2;
+			if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+				float v = d1 / (d1 - d3);
+				retvec = v * ab + t.m_A;
+				return;
+			}
 
+			bsm::Vec3 cp = point - t.m_C;
+			float d5 = bsm::dot(ab, cp);
+			float d6 = bsm::dot(ac, cp);
+			if (d6 >= 0.0f && d5 <= d6) {
+				retvec = t.m_C;
+				return;
+			}
+			float vb = d5 * d2 - d1 * d6;
+
+			if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+				float w = d2 / (d2 - d6);
+				retvec = w * ac + t.m_A;
+				return;
+			}
+
+			float va = d3 * d6 - d5 * d4;
+			if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+				float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+				retvec = w * (t.m_C - t.m_B) + t.m_B;
+				return;
+			}
+			float denon = 1.0f / (va + vb + vc);
+			float v = vb * denon;
+			float w = vc * denon;
+			retvec = ab * v + ac * w + t.m_A;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	pointから見たOBBの最近接点を得る
+		@param[in]	point	基準点
+		@param[in]	obb	OBB
+		@param[out]	retvec	最近接点を返す参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointOBB(const bsm::Vec3& point, const OBB& obb, bsm::Vec3& retvec) {
+			bsm::Vec3 d = point - obb.m_Center;
+			retvec = obb.m_Center;
+			float dist;
+			for (int i = 0; i < 3; i++)
+			{
+				dist = bsm::dot(d, obb.m_Rot[i]);
+				if (dist > obb.m_Size[i])
+				{
+					dist = obb.m_Size[i];
+				}
+				if (dist < -obb.m_Size[i])
+				{
+					dist = -obb.m_Size[i];
+				}
+				retvec += dist * obb.m_Rot[i];
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	点とAABBとの最近接点を得る
+		@param[in]	p	点
+		@param[in]	b	AABB
+		@param[out]	retvec	最近接点が代入される参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointAABB(const bsm::Vec3& p, const AABB& b,
+			bsm::Vec3& retvec) {
+			for (int i = 0; i < 3; i++) {
+				float v = p[i];
+				if (v < b.m_Min[i]) {
+					v = b.m_Min[i];
+				}
+				if (v > b.m_Max[i]) {
+					v = b.m_Max[i];
+				}
+				retvec[i] = v;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	点とAABBとの距離の平方を測る
+		@param[in]	p	点
+		@param[in]	b	AABB
+		@return	点とAABBとの距離の平方
+		*/
+		//--------------------------------------------------------------------------------------
+		static float SqDistPointAABB(const bsm::Vec3& p, const AABB& b) {
+			float sqDist = 0.0f;
+			for (int i = 0; i < 3; i++) {
+				float v = p[i];
+				if (v < b.m_Min[i]) {
+					sqDist += (b.m_Min[i] - v) * (b.m_Min[i] - v);
+				}
+				if (v > b.m_Max[i]) {
+					sqDist += (v - b.m_Max[i]) * (v - b.m_Max[i]);
+				}
+			}
+			return sqDist;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	点とCOLRECTとの最近接点を得る
+		@param[in]	p	点
+		@param[in]	rect	COLRECT
+		@param[out]	retvec	最近接点が代入される参照
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		static void ClosestPtPointCOLRECT(const bsm::Vec3& point, const COLRECT& rect,
+			bsm::Vec3& retvec) {
+			bsm::Vec3 d = point - rect.m_Center;
+			retvec = rect.m_Center;
+			for (int i = 0; i < 2; i++) {
+				float dist = bsm::dot(d, rect.m_Rot[i]);
+				if (dist > rect.m_UVec[i]) {
+					dist = rect.m_UVec[i];
+				}
+				if (dist < -rect.m_UVec[i]) {
+					dist = -rect.m_UVec[i];
+				}
+				retvec += rect.m_Rot[i] * dist;
+			}
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	球とカプセルとの衝突判定
@@ -2027,8 +2222,6 @@ namespace basecross{
 			}
 			return false;
 		}
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	カプセルとカプセルとの衝突判定
@@ -2049,93 +2242,6 @@ namespace basecross{
 				s,t,retvec1,retvec2);
 			float radius = cap1.m_Radius + cap2.m_Radius;
 			return dist2 <= radius * radius;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	pointから見た三角形の最近接点を得る
-		@param[in]	point	基準点
-		@param[in]	t	三角形
-		@param[out]	retvec	最近接点を返す参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		static void ClosestPtPointTriangle(const bsm::Vec3& point,const TRIANGLE& t,bsm::Vec3& retvec) {
-			bsm::Vec3 ab = t.m_B - t.m_A;
-			bsm::Vec3 ac = t.m_C - t.m_A;
-			bsm::Vec3 ap = point - t.m_A;
-			float d1 = bsm::dot(ab,ap);
-			float d2 = bsm::dot(ac,ap);
-			if (d1 <= 0.0f && d2 <= 0.0f) {
-				retvec = t.m_A;
-				return;
-			}
-
-			bsm::Vec3 bp = point - t.m_B;
-			float d3 = bsm::dot(ab,bp);
-			float d4 = bsm::dot(ac,bp);
-			if (d3 >= 0.0f && d4 <= d3) {
-				retvec = t.m_B;
-				return;
-			}
-			float vc = d1 * d4 - d3 * d2;
-			if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
-				float v = d1 / (d1 - d3);
-				retvec = v * ab + t.m_A;
-				return;
-			}
-
-			bsm::Vec3 cp = point - t.m_C;
-			float d5 = bsm::dot(ab,cp);
-			float d6 = bsm::dot(ac,cp);
-			if (d6 >= 0.0f && d5 <= d6) {
-				retvec = t.m_C;
-				return;
-			}
-			float vb = d5 * d2 - d1 * d6;
-
-			if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
-				float w = d2 / (d2 - d6);
-				retvec = w * ac + t.m_A;
-				return;
-			}
-
-			float va = d3 * d6 - d5 * d4;
-			if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
-				float w = (d4 - d3) / ((d4 - d3) + (d5 -d6));
-				retvec = w * (t.m_C - t.m_B) + t.m_B;
-				return;
-			}
-			float denon = 1.0f / (va + vb + vc);
-			float v = vb * denon;
-			float w = vc * denon;
-			retvec = ab * v + ac * w + t.m_A;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	pointから見たOBBの最近接点を得る
-		@param[in]	point	基準点
-		@param[in]	obb	OBB
-		@param[out]	retvec	最近接点を返す参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		static void ClosestPtPointOBB(const bsm::Vec3& point, const OBB& obb, bsm::Vec3& retvec){
-			bsm::Vec3 d = point - obb.m_Center;
-			retvec = obb.m_Center;
-			float dist;
-			for(int i = 0; i < 3; i++)
-			{
-				dist = bsm::dot(d,obb.m_Rot[i]);
-				if(dist > obb.m_Size[i])
-				{
-					dist = obb.m_Size[i];
-				}
-				if(dist < -obb.m_Size[i])
-				{
-					dist = -obb.m_Size[i];
-				}
-				retvec +=  dist * obb.m_Rot[i];
-			}
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2194,49 +2300,6 @@ namespace basecross{
 				}
 			}
 			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	点とAABBとの最近接点を得る
-		@param[in]	p	点
-		@param[in]	b	AABB
-		@param[out]	retvec	最近接点が代入される参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		static void ClosestPtPointAABB(const bsm::Vec3& p, const AABB& b,
-			bsm::Vec3& retvec){
-			for(int i = 0;i < 3;i++){
-				float v = p[i];
-				if(v < b.m_Min[i]){
-					v = b.m_Min[i];
-				}
-				if(v > b.m_Max[i]){
-					v = b.m_Max[i];
-				}
-				retvec[i] = v;
-			}
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	点とAABBとの距離の平方を測る
-		@param[in]	p	点
-		@param[in]	b	AABB
-		@return	点とAABBとの距離の平方
-		*/
-		//--------------------------------------------------------------------------------------
-		static float SqDistPointAABB(const bsm::Vec3& p, const AABB& b){
-			float sqDist = 0.0f;
-			for(int i = 0;i < 3;i++){
-				float v = p[i];
-				if(v < b.m_Min[i]){
-					sqDist += (b.m_Min[i] - v) * (b.m_Min[i] - v);
-				}
-				if(v > b.m_Max[i]){
-					sqDist += (v - b.m_Max[i]) * (v - b.m_Max[i]);
-				}
-			}
-			return sqDist;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2693,31 +2756,6 @@ namespace basecross{
 			}
 			return false;
 		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	点とCOLRECTとの最近接点を得る
-		@param[in]	p	点
-		@param[in]	rect	COLRECT
-		@param[out]	retvec	最近接点が代入される参照
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		static void ClosestPtPointCOLRECT(const bsm::Vec3& point, const COLRECT& rect,
-			bsm::Vec3& retvec) {
-			bsm::Vec3 d = point - rect.m_Center;
-			retvec = rect.m_Center;
-			for (int i = 0; i < 2; i++) {
-				float dist = bsm::dot(d, rect.m_Rot[i]);
-				if (dist > rect.m_UVec[i]) {
-					dist = rect.m_UVec[i];
-				}
-				if (dist < -rect.m_UVec[i]) {
-					dist = -rect.m_UVec[i];
-				}
-				retvec += rect.m_Rot[i] * dist;
-			}
-		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	球とCOLRECTとの衝突判定
@@ -2787,7 +2825,383 @@ namespace basecross{
 			uvw.x = 1.0f - uvw.y - uvw.z;
 			return true;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBとPLANEとの衝突判定
+		@param[in]	obb	OBB
+		@param[in]	plane	PLANE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_PLANE(const OBB& obb, const PLANE& plane) {
+			float r = obb.m_Size.x * abs(bsm::dot(plane.m_Normal, obb.m_Rot[0]))
+				+ obb.m_Size.y * abs(bsm::dot(plane.m_Normal, obb.m_Rot[1]))
+				+ obb.m_Size.z * abs(bsm::dot(plane.m_Normal, obb.m_Rot[2]));
+			float s = bsm::dot(plane.m_Normal, obb.m_Center) - plane.m_DotValue;
+			return abs(s) <= r;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBとCOLRECTとの衝突判定
+		@param[in]	obb	OBB
+		@param[in]	rect	COLRECT
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_COLRECT(const OBB& obb, const COLRECT& rect) {
+			if (OBB_PLANE(obb, rect.GetPLANE())) {
+				//平面と交差していた時のみOBBと調査
+				OBB obb2(bsm::Vec3(rect.m_BaseXSize, rect.m_BaseYSize, 1.0f), rect.m_Matrix);
+				return OBB_OBB(obb, obb2);
+			}
+			return false;
+		}
 
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREとTRIANGLEとの衝突判定
+		@param[in]	sp	SPHERE
+		@param[in]	tri	TRIANGLE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_TRIANGLE(const SPHERE& sp, const TRIANGLE& tri, bsm::Vec3& retvec) {
+			ClosestPtPointTriangle(sp.m_Center, tri, retvec);
+			bsm::Vec3 v = retvec - sp.m_Center;
+			return bsm::dot(v, v) <= sp.m_Radius * sp.m_Radius;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとObbの最近接点を得る
+		@param[in]	cp	カプセル
+		@param[in]	obb	OBB
+		@param[out]	flg	2つ球のとの位置関係
+		@return	最近接点
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Vec3 ClosestPtCapsuleOBB(const CAPSULE& cp, const OBB& obb, int& flg) {
+			SPHERE Sp;
+			Sp.m_Center = cp.m_PointBottom;
+			Sp.m_Radius = cp.m_Radius;
+			bsm::Vec3 retvec;
+			//スタート位置で最近接点を得る
+			HitTest::SPHERE_OBB(Sp, obb, retvec);
+			//内積を図る
+			bsm::Vec3 Base = cp.m_PointTop - cp.m_PointBottom;
+			Base.normalize();
+			bsm::Vec3 Dest = retvec - cp.m_PointBottom;
+			float dot = bsm::dot(Base, Dest);
+			if (dot < 0) {
+				//スタート位置の球体の外側
+				//retvecは有効
+				flg = -1;
+				return retvec;
+			}
+			float  size = bsm::length(cp.m_PointTop - cp.m_PointBottom);
+			if (dot > size) {
+				//終点より先にある
+				Sp.m_Center = cp.m_PointTop;
+				HitTest::SPHERE_OBB(Sp, obb, retvec);
+				//終点で最近接点をとる
+				flg = 1;
+				return retvec;
+			}
+			//中心とobbの最近接点を得る
+			HitTest::ClosestPtPointOBB(cp.GetCenter(), obb, retvec);
+			float t;
+			bsm::Vec3 SegPoint;
+			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
+			bsm::Vec3 Span = retvec - SegPoint;
+			Span.normalize();
+			Span *= cp.m_Radius;
+			SegPoint += Span;
+			retvec = SegPoint;
+			flg = 0;
+			return retvec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとAabbの最近接点を得る
+		@param[in]	cp	カプセル
+		@param[in]	aabb	AABB
+		@param[out]	flg	位置関係
+		@return	最近接点
+		*/
+		//--------------------------------------------------------------------------------------
+		static bsm::Vec3 ClosestPtCapsuleAABB(const CAPSULE& cp, const AABB& aabb, int& flg) {
+			SPHERE Sp;
+			Sp.m_Center = cp.m_PointBottom;
+			Sp.m_Radius = cp.m_Radius;
+			bsm::Vec3 retvec;
+			//スタート位置で最近接点を得る
+			HitTest::SPHERE_AABB(Sp, aabb, retvec);
+			//内積を図る
+			bsm::Vec3 Base = cp.m_PointTop - cp.m_PointBottom;
+			Base.normalize();
+			bsm::Vec3 Dest = retvec - cp.m_PointBottom;
+			float dot = bsm::dot(Base, Dest);
+			if (dot < 0) {
+				//スタート位置の球体の外側
+				//retvecは有効
+				flg = -1;
+				return retvec;
+			}
+			float  size = bsm::length(cp.m_PointTop - cp.m_PointBottom);
+			if (dot > size) {
+				//終点より先にある
+				Sp.m_Center = cp.m_PointTop;
+				HitTest::SPHERE_AABB(Sp, aabb, retvec);
+				//終点で最近接点をとる
+				flg = 1;
+				return retvec;
+			}
+			//中心とaabbの最近接点を得る
+			HitTest::ClosestPtPointAABB(cp.GetCenter(), aabb, retvec);
+			float t;
+			bsm::Vec3 SegPoint;
+			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
+			bsm::Vec3 Span = retvec - SegPoint;
+			Span.normalize();
+			Span *= cp.m_Radius;
+			SegPoint += Span;
+			retvec = SegPoint;
+			flg = 0;
+			return retvec;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとAABBの衝突判定
+		@param[in]	cp	カプセル
+		@param[in]	aabb	AABB
+		@param[out]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_AABB(const CAPSULE& cp, const AABB& aabb, bsm::Vec3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+			//各点とaabbの最近接点を得る
+			//カプセルとAABBの最近接点を得る（衝突してるかどうかは関係ない）
+			int flg;
+			retvec = ClosestPtCapsuleAABB(cp, aabb, flg);
+			float HitTime;
+			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereAabb(StartSp, Velocity, aabb, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	カプセルとObbの衝突判定
+		@param[in]	cp	カプセル
+		@param[in]	obb	OBB
+		@param[out]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_OBB(const CAPSULE& cp, const OBB& obb, bsm::Vec3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+			//各点とobbの最近接点を得る
+			//カプセルとOBBの最近接点を得る（衝突してるかどうかは関係ない）
+			int flg;
+			retvec = ClosestPtCapsuleOBB(cp, obb, flg);
+			float HitTime;
+			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereObb(StartSp, Velocity, obb, 0, 1.0f, HitTime)) {
+				SPHERE HitSp = StartSp;
+				bsm::Vec3 TempRet;
+				if (SPHERE_OBB(StartSp, obb, TempRet) && SPHERE_OBB(EndSp, obb, TempRet)) {
+					//スタート位置とエンド位置で両方ヒットしてたら、面で衝突している
+					HitSp.m_Center = cp.GetCenter();
+				}
+				else {
+					HitSp.m_Center += Velocity * HitTime;
+				}
+				SPHERE_OBB(HitSp, obb, retvec);
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEとTRIANGLEとの衝突判定
+		@param[in]	cp	CAPSULE
+		@param[in]	rect	COLRECT
+		@param[in]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_TRIANGLE(const CAPSULE& cp, const TRIANGLE& tri, bsm::Vec3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			//下から上
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+
+			PLANE p = tri.GetPLANE();
+			float t;
+			bsm::Vec3 q;
+			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
+			//仮に下の点で初期化
+			bsm::Vec3 Centor = StartSp.m_Center;
+			if (t <= 0) {
+				Centor = StartSp.m_Center;
+			}
+			else if (t >= 1.0f) {
+				Centor = EndSp.m_Center;
+			}
+			else {
+				Centor = q;
+			}
+			//Centerは、線上の面との最近接点
+			//点とTRIANGLEの最近接点を得る（衝突してるかどうかは関係ない）
+			ClosestPtPointTriangle(Centor, tri, retvec);
+			float HitTime;
+			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereTriangle(StartSp, Velocity, tri, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEとCOLRECTとの衝突判定
+		@param[in]	cp	CAPSULE
+		@param[in]	rect	COLRECT
+		@param[in]	retvec	最近接点
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_COLRECT(const CAPSULE& cp, const COLRECT& rect, bsm::Vec3& retvec) {
+			//スィープさせる球
+			SPHERE StartSp, EndSp;
+			//下から上
+			StartSp.m_Center = cp.m_PointBottom;
+			StartSp.m_Radius = cp.m_Radius;
+			EndSp.m_Center = cp.m_PointTop;
+			EndSp.m_Radius = cp.m_Radius;
+
+			PLANE p = rect.GetPLANE();
+			float t;
+			bsm::Vec3 q;
+			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
+			//仮に下の点で初期化
+			bsm::Vec3 Centor = StartSp.m_Center;
+			if (t <= 0) {
+				Centor = StartSp.m_Center;
+			}
+			else if (t >= 1.0f) {
+				Centor = EndSp.m_Center;
+			}
+			else {
+				Centor = q;
+			}
+			//Centerは、線上の面との最近接点
+			//球ととCOLRECTの最近接点を得る（衝突してるかどうかは関係ない）
+			ClosestPtPointCOLRECT(Centor, rect, retvec);
+			float HitTime;
+			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
+			if (CollisionTestSphereRect(StartSp, Velocity, rect, 0, 1.0f, HitTime)) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREとSPHEREとのAABB衝突判定
+		@param[in]	sp1	SPHERE
+		@param[in]	sp2	SPHERE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_SPHERE_BY_AABB(const SPHERE& sp1, const SPHERE& sp2) {
+			if (HitTest::AABB_AABB(sp1.GetWrappedAABB(), sp2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREとCAPSULEとのAABB衝突判定
+		@param[in]	sp	SPHERE
+		@param[in]	cp	CAPSULE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_CAPSULE_BY_AABB(const SPHERE& sp, const CAPSULE& cp) {
+			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), cp.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	SPHEREとOBBとのAABB衝突判定
+		@param[in]	sp	SPHERE
+		@param[in]	obb	OBB
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool SPHERE_OBB_BY_AABB(const SPHERE& sp, const OBB& obb) {
+			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), obb.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEとCAPSULEとのAABB衝突判定
+		@param[in]	cp1	CAPSULE
+		@param[in]	cp2	CAPSULE
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_CAPSULE_BY_AABB(const CAPSULE& cp1, const CAPSULE& cp2) {
+			if (HitTest::AABB_AABB(cp1.GetWrappedAABB(), cp2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CAPSULEとOBBとのAABB衝突判定
+		@param[in]	cp	CAPSULE
+		@param[in]	obb	OBB
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool CAPSULE_OBB_BY_AABB(const CAPSULE& cp, const OBB& obb) {
+			if (HitTest::AABB_AABB(cp.GetWrappedAABB(), obb.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	OBBとOBBとのAABB衝突判定
+		@param[in]	obb1 OBB
+		@param[in]	obb2 OBB
+		@return	衝突していればtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		static bool OBB_OBB_BY_AABB(const OBB& obb1, const OBB& obb2) {
+			if (HitTest::AABB_AABB(obb1.GetWrappedAABB(), obb2.GetWrappedAABB())) {
+				return true;
+			}
+			return false;
+		}
 
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -2820,62 +3234,12 @@ namespace basecross{
 			}
 			return CollisionTestSphereRect(SrcSp, SrcVelocity, DestRect, mid, EndTime, HitTime);
 		}
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OBBとPLANEとの衝突判定
-		@param[in]	obb	OBB
-		@param[in]	plane	PLANE
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool OBB_PLANE(const OBB& obb, const PLANE& plane) {
-			float r = obb.m_Size.x * abs(bsm::dot(plane.m_Normal, obb.m_Rot[0]))
-				+ obb.m_Size.y * abs(bsm::dot(plane.m_Normal, obb.m_Rot[1]))
-				+ obb.m_Size.z * abs(bsm::dot(plane.m_Normal, obb.m_Rot[2]));
-			float s = bsm::dot(plane.m_Normal, obb.m_Center) - plane.m_DotValue;
-			return abs(s) <= r;
-		}
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OBBとCOLRECTとの衝突判定
-		@param[in]	obb	OBB
-		@param[in]	rect	COLRECT
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool OBB_COLRECT(const OBB& obb, const COLRECT& rect) {
-			if (OBB_PLANE(obb, rect.GetPLANE())) {
-				//平面と交差していた時のみOBBと調査
-				OBB obb2(bsm::Vec3(rect.m_BaseXSize, rect.m_BaseYSize, 1.0f), rect.m_Matrix);
-				return OBB_OBB(obb, obb2);
-			}
-			return false;
-		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	SPHEREとTRIANGLEとの衝突判定
-		@param[in]	sp	SPHERE
-		@param[in]	tri	TRIANGLE
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool SPHERE_TRIANGLE(const SPHERE& sp, const TRIANGLE& tri, bsm::Vec3& retvec) {
-			ClosestPtPointTriangle(sp.m_Center, tri, retvec);
-			bsm::Vec3 v = retvec - sp.m_Center;
-			return bsm::dot(v,v) <= sp.m_Radius * sp.m_Radius;
-		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Sphereと動かないTriangleの衝突判定
 		@param[in]	SrcSp	Srcの球
 		@param[in]	SrcVelocity	ソース速度
-		@param[in]	DestRect	Dest矩形
+		@param[in]	DestTri	DestTriangle
 		@param[in]	StartTime	開始時間
 		@param[in]	EndTime	終了時間
 		@param[out]	HitTime	ヒット時間
@@ -2901,10 +3265,6 @@ namespace basecross{
 			}
 			return CollisionTestSphereTriangle(SrcSp, SrcVelocity, DestTri, mid, EndTime, HitTime);
 		}
-
-
-
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Obbと動かないRectの衝突判定
@@ -2969,7 +3329,6 @@ namespace basecross{
 			}
 			return CollisionTestSphereSphere(SrcSp, SrcVelocity, DestSp, mid, EndTime, HitTime);
 		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Sphereと動かないCylinderの衝突判定
@@ -3147,133 +3506,6 @@ namespace basecross{
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	カプセルとObbの最近接点を得る
-		@param[in]	cp	カプセル
-		@param[in]	obb	OBB
-		@param[out]	flg	2つ球のとの位置関係
-		@return	最近接点
-		*/
-		//--------------------------------------------------------------------------------------
-		static bsm::Vec3 ClosestPtCapsuleOBB(const CAPSULE& cp, const OBB& obb, int& flg){
-			SPHERE Sp;
-			Sp.m_Center = cp.m_PointBottom;
-			Sp.m_Radius = cp.m_Radius;
-			bsm::Vec3 retvec;
-			//スタート位置で最近接点を得る
-			HitTest::SPHERE_OBB(Sp, obb, retvec);
-			//内積を図る
-			bsm::Vec3 Base = cp.m_PointTop - cp.m_PointBottom;
-			Base.normalize();
-			bsm::Vec3 Dest = retvec - cp.m_PointBottom;
-			float dot = bsm::dot(Base,Dest);
-			if (dot < 0){
-				//スタート位置の球体の外側
-				//retvecは有効
-				flg = -1;
-				return retvec;
-			}
-			float  size = bsm::length(cp.m_PointTop - cp.m_PointBottom);
-			if (dot > size){
-				//終点より先にある
-				Sp.m_Center = cp.m_PointTop;
-				HitTest::SPHERE_OBB(Sp, obb, retvec);
-				//終点で最近接点をとる
-				flg = 1;
-				return retvec;
-			}
-			//中心とobbの最近接点を得る
-			HitTest::ClosestPtPointOBB(cp.GetCenter(), obb, retvec);
-			float t;
-			bsm::Vec3 SegPoint;
-			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
-			bsm::Vec3 Span = retvec - SegPoint;
-			Span.normalize();
-			Span *= cp.m_Radius;
-			SegPoint += Span;
-			retvec = SegPoint;
-			flg = 0;
-			return retvec;
-		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	カプセルとAabbの最近接点を得る
-		@param[in]	cp	カプセル
-		@param[in]	aabb	AABB
-		@param[out]	flg	位置関係
-		@return	最近接点
-		*/
-		//--------------------------------------------------------------------------------------
-		static bsm::Vec3 ClosestPtCapsuleAABB(const CAPSULE& cp, const AABB& aabb, int& flg) {
-			SPHERE Sp;
-			Sp.m_Center = cp.m_PointBottom;
-			Sp.m_Radius = cp.m_Radius;
-			bsm::Vec3 retvec;
-			//スタート位置で最近接点を得る
-			HitTest::SPHERE_AABB(Sp, aabb, retvec);
-			//内積を図る
-			bsm::Vec3 Base = cp.m_PointTop - cp.m_PointBottom;
-			Base.normalize();
-			bsm::Vec3 Dest = retvec - cp.m_PointBottom;
-			float dot = bsm::dot(Base,Dest);
-			if (dot < 0) {
-				//スタート位置の球体の外側
-				//retvecは有効
-				flg = -1;
-				return retvec;
-			}
-			float  size = bsm::length(cp.m_PointTop - cp.m_PointBottom);
-			if (dot > size) {
-				//終点より先にある
-				Sp.m_Center = cp.m_PointTop;
-				HitTest::SPHERE_AABB(Sp, aabb, retvec);
-				//終点で最近接点をとる
-				flg = 1;
-				return retvec;
-			}
-			//中心とaabbの最近接点を得る
-			HitTest::ClosestPtPointAABB(cp.GetCenter(), aabb, retvec);
-			float t;
-			bsm::Vec3 SegPoint;
-			HitTest::ClosetPtPointSegment(retvec, cp.m_PointBottom, cp.m_PointTop, t, SegPoint);
-			bsm::Vec3 Span = retvec - SegPoint;
-			Span.normalize();
-			Span *= cp.m_Radius;
-			SegPoint += Span;
-			retvec = SegPoint;
-			flg = 0;
-			return retvec;
-		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	カプセルとAABBの衝突判定
-		@param[in]	cp	カプセル
-		@param[in]	aabb	AABB
-		@param[out]	retvec	最近接点
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_AABB(const CAPSULE& cp, const AABB& aabb, bsm::Vec3& retvec) {
-			//スィープさせる球
-			SPHERE StartSp, EndSp;
-			StartSp.m_Center = cp.m_PointBottom;
-			StartSp.m_Radius = cp.m_Radius;
-			EndSp.m_Center = cp.m_PointTop;
-			EndSp.m_Radius = cp.m_Radius;
-			//各点とaabbの最近接点を得る
-			//カプセルとAABBの最近接点を得る（衝突してるかどうかは関係ない）
-			int flg;
-			retvec = ClosestPtCapsuleAABB(cp, aabb, flg);
-			float HitTime;
-			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
-			if (CollisionTestSphereAabb(StartSp, Velocity, aabb, 0, 1.0f, HitTime)) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
 		@brief	カプセルと動かないAABBの衝突判定
 		@param[in]	SrcCapsule	Srcのカプセル
 		@param[in]	SrcVelocity	ソース速度
@@ -3314,43 +3546,6 @@ namespace basecross{
 				return true;
 			}
 			return CollisionTestCapsuleAabb(SrcCapsule, SrcVelocity, DestAabb, mid, EndTime, HitTime);
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	カプセルとObbの衝突判定
-		@param[in]	cp	カプセル
-		@param[in]	obb	OBB
-		@param[out]	retvec	最近接点
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_OBB(const CAPSULE& cp, const OBB& obb, bsm::Vec3& retvec){
-			//スィープさせる球
-			SPHERE StartSp, EndSp;
-			StartSp.m_Center = cp.m_PointBottom;
-			StartSp.m_Radius = cp.m_Radius;
-			EndSp.m_Center = cp.m_PointTop;
-			EndSp.m_Radius = cp.m_Radius;
-			//各点とobbの最近接点を得る
-			//カプセルとOBBの最近接点を得る（衝突してるかどうかは関係ない）
-			int flg;
-			retvec = ClosestPtCapsuleOBB(cp, obb,flg);
-			float HitTime;
-			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
-			if (CollisionTestSphereObb(StartSp, Velocity,obb, 0,1.0f, HitTime)){
-				SPHERE HitSp = StartSp;
-				bsm::Vec3 TempRet;
-				if (SPHERE_OBB(StartSp, obb, TempRet) && SPHERE_OBB(EndSp, obb, TempRet)) {
-					//スタート位置とエンド位置で両方ヒットしてたら、面で衝突している
-					HitSp.m_Center = cp.GetCenter();
-				}
-				else {
-					HitSp.m_Center += Velocity * HitTime;
-				}
-				SPHERE_OBB(HitSp, obb, retvec);
-				return true;
-			}
-			return false;
 		}
 
 		//--------------------------------------------------------------------------------------
@@ -3396,51 +3591,6 @@ namespace basecross{
 			}
 			return CollisionTestCapsuleObb(SrcCapsule, SrcVelocity, DestObb, mid, EndTime, HitTime);
 		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	CAPSULEとTRIANGLEとの衝突判定
-		@param[in]	cp	CAPSULE
-		@param[in]	rect	COLRECT
-		@param[in]	retvec	最近接点
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_TRIANGLE(const CAPSULE& cp, const TRIANGLE& tri, bsm::Vec3& retvec) {
-			//スィープさせる球
-			SPHERE StartSp, EndSp;
-			//下から上
-			StartSp.m_Center = cp.m_PointBottom;
-			StartSp.m_Radius = cp.m_Radius;
-			EndSp.m_Center = cp.m_PointTop;
-			EndSp.m_Radius = cp.m_Radius;
-
-			PLANE p = tri.GetPLANE();
-			float t;
-			bsm::Vec3 q;
-			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
-			//仮に下の点で初期化
-			bsm::Vec3 Centor = StartSp.m_Center;
-			if (t <= 0) {
-				Centor = StartSp.m_Center;
-			}
-			else if (t >= 1.0f) {
-				Centor = EndSp.m_Center;
-			}
-			else {
-				Centor = q;
-			}
-			//Centerは、線上の面との最近接点
-			//点とTRIANGLEの最近接点を得る（衝突してるかどうかは関係ない）
-			ClosestPtPointTriangle(Centor, tri, retvec);
-			float HitTime;
-			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
-			if (CollisionTestSphereTriangle(StartSp, Velocity, tri, 0, 1.0f, HitTime)) {
-				return true;
-			}
-			return false;
-		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Capsuleと動かないTriangleの衝突判定
@@ -3483,53 +3633,6 @@ namespace basecross{
 				return true;
 			}
 			return CollisionTestCapsuleTriangle(SrcCapsule, SrcVelocity, DestTri, mid, EndTime, HitTime);
-		}
-
-
-
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	CAPSULEとCOLRECTとの衝突判定
-		@param[in]	cp	CAPSULE
-		@param[in]	rect	COLRECT
-		@param[in]	retvec	最近接点
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_COLRECT(const CAPSULE& cp, const COLRECT& rect, bsm::Vec3& retvec) {
-			//スィープさせる球
-			SPHERE StartSp, EndSp;
-			//下から上
-			StartSp.m_Center = cp.m_PointBottom;
-			StartSp.m_Radius = cp.m_Radius;
-			EndSp.m_Center = cp.m_PointTop;
-			EndSp.m_Radius = cp.m_Radius;
-
-			PLANE p = rect.GetPLANE();
-			float t;
-			bsm::Vec3 q;
-			SEGMENT_PLANE(StartSp.m_Center, EndSp.m_Center, p, t, q);
-			//仮に下の点で初期化
-			bsm::Vec3 Centor = StartSp.m_Center;
-			if (t <= 0) {
-				Centor = StartSp.m_Center;
-			}
-			else if (t >= 1.0f) {
-				Centor = EndSp.m_Center;
-			}
-			else {
-				Centor = q;
-			}
-			//Centerは、線上の面との最近接点
-			//球ととCOLRECTの最近接点を得る（衝突してるかどうかは関係ない）
-			ClosestPtPointCOLRECT(Centor, rect, retvec);
-			float HitTime;
-			bsm::Vec3 Velocity = EndSp.m_Center - StartSp.m_Center;
-			if (CollisionTestSphereRect(StartSp, Velocity, rect, 0, 1.0f, HitTime)) {
-				return true;
-			}
-			return false;
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -3631,94 +3734,6 @@ namespace basecross{
 			}
 			return CollisionTestObbObbSub(SrcObb, SrcVelocity,DestObb, StartTime, EndTime,HitTime);
 		}
-
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	SPHEREとSPHEREとのAABB衝突判定
-		@param[in]	sp1	SPHERE
-		@param[in]	sp2	SPHERE
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool SPHERE_SPHERE_BY_AABB(const SPHERE& sp1, const SPHERE& sp2) {
-			if (HitTest::AABB_AABB(sp1.GetWrappedAABB(), sp2.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	SPHEREとCAPSULEとのAABB衝突判定
-		@param[in]	sp	SPHERE
-		@param[in]	cp	CAPSULE
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool SPHERE_CAPSULE_BY_AABB(const SPHERE& sp, const CAPSULE& cp) {
-			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), cp.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	SPHEREとOBBとのAABB衝突判定
-		@param[in]	sp	SPHERE
-		@param[in]	obb	OBB
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool SPHERE_OBB_BY_AABB(const SPHERE& sp, const OBB& obb) {
-			if (HitTest::AABB_AABB(sp.GetWrappedAABB(), obb.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	CAPSULEとCAPSULEとのAABB衝突判定
-		@param[in]	cp1	CAPSULE
-		@param[in]	cp2	CAPSULE
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_CAPSULE_BY_AABB(const CAPSULE& cp1, const CAPSULE& cp2) {
-			if (HitTest::AABB_AABB(cp1.GetWrappedAABB(), cp2.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	CAPSULEとOBBとのAABB衝突判定
-		@param[in]	cp	CAPSULE
-		@param[in]	obb	OBB
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool CAPSULE_OBB_BY_AABB(const CAPSULE& cp, const OBB& obb) {
-			if (HitTest::AABB_AABB(cp.GetWrappedAABB(), obb.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OBBとOBBとのAABB衝突判定
-		@param[in]	obb1 OBB
-		@param[in]	obb2 OBB
-		@return	衝突していればtrue
-		*/
-		//--------------------------------------------------------------------------------------
-		static bool OBB_OBB_BY_AABB(const OBB& obb1, const OBB& obb2) {
-			if (HitTest::AABB_AABB(obb1.GetWrappedAABB(), obb2.GetWrappedAABB())) {
-				return true;
-			}
-			return false;
-		}
-
-
-
 	};
 
 	inline AABB CAPSULE::GetWrappedAABB() const {
@@ -3728,9 +3743,7 @@ namespace basecross{
 		sp_top.m_Center = m_PointBottom;
 		sp_top.m_Radius = m_Radius;
 		return HitTest::AABB_OR_AABB(sp_bottom.GetWrappedAABB(), sp_top.GetWrappedAABB());
-
 	}
-
 
 }
 //end of namespace basecross.

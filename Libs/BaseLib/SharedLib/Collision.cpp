@@ -193,7 +193,6 @@ namespace basecross {
 		}
 	}
 
-
 	//ëÄçÏ
 	shared_ptr<CollisionManager> Collision::GetCollisionManager() const {
 		return GetGameObject()->GetStage()->GetCollisionManager();
@@ -201,6 +200,7 @@ namespace basecross {
 
 	void Collision::OnUpdate() {
 	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	struct CollisionSphere::Impl;
@@ -308,6 +308,7 @@ namespace basecross {
 		return Src->SimpleCollision(GetThis<CollisionSphere>());
 	}
 
+
 	bool CollisionSphere::SimpleCollision(const shared_ptr<CollisionSphere>& DestColl) {
 		auto SrcSp = GetSphere();
 		auto DestSp = DestColl->GetSphere();
@@ -350,7 +351,6 @@ namespace basecross {
 	void CollisionSphere::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionSphere>());
 	}
-
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 		if (!HitTest::AABB_AABB(GetSphere().GetWrappedAABB(), DestColl->GetSphere().GetWrappedAABB())) {
@@ -468,22 +468,6 @@ namespace basecross {
 			GetCollisionManager()->InsertNewPair(pair);
 		}
 	}
-
-	SPHERE  CollisionSphere::GetEnclosingSphere()const {
-		SPHERE SrcSphere = GetSphere();
-		SPHERE SrcBeforSphere = GetBeforeSphere();
-
-		SPHERE Src = HitTest::SphereEnclosingSphere(SrcSphere, SrcBeforSphere);
-		return Src;
-	}
-
-	AABB CollisionSphere::GetEnclosingAabb()const {
-		AABB SrcAabb = GetSphere().GetWrappedAABB();
-		AABB SrcBeforAabb = GetBeforeSphere().GetWrappedAABB();
-		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
-		return Src;
-	}
-
 
 	bsm::Vec3 CollisionSphere::GetCenterPosition()const {
 		SPHERE SrcSphere = GetSphere();
@@ -654,9 +638,11 @@ namespace basecross {
 		return false;
 	}
 
+
 	void CollisionCapsule::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionCapsule>());
 	}
+
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 		if (!HitTest::AABB_AABB(GetCapsule().GetWrappedAABB(), DestColl->GetSphere().GetWrappedAABB())) {
@@ -783,21 +769,6 @@ namespace basecross {
 			pair.m_SrcHitNormal.normalize();
 			GetCollisionManager()->InsertNewPair(pair);
 		}
-	}
-
-	SPHERE  CollisionCapsule::GetEnclosingSphere()const {
-		CAPSULE SrcCapsule = GetCapsule();
-		CAPSULE SrcBeforCapsule = GetBeforeCapsule();
-
-		SPHERE Src = HitTest::SphereEnclosingSphere(SrcCapsule.GetWrappedSPHERE(), SrcBeforCapsule.GetWrappedSPHERE());
-		return Src;
-	}
-
-	AABB CollisionCapsule::GetEnclosingAabb()const {
-		AABB SrcAabb = GetCapsule().GetWrappedAABB();
-		AABB SrcBeforAabb = GetBeforeCapsule().GetWrappedAABB();
-		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
-		return Src;
 	}
 
 
@@ -1062,22 +1033,6 @@ namespace basecross {
 		}
 	}
 
-	SPHERE  CollisionObb::GetEnclosingSphere()const {
-		OBB SrcObb = GetObb();
-		OBB SrcBeforeObb = GetBeforeObb();
-
-		SPHERE Src = HitTest::SphereEnclosingSphere(SrcObb.GetWrappedSPHERE(), SrcBeforeObb.GetWrappedSPHERE());
-		return Src;
-	}
-
-	AABB CollisionObb::GetEnclosingAabb()const {
-		AABB SrcAabb = GetObb().GetWrappedAABB();
-		AABB SrcBeforAabb = GetBeforeObb().GetWrappedAABB();
-		AABB Src = HitTest::AABB_OR_AABB(SrcBeforAabb, SrcAabb);
-		return Src;
-	}
-
-
 	bsm::Vec3 CollisionObb::GetCenterPosition()const {
 		OBB SrcObb = GetObb();
 		return SrcObb.m_Center;
@@ -1087,7 +1042,6 @@ namespace basecross {
 		GenericDraw Draw;
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CUBE"));
 	}
-
 
 }
 //end basecross

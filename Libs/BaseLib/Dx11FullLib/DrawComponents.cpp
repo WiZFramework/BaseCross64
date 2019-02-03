@@ -1755,6 +1755,30 @@ namespace basecross {
 		return false;
 	}
 
+	bool SmBaseDraw::HitTestStaticMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		GetStaticMeshWorldPositions(pImpl->m_SmDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_SmDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			//‹…‘Ì‚ÌˆÚ“®‚ÍStartSp‚©‚çEndSp‚É1.0‚Æ‚·‚é
+			bsm::Vec3 Valocity = EndSp.m_Center - StartSp.m_Center;
+			if (HitTest::CollisionTestSphereTriangle(StartSp, Valocity, tri, 0.0f, 1.0f, t)) {
+				auto Len = length(EndSp.m_Center - StartSp.m_Center);
+				Len *= t;
+				auto Nomal = EndSp.m_Center - StartSp.m_Center;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartSp.m_Center + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
 
 	void SmBaseDraw::GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices) {
 		if (GetVecLocalBones().size() == 0) {
@@ -1830,6 +1854,31 @@ namespace basecross {
 		return false;
 	}
 
+	bool SmBaseDraw::HitTestSkinedMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp,
+		bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		GetSkinedMeshWorldPositions(pImpl->m_SmDrawObject.m_TempPositions);
+		for (size_t i = 0; i < pImpl->m_SmDrawObject.m_TempPositions.size(); i += 3) {
+			TRIANGLE tri;
+			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
+			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
+			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			bsm::Vec3 ret;
+			float t;
+			//‹…‘Ì‚ÌˆÚ“®‚ÍStartSp‚©‚çEndSp‚É1.0‚Æ‚·‚é
+			bsm::Vec3 Valocity = EndSp.m_Center - StartSp.m_Center;
+			if (HitTest::CollisionTestSphereTriangle(StartSp, Valocity, tri, 0.0f, 1.0f, t)) {
+				auto Len = length(EndSp.m_Center - StartSp.m_Center);
+				Len *= t;
+				auto Nomal = EndSp.m_Center - StartSp.m_Center;
+				Nomal.normalize();
+				Nomal *= Len;
+				HitPoint = StartSp.m_Center + Nomal;
+				RetTri = tri;
+				return true;
+			}
+		}
+		return false;
+	}
 
 
 	//--------------------------------------------------------------------------------------
