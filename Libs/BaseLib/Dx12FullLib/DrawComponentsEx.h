@@ -1158,6 +1158,11 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+
+		bool HitTestStaticMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+			return false;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スキン処理済みのメッシュのローカル頂点配列を得る
@@ -1185,6 +1190,10 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		bool HitTestSkinedMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+			return false;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Dx12描画リソース群の取得（const）

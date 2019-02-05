@@ -650,10 +650,6 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
-
-
-
-
 	//--------------------------------------------------------------------------------------
 	//	class CollisionObb : public Collision ;
 	//	用途: Obb衝突判定コンポーネント

@@ -2037,6 +2037,20 @@ namespace basecross {
 		DrawPN();
 	}
 
+	//--------------------------------------------------------------------------------------
+	///	PCTStatic描画コンポーネント
+	//--------------------------------------------------------------------------------------
+	PCTStaticDraw::PCTStaticDraw(const shared_ptr<GameObject>& GameObjectPtr) :
+		SmBaseDraw(GameObjectPtr)
+	{}
+
+	PCTStaticDraw::~PCTStaticDraw() {}
+
+	void PCTStaticDraw::OnCreate() {}
+
+	void PCTStaticDraw::OnDraw() {
+
+	}
 
 
 	//--------------------------------------------------------------------------------------

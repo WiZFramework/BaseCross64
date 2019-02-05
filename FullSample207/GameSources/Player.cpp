@@ -73,11 +73,9 @@ namespace basecross{
 		auto ptrTrans = GetComponent<Transform>();
 		SPHERE startSp(ptrTrans->GetBeforePosition(), 0.125f);
 		SPHERE endSp(ptrTrans->GetPosition(), 0.125f);
-
 		auto EnemyPtr = GetStage()->GetSharedGameObject<EnemyBox>(L"EnemyBox");
 		Vec3 HitPoint;
 		TRIANGLE tri;
-
 		if (EnemyPtr->IsHitSphereTriangles(startSp, endSp, tri, HitPoint)) {
 			//スパークの放出
 			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");

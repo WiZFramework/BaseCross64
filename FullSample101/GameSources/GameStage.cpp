@@ -107,6 +107,18 @@ namespace basecross {
 
 	}
 
+	//行ったり来たりするボックスの作成
+	void GameStage::CreateMoveFixedBox() {
+		CreateSharedObjectGroup(L"MoveFixedBox");
+		AddGameObject<MoveFixedBox>(
+			Vec3(5.0f, 0.5f, 5.0f),
+			Vec3(0.0f, 0.0f, 0.0f),
+			Vec3(0.0f, -0.5f, 20.0f)
+			);
+
+	}
+
+
 
 	//移動するボックスの作成
 	void GameStage::CreateMoveBox() {
@@ -164,6 +176,8 @@ namespace basecross {
 			CreateViewLight();
 			//固定のボックスの作成
 			CreateFixedBox();
+			//行ったり来たりするボックスの作成
+			CreateMoveFixedBox();
 			//移動するボックスの作成
 			CreateMoveBox();
 			//固定の球体の作成

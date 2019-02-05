@@ -84,25 +84,17 @@ namespace basecross {
 		bsm::Vec3 m_BeforePivot;
 		bsm::Quat m_BeforeQuaternion;
 		bsm::Vec3 m_BeforePosition;
-		//再計算抑制用変数
-		bool m_BeforeChangeed;
-		bsm::Mat4x4 m_BeforeWorldMatrix;
 		//現在の変数
 		bsm::Vec3 m_Scale;
 		bsm::Vec3 m_Pivot;
 		bsm::Quat m_Quaternion;
 		bsm::Vec3 m_Position;
-		//再計算抑制用変数
-		bool m_Changeed;
-		bsm::Mat4x4 m_WorldMatrix;
 		//親オブジェクト
 		weak_ptr<GameObject> m_Parent;
 		Impl():
 			//スケールのみ初期化（他はデフォルト処理でよい）
 			m_BeforeScale(1.0f,1.0f,1.0f),
-			m_Scale(1.0f, 1.0f, 1.0f),
-			m_BeforeChangeed(true),
-			m_Changeed(true)
+			m_Scale(1.0f, 1.0f, 1.0f)
 		{}
 		~Impl() {}
 	};
@@ -144,23 +136,21 @@ namespace basecross {
 	}
 
 
-	const bsm::Mat4x4& Transform::GetBeforeWorldMatrix() const{
+	const bsm::Mat4x4 Transform::GetBeforeWorldMatrix() const{
 		auto ParPtr = GetParent();
-		if (pImpl->m_BeforeChangeed || ParPtr) {
-			pImpl->m_BeforeWorldMatrix.affineTransformation(
+		Mat4x4 BefWorld;
+		BefWorld.affineTransformation(
 				pImpl->m_BeforeScale,
 				pImpl->m_BeforePivot,
 				pImpl->m_BeforeQuaternion,
 				pImpl->m_BeforePosition
 			);
-			pImpl->m_BeforeChangeed = false;
-			if (ParPtr) {
-				auto ParBeforeWorld = ParPtr->GetComponent<Transform>()->GetBeforeWorldMatrix();
-				ParBeforeWorld.scaleIdentity();
-				pImpl->m_BeforeWorldMatrix = pImpl->m_BeforeWorldMatrix * ParBeforeWorld;
-			}
+		if (ParPtr) {
+			auto ParBeforeWorld = ParPtr->GetComponent<Transform>()->GetBeforeWorldMatrix();
+			ParBeforeWorld.scaleIdentity();
+			BefWorld *= ParBeforeWorld;
 		}
-		return pImpl->m_BeforeWorldMatrix;
+		return BefWorld;
 	}
 
 
@@ -171,7 +161,6 @@ namespace basecross {
 	}
 
 	void Transform::SetScale(const bsm::Vec3& Scale) {
-		pImpl->m_Changeed = true;
 		pImpl->m_Scale = Scale;
 	}
 	void Transform::SetScale(float x, float y, float z) {
@@ -182,7 +171,6 @@ namespace basecross {
 		return pImpl->m_Pivot;
 	}
 	void Transform::SetPivot(const bsm::Vec3& Pivot) {
-		pImpl->m_Changeed = true;
 		pImpl->m_Pivot = Pivot;
 	}
 	void Transform::SetPivot(float x, float y, float z) {
@@ -193,7 +181,6 @@ namespace basecross {
 		return pImpl->m_Quaternion;
 	}
 	void Transform::SetQuaternion(const bsm::Quat& quaternion) {
-		pImpl->m_Changeed = true;
 		pImpl->m_Quaternion = quaternion;
 		pImpl->m_Quaternion.normalize();
 	}
@@ -204,7 +191,6 @@ namespace basecross {
 	}
 
 	void Transform::SetRotation(const bsm::Vec3& Rot) {
-		pImpl->m_Changeed = true;
 		bsm::Quat Qt;
 		Qt.rotationRollPitchYawFromVector(Rot);
 		SetQuaternion(Qt);
@@ -218,7 +204,6 @@ namespace basecross {
 	}
 
 	void Transform::SetPosition(const bsm::Vec3& Position) {
-		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 	void Transform::SetPosition(float x, float y, float z) {
@@ -226,9 +211,7 @@ namespace basecross {
 	}
 
 	void Transform::ResetPosition(const bsm::Vec3& Position) {
-		pImpl->m_BeforeChangeed = true;
 		pImpl->m_BeforePosition = Position;
-		pImpl->m_Changeed = true;
 		pImpl->m_Position = Position;
 	}
 
@@ -267,47 +250,43 @@ namespace basecross {
 	}
 
 
-	const bsm::Mat4x4& Transform::GetWorldMatrix() const{
+	const bsm::Mat4x4 Transform::GetWorldMatrix() const{
 		auto ParPtr = GetParent();
-		if (pImpl->m_Changeed || ParPtr) {
-			pImpl->m_WorldMatrix.affineTransformation(
+		Mat4x4 WorldMat;
+		WorldMat.affineTransformation(
 				pImpl->m_Scale,
 				pImpl->m_Pivot,
 				pImpl->m_Quaternion,
 				pImpl->m_Position
 			);
-			pImpl->m_Changeed = false;
-			if (ParPtr) {
-				auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
-				ParWorld.scaleIdentity();
-				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
-			}
+		if (ParPtr) {
+			auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
+			ParWorld.scaleIdentity();
+			WorldMat *= ParWorld;
 		}
-		return pImpl->m_WorldMatrix;
+		return WorldMat;
 	}
 
-	const bsm::Mat4x4& Transform::Get2DWorldMatrix() const {
+	const bsm::Mat4x4 Transform::Get2DWorldMatrix() const {
 		auto ParPtr = GetParent();
-		if (pImpl->m_Changeed || ParPtr) {
-			pImpl->m_Scale.z = 1.0f;
-			bsm::Vec4 temp_z(pImpl->m_Position.z);
-			temp_z = XMVector4ClampLength(temp_z, 0.0f, 1.0f);
-			pImpl->m_Position.z = temp_z.z;
-			pImpl->m_Pivot.z = 0;
-			pImpl->m_WorldMatrix.affineTransformation(
-				pImpl->m_Scale,
-				pImpl->m_Pivot,
-				pImpl->m_Quaternion,
-				pImpl->m_Position
-			);
-			pImpl->m_Changeed = false;
-			if (ParPtr) {
-				auto ParWorld = ParPtr->GetComponent<Transform>()->Get2DWorldMatrix();
-				ParWorld.scaleIdentity();
-				pImpl->m_WorldMatrix = pImpl->m_WorldMatrix * ParWorld;
-			}
+		pImpl->m_Scale.z = 1.0f;
+		bsm::Vec4 temp_z(pImpl->m_Position.z);
+		temp_z = XMVector4ClampLength(temp_z, 0.0f, 1.0f);
+		pImpl->m_Position.z = temp_z.z;
+		pImpl->m_Pivot.z = 0;
+		Mat4x4 WorldMat;
+		WorldMat.affineTransformation(
+			pImpl->m_Scale,
+			pImpl->m_Pivot,
+			pImpl->m_Quaternion,
+			pImpl->m_Position
+		);
+		if (ParPtr) {
+			auto ParWorld = ParPtr->GetComponent<Transform>()->Get2DWorldMatrix();
+			ParWorld.scaleIdentity();
+			WorldMat *= ParWorld;
 		}
-		return pImpl->m_WorldMatrix;
+		return WorldMat;
 	}
 
 
@@ -371,19 +350,15 @@ namespace basecross {
 
 	void Transform::SetToBefore() {
 		if (pImpl->m_BeforeScale != pImpl->m_Scale) {
-			pImpl->m_BeforeChangeed = true;
 			pImpl->m_BeforeScale = pImpl->m_Scale;
 		}
 		if (pImpl->m_BeforePivot != pImpl->m_Pivot) {
-			pImpl->m_BeforeChangeed = true;
 			pImpl->m_BeforePivot = pImpl->m_Pivot;
 		}
 		if (pImpl->m_BeforeQuaternion != pImpl->m_Quaternion) {
-			pImpl->m_BeforeChangeed = true;
 			pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
 		}
 		if (pImpl->m_BeforePosition != pImpl->m_Position) {
-			pImpl->m_BeforeChangeed = true;
 			pImpl->m_BeforePosition = pImpl->m_Position;
 		}
 	}
@@ -773,9 +748,10 @@ namespace basecross {
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		pImpl->m_GravityVelocity += pImpl->m_Gravity * ElapsedTime;
-		auto Pos = PtrTransform->GetWorldPosition();
+		auto Pos = PtrTransform->GetPosition();
+//		auto Pos = PtrTransform->GetWorldPosition();
 		Pos += pImpl->m_GravityVelocity * ElapsedTime;
-		PtrTransform->SetWorldPosition(Pos);
+		PtrTransform->SetPosition(Pos);
 	}
 
 

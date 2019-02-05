@@ -42,6 +42,8 @@ namespace basecross{
 		//更新
 		virtual void OnUpdate() override;
 		virtual void OnUpdate2() override;
+		virtual void OnCollisionEnter(shared_ptr<GameObject>& Other) override;
+		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) override;
 		//Aボタン
 		void OnPushA();
 		void MovePlayer();

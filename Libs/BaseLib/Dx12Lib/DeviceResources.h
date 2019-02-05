@@ -566,6 +566,12 @@ namespace basecross {
 			MeshUtill::CreateIcosahedron(Size, vertices, indices);
 			return MeshResource::CreateMeshResource<VertexPositionNormalTexture>(vertices, indices, AccessWrite);
 		}
+		//未実装
+		static shared_ptr<MeshResource> CreateBoneModelMeshWithTangent(const wstring& BinDataDir,
+			const wstring& BinDataFile, bool AccessWrite = false) {
+			return nullptr;
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@breaf 頂点バッファの取得

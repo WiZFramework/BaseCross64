@@ -20,6 +20,8 @@ namespace basecross {
 		void CreateFixedSphere();
 		//固定のカプセルの作成
 		void CreateFixedCapsule();
+		//行ったり来たりするボックスの作成
+		void CreateMoveFixedBox();
 		//移動するボックスの作成
 		void CreateMoveBox();
 		//追いかけるオブジェクトの作成

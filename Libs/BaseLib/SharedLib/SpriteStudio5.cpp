@@ -1586,6 +1586,9 @@ namespace basecross {
 
 	//頂点の変更
 	void SSPart::ResetVirtex(){
+
+#if BASECROSS_DXVERSION == 11
+
 		//座標を変更する
 		auto Dev = App::GetApp()->GetDeviceResources();
 		ID3D11Device* pDx11Device = Dev->GetD3DDevice();
@@ -1668,9 +1671,13 @@ namespace basecross {
 			bsm::Vec2(UVRect.right, UVRect.bottom));
 		//アンマップ
 		pID3D11DeviceContext->Unmap(pVertexBuffer, 0);
+#endif
 	}
 
 	void SSPart::ResetSpriteVirtex(){
+
+#if BASECROSS_DXVERSION == 11
+
 		vector<VertexPositionColorTexture> m_VertexVec;
 		//頂点の変更
 		Rect2D<float> UVRectBase(0, 0, pImpl->m_SS5CellPtr->get_size().x, pImpl->m_SS5CellPtr->get_size().y);
@@ -1729,6 +1736,9 @@ namespace basecross {
 		auto PtrSprite = GetComponent<PCTSpriteDraw>();
 		auto Mesh = PtrSprite->GetMeshResource();
 		Mesh->UpdateVirtexBuffer(m_VertexVec);
+
+#endif
+
 	}
 
 	//アニメーション後の行列を計算する

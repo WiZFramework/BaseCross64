@@ -28,7 +28,7 @@ namespace basecross{
 				auto ptrTransform = GetComponent<Transform>();
 				auto ptrCamera = OnGetDrawCamera();
 				//進行方向の向きを計算
-				auto front = ptrTransform->GetPosition() - ptrCamera->GetEye();
+				auto front = ptrTransform->GetWorldPosition() - ptrCamera->GetEye();
 				front.y = 0;
 				front.normalize();
 				//進行方向向きからの角度を算出
@@ -77,12 +77,9 @@ namespace basecross{
 		auto ptr = AddComponent<Transform>();
 		ptr->SetScale(0.25f, 0.25f, 0.25f);	//直径25センチの球体
 		ptr->SetRotation(0.0f, 0.0f, 0.0f);
-//		ptr->SetPosition(0, 0.25f, 0);
 		ptr->SetPosition(Vec3(0, 0.125f, 0));
 
 		//CollisionSphere衝突判定を付ける
-//		auto ptrColl = AddComponent<CollisionObb>();
-//		auto ptrColl = AddComponent<CollisionCapsule>();
 		auto ptrColl = AddComponent<CollisionSphere>();
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
@@ -101,8 +98,6 @@ namespace basecross{
 		//描画コンポーネントの設定
 		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		//描画するメッシュを設定
-//		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
-//		ptrDraw->SetMeshResource(L"DEFAULT_CAPSULE");
 		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		ptrDraw->SetFogEnabled(true);
 		//描画するテクスチャを設定
@@ -124,10 +119,18 @@ namespace basecross{
 		//コントローラチェックして入力があればコマンド呼び出し
 		m_InputHandler.PushHandle(GetThis<Player>());
 		MovePlayer();
-		auto ptr = GetComponent<Transform>();
-		auto bpos = ptr->GetBeforePosition();
-		auto pos = ptr->GetPosition();
+	}
 
+	void Player::OnCollisionEnter(shared_ptr<GameObject>& Other) {
+		if (Other->FindTag(L"MoveFixedBox")) {
+			GetComponent<Transform>()->SetParent(Other);
+		}
+	}
+
+	void Player::OnCollisionExit(shared_ptr<GameObject>& Other) {
+//		if (Other->FindTag(L"MoveFixedBox")) {
+			GetComponent<Transform>()->ClearParent();
+//		}
 	}
 
 	void Player::OnUpdate2() {

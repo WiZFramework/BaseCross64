@@ -193,7 +193,7 @@ namespace basecross{
 
 	Vec3 SeekObject::GetTargetPos()const {
 		auto ptrTarget = GetStage()->GetSharedObject(L"Player");
-		return ptrTarget->GetComponent<Transform>()->GetPosition();
+		return ptrTarget->GetComponent<Transform>()->GetWorldPosition();
 	}
 
 
@@ -330,6 +330,53 @@ namespace basecross{
 		}
 
 	}
+
+	//--------------------------------------------------------------------------------------
+	//	class MoveBox : public GameObject;
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	MoveFixedBox::MoveFixedBox(const shared_ptr<Stage>& StagePtr,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position
+	) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position)
+	{
+	}
+	MoveFixedBox::~MoveFixedBox() {}
+
+	//初期化
+	void MoveFixedBox::OnCreate() {
+		AddTag(L"MoveFixedBox");
+		auto ptrTransform = GetComponent<Transform>();
+		ptrTransform->SetScale(m_Scale);
+		ptrTransform->SetRotation(m_Rotation);
+		ptrTransform->SetPosition(m_Position);
+		//OBB衝突j判定を付ける
+		auto ptrColl = AddComponent<CollisionObb>();
+		ptrColl->SetFixed(true);
+		//アクションの登録
+		auto PtrAction = AddComponent<Action>();
+		PtrAction->AddMoveBy(5.0f, Vec3(5.0f, 5.0f, 0));
+		PtrAction->AddMoveBy(5.0f, Vec3(-5.0f, -5.0f, 0));
+		//ループする
+		PtrAction->SetLooped(true);
+		//アクション開始
+		PtrAction->Run();
+		//影をつける
+		auto shadowPtr = AddComponent<Shadowmap>();
+		shadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		//描画処理
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetFogEnabled(true);
+		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
+		ptrDraw->SetTextureResource(L"WALL_TX");
+		ptrDraw->SetOwnShadowActive(true);
+	}
+
 
 }
 //end basecross

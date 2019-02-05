@@ -173,6 +173,27 @@ namespace basecross{
 		virtual void OnCollisionExit(const CollisionPair& Pair)override;
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	class MoveFixedBox : public GameObject;
+	//--------------------------------------------------------------------------------------
+	class MoveFixedBox : public GameObject {
+		Vec3 m_Scale;
+		Vec3 m_Rotation;
+		Vec3 m_Position;
+	public:
+		//ç\ízÇ∆îjä¸
+		MoveFixedBox(const shared_ptr<Stage>& StagePtr,
+			const Vec3& Scale,
+			const Vec3& Rotation,
+			const Vec3& Position
+		);
+		virtual ~MoveFixedBox();
+		//èâä˙âª
+		virtual void OnCreate() override;
+		//ëÄçÏ
+	};
+
+
 
 
 }

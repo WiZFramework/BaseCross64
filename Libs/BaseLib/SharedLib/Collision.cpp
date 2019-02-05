@@ -1043,6 +1043,7 @@ namespace basecross {
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CUBE"));
 	}
 
+
 }
 //end basecross
 
