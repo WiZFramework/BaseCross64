@@ -366,6 +366,8 @@ namespace basecross{
 		ptrDraw->SetFogEnabled(true);
 		//描画するメッシュを設定
 		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+		//描画するテクスチャを設定
+		ptrDraw->SetTextureResource(L"WALL_TX");
 	}
 
 	//更新
@@ -382,11 +384,13 @@ namespace basecross{
 		auto mesh = boneDraw->GetMeshResource();
 		vector<Vec3> positions;
 		mesh->GetLocalPositions(positions);
-		Vec3 Pos = positions[1];
-		Pos *= mat;
-		Pos *= boneTrans->GetWorldMatrix();
+		Mat4x4 localMat;
+		localMat.translation(positions[1]);
+		localMat *= mat;
+		localMat *= boneTrans->GetWorldMatrix();
 		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetPosition(Pos);
+		ptrTrans->SetPosition(localMat.transInMatrix());
+		ptrTrans->SetQuaternion(localMat.quatInMatrix());
 	}
 
 }
