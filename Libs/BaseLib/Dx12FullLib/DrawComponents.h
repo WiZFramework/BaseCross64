@@ -2078,10 +2078,11 @@ namespace basecross {
 		@param[in]	EndPos	線分の終了点
 		@param[out]	HitPoint	衝突していた場合の衝突点
 		@param[out]	RetTri	衝突していた場合の三角形
+		@param[out]	RetIndex	衝突していた場合の三角形の位置
 		@return	衝突していたらtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		bool HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri,size_t& RetIndex);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	スキン処理済みのメッシュのローカル頂点配列を得る
@@ -2105,10 +2106,11 @@ namespace basecross {
 		@param[in]	EndPos	線分の終了点
 		@param[out]	HitPoint	衝突していた場合の衝突点
 		@param[out]	RetTri	衝突していた場合の三角形
+		@param[out]	RetIndex	衝突していた場合の三角形の位置
 		@return	衝突していたらtrue
 		*/
 		//--------------------------------------------------------------------------------------
-		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri);
+		bool HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint, TRIANGLE& RetTri, size_t& RetIndex);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	Dx12描画リソース群の取得（const）

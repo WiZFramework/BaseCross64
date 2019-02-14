@@ -266,12 +266,14 @@ namespace basecross{
 
 	bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
 		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
-		return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri);
+		size_t hitIndex;
+		return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);
 	}
 
 	bool EnemyBox::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
 		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
-		return PtrDraw->HitTestStaticMeshSphereTriangles(StartSp, EndSp, HitPoint, tri);
+		size_t hitIndex;
+		return PtrDraw->HitTestStaticMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex);
 	}
 
 
@@ -323,13 +325,15 @@ namespace basecross{
 
 	bool BoneChara::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
 		auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
-		return PtrDraw->HitTestSkinedMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri);
+		size_t hitIndex;
+		return PtrDraw->HitTestSkinedMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);
 
 	}
 
 	bool BoneChara::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
 		auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
-		return PtrDraw->HitTestSkinedMeshSphereTriangles(StartSp, EndSp, HitPoint, tri);
+		size_t hitIndex;
+		return PtrDraw->HitTestSkinedMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex);
 	}
 
 	//XV
@@ -378,9 +382,7 @@ namespace basecross{
 
 
 		auto& bones = boneDraw->GetVecLocalBones();
-		auto sz = bones.size();
 		Mat4x4 mat = bones[2];
-
 		auto mesh = boneDraw->GetMeshResource();
 		vector<Vec3> positions;
 		mesh->GetLocalPositions(positions);

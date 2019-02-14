@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０７．頂点データの取得</h3>
+　このサンプルは<b>FullSample207</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx12版</b>はありません。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1207a.png" width="80%"/>
+<p>図1207a</p>
+<p>&nbsp;</p>
+　プレイヤーはAボタンでジャンプ、Xボタンで球を発射します。この辺りは前項と同じです。<br />
+　このサンプルには２つのボックス型オブジェクトが配置されています。右のはスタティックなモデルで、左がボーンモデルです。<br />
+　Xボタンで発射された球は、これらのオブジェクトにぶつかると、スパークを出し反発します。<br />
+　ボーンモデルの場合も、アニメーションされている場所で反発します。
+<h4>メッシュの三角形との衝突判定</h4>
+　前項で紹介した<b>衝突判定</b>は<b>ボリューム境界</b>を使用したものです。モデルなどを単純な３Ｄの形状と見立てて、判定を行います。<br />
+　しかし今回のサンプルでは、メッシュ内の各三角形と衝突判定を行います。<br />
+　まず、発射された球体との判定ですが、<b>Charaaacter.h/cpp</b>に記述があります<b>FireSphereクラス</b>です。<br />
+　このメンバ関数の<b>FireSphere::OnUpdate()</b>に記述があります。
+<div class="box1">
+<pre>
+void FireSphere::OnUpdate() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    if (ptrTrans->GetPosition().y > m_ActiveMaxY) {
+        float elapsedTime = App::GetApp()->GetElapsedTime();
+        auto BeforePos = ptrTrans->GetBeforePosition();
+        auto Pos = ptrTrans->GetPosition();
+        Pos += m_Velocity * elapsedTime;
+        ptrTrans->SetPosition(Pos);
+        auto ptrColl = GetComponent&lt;CollisionSphere>();
+        auto ptrDraw = GetComponent&lt;BcPNTStaticDraw>();
+        if (ptrColl->IsSleep()) {
+            ptrDraw->SetDiffuse(Col4(0.0f, 0.0f, 1.0f, 1.0f));
+        }
+        else {
+            ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
+
+            <span class="red">auto EnemyPtr = GetStage()->GetSharedGameObject&lt;EnemyBox>(L"EnemyBox");
+            Vec3 HitPoint;
+            TRIANGLE tri;
+            bool isModelHit = false;
+            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+                //スパークの放出
+                auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+                PtrSpark->InsertSpark(HitPoint);
+                isModelHit = true;
+            }
+            else {
+                auto BonePtr = GetStage()->GetSharedGameObject&lt;BoneChara>(L"BoneChara");
+                if (BonePtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+                    //スパークの放出
+                    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+                    PtrSpark->InsertSpark(HitPoint);
+                    isModelHit = true;
+                }
+            }
+            if (isModelHit) {
+                m_Velocity.reflect(tri.GetNormal());
+                if (m_Velocity.length() > 20.0f) {
+                    m_Velocity.normalize();
+                    m_Velocity *= 20.0f;
+                }
+
+            }</span>
+        }
+    }
+    else {
+        SetUpdateActive(false);
+        SetDrawActive(false);
+        return;
+    }
+}
+</pre>
+</div>
+　ここで赤くなっている部分のうち、
+<div class="box1">
+<pre>
+            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+</pre>
+</div>
+　という部分に注目してください。ここでは<b>右側のボックス</b>の<b>IsHitSegmentTriangles()関数</b>を呼んでいます。<br />
+　この関数は以下のようになっています。
+<div class="box1">
+<pre>
+    bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos,
+             TRIANGLE& tri, Vec3& HitPoint) {
+        auto PtrDraw = GetComponent&lt;BcPNTStaticDraw>();
+        size_t hitIndex;
+        return <span class="red">PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri,hitIndex);</span>
+    }
+</pre>
+</div>
+　のようになっています。<br />
+　上記の描画コンポーネントにおける<b>HitTestStaticMeshSegmentTriangles()関数</b>は<b>線とスタティックメッシュの衝突判定</b>を行います。<br />
+　<b>EnemyBox</b>は六面体ですので12個の三角形で構成されています。その中のどれかの<b>三角形と線分</b>が衝突していればtrueを返し、<b>tri変数</b>に衝突した三角形を入れます。この内容はそのまま呼び出し側（FireSphere::OnUpdate()関数）に返されますので、<b>FireSphere側</b>でその情報を利用できるわけです。<br />
+　<b>FireSphere側</b>では、<b>FireSphere::OnUpdate()関数</b>で、
+<div class="box1">
+<pre>
+            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+                //スパークの放出
+                auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+                PtrSpark->InsertSpark(HitPoint);
+                isModelHit = true;
+            }
+</pre>
+</div>
+　とします。つまり、ヒットポイントをエミッターとしてエフェクトを送出します。また、<b>isModelHitフラグ</b>をtrueにします。<br />
+　同様の処理を<b>BoneChara</b>に対しても行います。左側のくねくねする物体です。このキャラクターのメンバ関数<b>BoneChara::IsHitSegmentTriangles()関数</b>では、<b>描画コンポーネント</b>の<b>HitTestSkinedMeshSegmentTriangles()関数</b>を呼び出します。<br />　こちらは<b>ボーン処理された三角形と線分</b>の衝突判定を行いますので、例えば、このくねくね物体が首をもたげても空中で衝突することはありません。こちらでも同様、スパークを放出します。<br />
+　上記どちらかと衝突した場合、<b>isModelHitフラグ</b>はtrueになりますので、
+<div class="box1">
+<pre>
+            if (isModelHit) {
+                m_Velocity.reflect(tri.GetNormal());
+                if (m_Velocity.length() > 20.0f) {
+                    m_Velocity.normalize();
+                    m_Velocity *= 20.0f;
+                }
+
+            }
+</pre>
+</div>
+　という処理で反発（reflect）させます。こうすることで、<b>FireSphere</b>は跳ね返ります。<br />
+<br />
+　<b>FireSphere</b>は<b>コリジョン</b>もついてますので、<b>FireSphere::OnCollisionEnter()関数</b>により、同様の処理を行います。
+<div class="box1">
+<pre>
+void FireSphere::OnCollisionEnter(const CollisionPair& Pair) {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    auto shDest = Pair.m_Dest.lock();
+    m_Velocity -= shDest->GetVelocity();
+    m_Velocity.reflect(Pair.m_SrcHitNormal);
+    if (m_Velocity.length() > 20.0f) {
+        m_Velocity.normalize();
+        m_Velocity *= 20.0f;
+    }
+}
+</pre>
+</div>
+　という部分です。さらに前項のように<b>FireSphere</b>は例えばステージ上で<b>減速</b>しますので、<b>FireSphere::OnCollisionExcute()関数</b>で、減速処理を行います。
+<div class="box1">
+<pre>
+void FireSphere::OnCollisionExcute(const CollisionPair& Pair) {
+    auto shDest = Pair.m_Dest.lock();
+    if (shDest->IsFixed()) {
+        //減速
+        m_Velocity *= 0.95f;
+        if (m_Velocity.length() &lt; 0.05f) {
+            m_Velocity = Vec3(0);
+        }
+    }
+}
+</pre>
+</div>
+<h4>プレイヤー三角形との衝突判定</h4>
+　プレイヤーも三角形と衝突します。先ほどのボックスやくねくねする物体の三角形との衝突があった場合、エフェクトを放出します。<br />
+　プレイヤーは<b>線</b>ではなく<b>球体として</b>判定を行っています。ここは、プレイヤーの1つ前のターン位置と現在の位置をとってきて、<b>線</b>として判定する方法もあるでしょう、ただこのサンプルでは<b>球体として</b>行います。<br />
+　プレイヤーの判定部分は、<b>Player::ChkModelCollision()関数</b>で行ってます。この中から、各物体の<b>三角形と球の判定</b>の関数を呼び出しています。<br />
+　FireSphereとは違い、プレイヤーでは衝突後の処理は記述してません。例えばくねくねする物体の<b>曲がった部分に乗る</b>のような処理があればよりリアルなのでしょうが、その部分は各自検討してください。<br />
+　その処理をするためにはプレイヤーに<b>速度</b>という概念をおいて、コリジョンコンポーネントがやってるような処理を実装する必要があるでしょう。
+<h4>ボーン情報をとってくる</h4>
+　このサンプルでは<b>スキンメッシュのボーン情報を取得する</b>ことも紹介されています。<br />
+　<b>Character.h/cpp</b>には<b>BallChara</b>というオブジェクトも実装されています。<br />
+　このオブジェクトは<b>BoneChara</b>の<b>ボーン情報</b>をとってきて、そこに自分自身を配置します。<b>BallChara::OnUpdate()関数</b>を見てください。
+<div class="box1">
+<pre>
+void BallChara::OnUpdate() {
+    auto bonePtr = GetStage()->GetSharedGameObject&lt;BoneChara>(L"BoneChara");
+    auto boneTrans = bonePtr->GetComponent&lt;Transform>();
+    auto boneDraw = bonePtr->GetComponent&lt;BcPNTnTBoneModelDraw>();
+
+    <span class="red">auto& bones = boneDraw->GetVecLocalBones();
+    Mat4x4 mat = bones[2];
+    auto mesh = boneDraw->GetMeshResource();
+    vector&lt;Vec3> positions;
+    mesh->GetLocalPositions(positions);
+    Mat4x4 localMat;
+    localMat.translation(positions[1]);
+    localMat *= mat;
+    localMat *= boneTrans->GetWorldMatrix();
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetPosition(localMat.transInMatrix());
+    ptrTrans->SetQuaternion(localMat.quatInMatrix());</span>
+}
+</pre>
+</div>
+　この赤い部分は、スキンメッシュのボーン情報をとってきて、その2番目のボーンに対して吸着する行列を作り出します（localMat）。<br />
+　行列は<b>別の行列</b>を掛け算することで、その、<b>別の行列</b>の単位系にすることができます（いわゆる親子関係です）。<br />
+<div class="box1">
+<pre>
+    localMat.translation(positions[1]);
+    localMat *= mat;
+    localMat *= boneTrans->GetWorldMatrix();
+</pre>
+</div>
+　の記述で、ボーン行列（mat）、ワールド行列（boneTrans->GetWorldMatrix()）を続けて掛け算しますので、処理後は、localMatには<b>BoneChara</b>を親に持つ行列が出来上がります。<br />
+　そして
+<div class="box1">
+<pre>
+    ptrTrans->SetPosition(localMat.transInMatrix());
+    ptrTrans->SetQuaternion(localMat.quatInMatrix());
+</pre>
+</div>
+　で位置と回転を取り出して設定すれば、<b>BoneChara</b>の特定のボーンに吸着する動きを実装することができます。
+
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="12_07.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>

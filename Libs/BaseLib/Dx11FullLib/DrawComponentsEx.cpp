@@ -743,7 +743,7 @@ namespace basecross {
 	}
 
 	bool BcBaseDraw::HitTestStaticMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, bsm::Vec3& HitPoint,
-		TRIANGLE& RetTri) {
+		TRIANGLE& RetTri, size_t& RetIndex) {
 		GetStaticMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
 		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
 			TRIANGLE tri;
@@ -760,13 +760,14 @@ namespace basecross {
 				Nomal *= Len;
 				HitPoint = StartPos + Nomal;
 				RetTri = tri;
+				RetIndex = i / 3;
 				return true;
 			}
 		}
 		return false;
 	}
 
-	bool BcBaseDraw::HitTestStaticMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+	bool BcBaseDraw::HitTestStaticMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, bsm::Vec3& HitPoint, TRIANGLE& RetTri, size_t& RetIndex) {
 		GetStaticMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
 		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
 			TRIANGLE tri;
@@ -785,6 +786,7 @@ namespace basecross {
 				Nomal *= Len;
 				HitPoint = StartSp.m_Center + Nomal;
 				RetTri = tri;
+				RetIndex = i / 3;
 				return true;
 			}
 		}
@@ -844,7 +846,7 @@ namespace basecross {
 	}
 
 	bool BcBaseDraw::HitTestSkinedMeshSegmentTriangles(const bsm::Vec3& StartPos, const bsm::Vec3& EndPos, 
-		bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		bsm::Vec3& HitPoint, TRIANGLE& RetTri, size_t& RetIndex) {
 		GetSkinedMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
 		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
 			TRIANGLE tri;
@@ -861,6 +863,7 @@ namespace basecross {
 				Nomal *= Len;
 				HitPoint = StartPos + Nomal;
 				RetTri = tri;
+				RetIndex = i / 3;
 				return true;
 			}
 		}
@@ -868,7 +871,7 @@ namespace basecross {
 	}
 
 	bool BcBaseDraw::HitTestSkinedMeshSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, 
-		bsm::Vec3& HitPoint, TRIANGLE& RetTri) {
+		bsm::Vec3& HitPoint, TRIANGLE& RetTri, size_t& RetIndex) {
 		GetSkinedMeshWorldPositions(pImpl->m_BcDrawObject.m_TempPositions);
 		for (size_t i = 0; i < pImpl->m_BcDrawObject.m_TempPositions.size(); i += 3) {
 			TRIANGLE tri;
@@ -887,6 +890,7 @@ namespace basecross {
 				Nomal *= Len;
 				HitPoint = StartSp.m_Center + Nomal;
 				RetTri = tri;
+				RetIndex = i / 3;
 				return true;
 			}
 		}
