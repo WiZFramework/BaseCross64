@@ -14,13 +14,293 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <h2>１３．Draw系の操作とオーディオ</h2>
-<h3>１３０４．エフェクトとオーディオ</h3>
+<h3>１３０４．マルチスレッド、連番アニメ、エフェクトにオーディオ</h3>
 　このサンプルは<b>FullSample304</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
-　すると以下のような画面が現れます。<br />
+　すると以下のような、<b>お待ちください</b>の画面が現れます。<br />
 <p>&nbsp;</p>
 <img src="img/1304a.png" width="80%"/>
 <p>図1304a</p>
+　少し経つと、以下の画面になります。
+<p>&nbsp;</p>
+<img src="img/1304b.png" width="80%"/>
+<p>図1304b</p>
+　ここで<b>Bボタン</b>を押すと、ゲーム画面になります。
+<p>&nbsp;</p>
+<img src="img/1304c.png" width="80%"/>
+<p>図1304c</p>
+　ゲーム画面で<b>Bボタン</b>を押すと前の画面に戻ります。<br />
+　このサンプルは、いろいろな機能が紹介されています。
+<h4>マルチスレッドによるリソースの読み込み</h4>
+　最初の<b>お待ちください</b>の画面は<b>リソースを読み込むあいだ、アニメーションをする</b>画面です。<br />
+　<b>BaseCross64</b>では、<b>リソース（メッシュやテクスチャやサウンド）</b>を読み込むタイミングを制御できます。<br />
+　サンプルでは<b>シーン</b>で読み込み、複数のステージで使いまわしする場合にストレスがかからない方法をとってますが、場合によってはステージ単位で<b>これまでのリソースを開放し、また別ステージで読み込む</b>などの手法を取りたい場合があります。<br />
+　こんな時は、<b>リソースの読み込みと開放</b>を繰り返す必要があるのですが、その間、<b>お待ちください</b>などのメッセージを表示すると親切ですね。<br />
+　このような画面<b>お待ちくださいのステージ</b>を作るためには、<b>GameStage.h/cpp</b>に記述される、<b>WaitStageクラス</b>のようなステージを作成します。以下は宣言部です。
+<div class="box1">
+<pre>
+class WaitStage : public Stage {
+    //ビューの作成
+    void CreateViewLight();
+    //スプライトの作成
+    void CreateTitleSprite();
+    <span class="red">//リソースロード用のスレッド（スタティック関数）
+    static void LoadResourceFunc();
+    //リソースを読み込んだことを知らせるフラグ（スタティック変数）
+    static bool m_Loaded;
+    //ミューテックス
+    static std::mutex mtx;</span>
+public:
+    //構築と破棄
+    WaitStage() :Stage() {}
+    virtual ~WaitStage() {}
+    //初期化
+    virtual void OnCreate()override;
+    //更新
+    virtual void OnUpdate()override;
+};
+</pre>
+</div>
+　赤い部分のように、
+<div class="box1">
+<pre>
+リソースロード用のスレッド関数
+リソースが読み込み終わったことを知らせるフラグ
+ミューテックス
+</pre>
+</div>
+　をスタティックな変数、関数として用意します。<br />
+　そして、<b>WaitStage::OnCreate()</b>は以下のように記述します。
+<div class="box1">
+<pre>
+void WaitStage::OnCreate() {
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //お待ちくださいのテクスチャのみここで登録
+    wstring strTexture = DataDir + L"wait.png";
+    App::GetApp()->RegisterTexture(L"WAIT_TX", strTexture);
+    strTexture = DataDir + L"movetest.png";
+    App::GetApp()->RegisterTexture(L"MOVETEST_TX", strTexture);
+    <span class="red">//他のリソースを読み込むスレッドのスタート
+    std::thread LoadThread(LoadResourceFunc);
+    //終了までは待たない
+    LoadThread.detach();</span>
+
+    CreateViewLight();
+    //スプライトの作成
+    CreateTitleSprite();
+}
+</pre>
+</div>
+　このステージは<b>リソースを読み込むステージ</b>ですが、ここで表示される<b>お待ちください</b>や<b>キャラクターのアニメーション</b>のリソースは先に読み込まなければいけません。ですので、冒頭で読み込みます。その後
+<div class="box1">
+<pre>
+    <span class="red">//他のリソースを読み込むスレッドのスタート
+    std::thread LoadThread(LoadResourceFunc);
+    //終了までは待たない
+    LoadThread.detach();</span>
+</pre>
+</div>
+　という形で<b>新しいスレッド</b>を開始します。スレッドを作成する方法はいくつかありますが、ここでは<b>std::thread</b>というSTLのクラスを使います。このクラスは、コンストラクタに、新スレッドで動作させる関数（スタティックな関数）を渡すと、新スレッドを作成しその関数を実行してくれます。<br />
+　そのスレッドの終了はここでは待たないので、<b>LoadThread.detach();</b>としておきます。<br />
+　新スレッドと、メインスレッドの通信は、スタティックな変数である<b>m_Loaded</b>を通じて行います。<br />
+　またミューテックスクラスもスタティッククラスなので実体を記述します
+　これらは<b>GameStage.cppの231行目付近</b>で以下のように初期化されます。
+<div class="box1">
+<pre>
+    bool WaitStage::m_Loaded = false;
+    std::mutex WaitStage::mtx;
+</pre>
+</div>
+　新スレッドに割り当てられたスタティックな関数、<b>WaitStage::LoadResourceFunc()</b>は以下の様な記述です。
+<div class="box1">
+<pre>
+void WaitStage::LoadResourceFunc() {
+    <span class="red">mtx.lock();
+    m_Loaded = false;
+    mtx.unlock();</span>
+
+    wstring DataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(DataDir);
+    //各ゲームは以下のようにデータディレクトリを取得すべき
+    //App::GetApp()->GetDataDirectory(DataDir);
+    wstring strTexture = DataDir + L"sky.jpg";
+    App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
+    strTexture = DataDir + L"trace.png";
+    App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
+    strTexture = DataDir + L"number.png";
+    App::GetApp()->RegisterTexture(L"NUMBER_TX", strTexture);
+    strTexture = DataDir + L"spark.png";
+    App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
+    strTexture = DataDir + L"fire.png";
+    App::GetApp()->RegisterTexture(L"FIRE_TX", strTexture);
+    strTexture = DataDir + L"StageMessage.png";
+    App::GetApp()->RegisterTexture(L"MESSAGE_TX", strTexture);
+    //サウンド
+    wstring CursorWav = DataDir + L"cursor.wav";
+    App::GetApp()->RegisterWav(L"cursor", CursorWav);
+    //BGM
+    wstring strMusic = DataDir + L"nanika .wav";
+    App::GetApp()->RegisterWav(L"Nanika", strMusic);
+
+    <span class="red">mtx.lock();
+    m_Loaded = true;
+    mtx.unlock();</span>
+
+}
+</pre>
+</div>
+　赤くなっているところは<b>ミューテックス</b>で<b>ロック</b>をかけています。<b>m_Loaded</b>に値を設定している間アクセスを禁止するためです。<br />
+　このように記述しておくと、<b>WaitStage::OnUpdate()</b>では以下のように記述できます。
+<div class="box1">
+<pre>
+void WaitStage::OnUpdate() {
+    if (m_Loaded) {
+        //リソースのロードが終了したらタイトルステージに移行
+        PostEvent(0.0f, GetThis&lt;ObjectInterface>(), App::GetApp()->GetScene&lt;Scene>(), L"ToTitleStage");
+    }
+}
+</pre>
+</div>
+　また、リソースの説明の最後になりますが、メモリ制約などの関係で使わないリソースを開放する場合は
+<div class="box1">
+<pre>
+App::GetApp()->UnRegisterResource(L"リソース名")
+</pre>
+</div>
+　で開放することができます。
+<h4>アニメーション</h4>
+　WaitStageには2つの、待っている間のアニメーションするクラスが実装されています。点滅する文字と、右下のアニメーションです。点滅する文字は<b>AnimeSpriteクラス</b>で、右下のキャラクターは<b>SerialAnimeSpriteクラス</b>です。<br />
+　いずれも<b>Character.h/cpp</b>に実装があります。
+<h4>点滅アニメーション</h4>
+　まず、<b>AnimeSpriteクラス</b>ですが、<b>OnCreate()関数</b>は以下の様な記述になります。
+<div class="box1">
+<pre>
+void AnimeSprite::OnCreate() {
+    float HelfSize = 0.5f;
+    //頂点配列
+    vector&lt;VertexPositionColorTexture> vertex = {
+        { VertexPositionColorTexture(Vec3(-HelfSize, HelfSize, 0),Col4(1.0f,1.0f,1.0f,1.0f), Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, HelfSize, 0), Col4(1.0f, 1.0f, 1.0f, 1.0f), Vec2(1.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-HelfSize, -HelfSize, 0), Col4(1.0f, 1.0f, 1.0f, 1.0f), Vec2(0.0f, 1.0f)) },
+        { VertexPositionColorTexture(Vec3(HelfSize, -HelfSize, 0), Col4(1.0f, 1.0f, 1.0f, 1.0f), Vec2(1.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> indices = { 0, 1, 2, 1, 3, 2 };
+    SetAlphaActive(m_Trace);
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(m_StartScale.x, m_StartScale.y, 1.0f);
+    PtrTransform->SetRotation(0, 0, 0);
+    PtrTransform->SetPosition(m_StartPos.x, m_StartPos.y, 0.0f);
+    //頂点とインデックスを指定してスプライト作成
+    auto PtrDraw = AddComponent&lt;PCTSpriteDraw>(vertex, indices);
+    PtrDraw->SetSamplerState(SamplerState::LinearWrap);
+    PtrDraw->SetTextureResource(m_TextureKey);
+}
+</pre>
+</div>
+　このように<b>VertexPositionColorTexture</b>の頂点の配列を作り、<b>PCTSpriteDrawコンポーネント</b>に渡します。<br />
+　更新処理は以下のようになります。
+<div class="box1">
+<pre>
+void AnimeSprite::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime * 5.0f;
+    if (m_TotalTime >= XM_2PI) {
+        m_TotalTime = 0;
+    }
+    auto PtrDraw = GetComponent&lt;PCTSpriteDraw>();
+    Col4 col(1.0, 1.0, 1.0, 1.0);
+    col.w = sin(m_TotalTime) * 0.5f + 0.5f;
+    PtrDraw->SetDiffuse(col);
+}
+</pre>
+</div>
+　このように<b>三角関数のサイン（sin）</b>を使って、Diffuseのアルファ値を変化させ、点滅させています
+<h4>連番アニメーション</h4>
+　右下のキャラクターのアニメは<b>連番アニメーション</b>です。<br />
+　テクスチャ全体では以下の様な画像です。
+<p>&nbsp;</p>
+<img src="img/1304d.png" width="60%"/>
+<p>図1304d</p>
+　このテクスチャを3×2に分割し、それを順番に表示すると<b>連番アニメーション</b>が出来上がります。<br />
+　まず<b>SerialAnimeSprite::OnCreate()関数</b>ですが、これは、<b>AnimeSprite::OnCreate()</b>とほぼ変わりません。<br />
+　ただ、一つ注意したいのは、頂点の変更をしたいので、<b>m_BackupVertices</b>という頂点の配列を作成してそれはとっておくということです。<br />
+　重要なのは<b>SerialAnimeSprite::OnUpdate()関数</b>です
+<div class="box1">
+<pre>
+void SerialAnimeSprite::OnUpdate() {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime >= m_AnimeTime) {
+        m_PieceIndex++;
+        if (m_PieceIndex >= m_PieceXCount * m_PieceYCount) {
+            m_PieceIndex = 0;
+        }
+        m_TotalTime = 0;
+    }
+    vector&lt;VertexPositionColorTexture> newVertices;
+    <span class="red">uint32_t pieceX = m_PieceIndex % m_PieceXCount;
+    uint32_t pieceY = m_PieceIndex / m_PieceXCount;</span>
+    float pieceWidth = 1.0f / (float)m_PieceXCount;
+    float pieceHeight = 1.0f / (float)m_PieceYCount;
+
+    float pieceStartX = (float)pieceX * pieceWidth;
+    float pieceEndX = pieceStartX + pieceWidth;
+
+    float pieceStartY = (float)pieceY * pieceHeight;
+    float pieceEndY = pieceStartY + pieceHeight;
+
+    for (size_t i = 0; i &lt; m_BackupVertices.size(); i++) {
+        Vec2 uv = m_BackupVertices[i].textureCoordinate;
+        switch (i) {
+        case 0:
+            uv.x = pieceStartX;
+            uv.y = pieceStartY;
+            break;
+        case 1:
+            uv.x = pieceEndX;
+            uv.y = pieceStartY;
+            break;
+        case 2:
+            uv.x = pieceStartX;
+            uv.y = pieceEndY;
+            break;
+        case 3:
+            uv.x = pieceEndX;
+            uv.y = pieceEndY;
+            break;
+        }
+        auto v = VertexPositionColorTexture(
+            m_BackupVertices[i].position,
+            m_BackupVertices[i].color,
+            uv
+        );
+        newVertices.push_back(v);
+    }
+    auto ptrDraw = GetComponent&lt;PCTSpriteDraw>();
+    ptrDraw->UpdateVertices(newVertices);
+}
+</pre>
+</div>
+　赤くなっているところに注目してください。<br />
+　これは、今、表示しようとしているピース（片）の番号から、そのテクスチャ上の位置を計算しているところです。<br />
+　連番アニメーションは通常、左上から右下にアニメーションします。すると各片の位置は
+<div class="box1">
+<pre>
+    <span class="red">uint32_t pieceX = m_PieceIndex % m_PieceXCount; //Xの位置
+    uint32_t pieceY = m_PieceIndex / m_PieceXCount; //Yの位置</span>
+</pre>
+</div>
+　と計算できます。C/C++の文法により、整数型（ここではunsignedですが）の<b>割り算は切り捨て</b>、<b>%演算子は剰余（余り）</b>を計算するので、このような形で<b>片の位置</b>出せます。<br />
+　また、ここから<b>UV値</b>の<b>開始位置、終了位置</b>を計算します。<br />
+　そこまで出せたら<b>newVertices</b>に<b>m_BackupVertices</b>の内容の中で、<b>UV値</b>だけを変化させます。<br />
+　これは先ほど出した<b>開始位置、終了位置</b>から算出します。<br />
+<br />
+　この<b>SerialAnimeSpriteクラス</b>は汎用的にできていて、テクスチャやXY方向の片の数、1辺の表示時間などを設定すれば、別のテクスチャでも<b>連番アニメーション</b>を作成できます。<br />
+　またこのアニメーションは<b>ゲームステージ</b>にも、設置してあります。
 <h4>エフェクト</h4>
 　このサンプルでは<b>エフェクト</b>を表現しています。<br />
 　プレイヤーを動かすとほかのサンプルでも出てくる<b>追いかけるオブジェクト</b>が追いかけてきますが、その際、上図のように炎のようなエフェクトを送出します。プレイヤーがジャンプするとエフェクトが出る頻度が上がります。<br />
@@ -157,10 +437,10 @@ void MultiSpark::OnUpdate() {
 <h4>オーディオ</h4>
 　このサンプルでは<b>オーディオ</b>が実装されています。<br />
 　<b>BaseCross64</b>ではバックミュージックを<b>ミュージック</b>、効果音を<b>サウンド</b>と称します。<br />
-　オーディオを実装するには<b>Scene::CreateResourses()</b>などで、リソース登録します。
+　オーディオを実装するには事前にリソース登録します。このサンプルでは、前述した、<b>WaitStage::LoadResourceFunc()スレッド関数</b>で登録しています。
 <div class="box1">
 <pre>
-    void Scene::CreateResourses() {
+    void WaitStage::LoadResourceFunc() {
         wstring dataDir;
         //サンプルのためアセットディレクトリを取得
         App::GetApp()->GetAssetsDirectory(dataDir);
@@ -179,39 +459,25 @@ void MultiSpark::OnUpdate() {
 </pre>
 </div>
 <h4>ミュージック</h4>
-　ミュージックの再生は、<b>Scene::OnCreate()関数</b>などで以下のように記述します。
+　ミュージックの再生は、<b>GameStage::PlayBGM()関数</b>などで以下のように記述します。
 <div class="box1">
 <pre>
-void Scene::OnCreate(){
-    try {
-        //リソース作成
-        CreateResourses();
-        //BGMの再生
-        auto ptrXA = App::GetApp()->GetXAudio2Manager();
-        m_BGM = ptrXA->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
-
-//中略
-
+    void GameStage::PlayBGM() {
+        auto XAPtr = App::GetApp()->GetXAudio2Manager();
+        m_BGM = XAPtr->Start(L"Nanika", XAUDIO2_LOOP_INFINITE, 0.1f);
     }
-    catch (...) {
-        throw;
-    }
-}
 </pre>
 </div>
 　この際、<b>XAUDIO2_LOOP_INFINITE</b>は繰り返し、<b>0.1f</b>はボリュームです。例えば2回繰り返し再生を終了する場合は<b>XAUDIO2_LOOP_INFINITE</b>の部分を<b>1</b>と設定します。ここには<b>繰り返す回数</b>を設定するので、1回目はカウントしないで指定します。<br />
-　ここでは<b>シーン</b>で再生してますが、ステージで再生させることもできます。例えばタイトルステージとゲームステージでミュージックが変わる場合も多いと思いますが、そんな時は、ステージの<b>OnCreate()関数</b>で再生開始します。<br />
+　ここでは<b>GameStage</b>で再生してますが、シーンで再生させることもできます。あるいは、例えばタイトルステージとゲームステージでミュージックが変わる場合も多いと思いますが、そんな時は、それぞれのステージの<b>OnCreate()関数</b>で再生開始します。<br />
 　オーディオ関連で気を付けたいのは終了処理です。再生中にゲームを中断した時など、エラーが出ることがあります。<br />
-　これを回避するために、再生を開始したオブジェクト(ここではシーン）の<b>OnDestroy()関数</b>を多重定義し以下のように記述します。
+　これを回避するために、再生を開始したオブジェクト(ここではGameStage）の<b>OnDestroy()関数</b>を多重定義し以下のように記述します。
 <div class="box1">
 <pre>
-void Scene::OnDestroy() {
-    //親クラスのOnDestroyを呼ぶ
-    SceneBase::OnDestroy();
-
-    auto ptrXA = App::GetApp()->GetXAudio2Manager();
-    ptrXA->Stop(m_BGM);
-
+void GameStage::OnDestroy() {
+    //BGMのストップ
+    auto XAPtr = App::GetApp()->GetXAudio2Manager();
+    XAPtr->Stop(m_BGM);
 }
 </pre>
 </div>

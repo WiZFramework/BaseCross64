@@ -8,7 +8,6 @@
 
 namespace basecross{
 
-
 	//--------------------------------------------------------------------------------------
 	///	プレイヤー
 	//--------------------------------------------------------------------------------------
@@ -42,15 +41,12 @@ namespace basecross{
 		//更新
 		virtual void OnUpdate() override;
 		virtual void OnUpdate2() override;
+
 		//Aボタン
 		void OnPushA();
 		void MovePlayer();
 
 	};
-
-
-
-
 
 
 }

@@ -7,7 +7,6 @@
 #include "Project.h"
 
 namespace basecross{
-
 	//--------------------------------------------------------------------------------------
 	//	class Player : public GameObject;
 	//	用途: プレイヤー
@@ -127,10 +126,11 @@ namespace basecross{
 		DrawStrings();
 	}
 
+
 	//Aボタン
 	void Player::OnPushA() {
 		auto grav = GetComponent<Gravity>();
-		grav->StartJump(Vec3(0,4.0f,0));
+		grav->StartJump(Vec3(0, 4.0f, 0));
 		//スパークの放出
 		auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark", false);
 		if (PtrSpark) {
@@ -145,6 +145,7 @@ namespace basecross{
 	void Player::DrawStrings() {
 
 		//文字列表示
+		auto message = L"Bで戻る\n";
 		auto fps = App::GetApp()->GetStepTimer().GetFramesPerSecond();
 		wstring fpsStr(L"FPS: ");
 		fpsStr += Util::UintToWStr(fps);
@@ -164,7 +165,7 @@ namespace basecross{
 		gravStr += L"X=" + Util::FloatToWStr(gravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-		wstring str = fpsStr + positionStr + gravStr;
+		wstring str = message + fpsStr + positionStr + gravStr;
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();
 		ptrString->SetText(str);
