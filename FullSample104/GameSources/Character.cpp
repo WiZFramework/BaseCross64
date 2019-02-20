@@ -156,7 +156,7 @@ namespace basecross{
 	//砲弾発射行動
 	void Box::FirShellBehavior(int div, float up) {
 		if (Util::DivProbability(div)) {
-			//200分の1の確率で発射
+			//div分の1の確率で発射
 			auto Ptr = GetComponent<Transform>();
 			Vec3 Pos = Ptr->GetPosition();
 			Pos.y += 0.5f;
@@ -191,6 +191,9 @@ namespace basecross{
 		Vec3 QtTmp = cross(normalize(HitVelocity), Vec3(0, 1, 0));
 		PsPtr->SetAngularVelocity(HitVelo);
 		m_HitAfterTime = 0;
+		//サウンドの再生
+		auto ptrXA = App::GetApp()->GetXAudio2Manager();
+		ptrXA->Start(L"cursor", 0, 0.5f);
 		//ヒットステートに移行
 		GetStateMachine()->ChangeState(BoxHitState::Instance());
 	}
@@ -307,6 +310,8 @@ namespace basecross{
 		ptrTrans->SetPosition(m_Emitter);
 		//コリジョンを付ける
 		auto ptrColl = AddComponent<CollisionSphere>();
+		//衝突判定はNoneにする
+		ptrColl->SetAfterCollision(AfterCollision::None);
 		ptrColl->SetSleepActive(true);
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
@@ -315,6 +320,7 @@ namespace basecross{
 		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
 
 		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
 		ptrDraw->SetFogEnabled(true);
 		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
 		ptrDraw->SetTextureResource(L"BROWN_TX");
@@ -331,19 +337,10 @@ namespace basecross{
 			auto Pos = ptrTrans->GetPosition();
 			Pos += m_Velocity * elapsedTime;
 			ptrTrans->SetPosition(Pos);
-			auto ptrColl = GetComponent<CollisionSphere>();
-			auto ptrDraw = GetComponent<BcPNTStaticDraw>();
-			if (ptrColl->IsSleep()) {
-				ptrDraw->SetDiffuse(Col4(0.0f, 0.0f, 1.0f, 1.0f));
-			}
-			else {
-				ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
-			}
 		}
 		else {
 			SetUpdateActive(false);
 			SetDrawActive(false);
-			return;
 		}
 	}
 
@@ -380,17 +377,6 @@ namespace basecross{
 
 	}
 
-	void FireSphere::OnCollisionExcute(const CollisionPair& Pair) {
-		auto shDest = Pair.m_Dest.lock();
-		if (shDest->IsFixed()) {
-			//減速
-			m_Velocity *= 0.95f;
-			if (m_Velocity.length() < 0.05f) {
-				m_Velocity = Vec3(0);
-			}
-		}
-	}
-
 	//--------------------------------------------------------------------------------------
 	///	物理計算する固定のボックス
 	//--------------------------------------------------------------------------------------
@@ -416,6 +402,9 @@ namespace basecross{
 		PtrTransform->SetQuaternion(m_Qt);
 		PtrTransform->SetPosition(m_Position);
 
+		//コリジョンを付ける
+		auto ptrColl = AddComponent<CollisionObb>();
+
 		//影をつける
 		auto ShadowPtr = AddComponent<Shadowmap>();
 		ShadowPtr->SetMeshResource(L"DEFAULT_CUBE");
@@ -426,7 +415,6 @@ namespace basecross{
 		PtrDraw->SetOwnShadowActive(true);
 		PtrDraw->SetTextureResource(L"SKY_TX");
 
-		//物理計算ボックス
 		//物理計算ボックス
 		PsBoxParam param(PtrTransform->GetWorldMatrix(), 0.0f, true, PsMotionType::MotionTypeFixed);
 		auto PsPtr = AddComponent<RigidbodyBox>(param);

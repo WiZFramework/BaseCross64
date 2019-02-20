@@ -139,7 +139,6 @@ namespace basecross{
 		virtual void OnCreate() override;
 		virtual void OnUpdate() override;
 		virtual void OnCollisionEnter(const CollisionPair& Pair) override;
-		virtual void OnCollisionExcute(const CollisionPair& Pair) override;
 		//•¨‘Ì‚ðƒŠƒZƒbƒg‚·‚é
 		void Reset(const Vec3& Emitter, const Vec3& Velocity);
 	};

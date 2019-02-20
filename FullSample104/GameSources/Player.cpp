@@ -170,10 +170,6 @@ namespace basecross{
 		auto Velo = PtrPs->GetLinearVelocity();
 		Velo += Vec3(0, 4.0f, 0.0);
 		PtrPs->SetLinearVelocity(Velo);
-		//サウンドの再生
-		auto ptrXA = App::GetApp()->GetXAudio2Manager();
-		ptrXA->Start(L"cursor", 0, 0.5f);
-
 	}
 
 	//Xボタン
@@ -212,6 +208,9 @@ namespace basecross{
 		Vec3 HitVelo = HitVelocity;
 		HitVelo.y = 5.0f;
 		PsPtr->SetLinearVelocity(HitVelo);
+		//サウンドの再生
+		auto ptrXA = App::GetApp()->GetXAudio2Manager();
+		ptrXA->Start(L"cursor", 0, 0.5f);
 	}
 
 	//文字列の表示

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１１．チュートリアル</h2>
+<h3>１１０４．物理処理、オーディオ、レイキャスト</h3>
+　このサンプルは<b>FullSample104</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+　ただし、<b>Dx12版</b>は一部機能が制限されます。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1104a.png" width="80%"/>
+<p>図1104a</p>
+<p>&nbsp;</p>
+<h4>物理処理と衝突判定</h4>
+　このサンプルでは<b>物理処理（Rigidbodyコンポーネント）</b>と<b>衝突判定（Collision）</b>を同居させることで、衝突した瞬間などの情報を取り出す手法を実装しています。<br />
+　起動したらプレイヤーを動かし（コントローラかキーボードのWASDで動きます）、敵キャラ（行ったり来たりするボックス）に近づいてみましょう。<br />
+　ある一定の距離以上近づくと、敵は砲弾を打ってきます。プレイヤーもコントローラのXボタンかキーボードのXで砲弾を打てます。　砲弾はオブジェクトに当たると消えます。また、敵やプレイヤーに当たると、それぞれが飛ばされます。<br />
+<h4>砲弾クラス</h4>
+　砲弾クラスは<b>Character.h/cpp</b>に<b>FireSphereクラス</b>として定義されています。<br />
+　以下は<b>FireSphere::OnCreate()</b>です。
+<div class="box1">
+<pre>
+void FireSphere::OnCreate() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+
+    ptrTrans->SetScale(Vec3(m_Scale));
+    ptrTrans->SetQuaternion(Quat());
+    ptrTrans->SetPosition(m_Emitter);
+    <span class="red">//コリジョンを付ける
+    auto ptrColl = AddComponent&lt;CollisionSphere>();
+    //衝突判定はNoneにする
+    ptrColl->SetAfterCollision(AfterCollision::None);
+    ptrColl->SetSleepActive(true);</span>
+    //重力をつける
+    auto ptrGra = AddComponent&lt;Gravity>();
+    //影をつける
+    auto ptrShadow = AddComponent&lt;Shadowmap>();
+    ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
+
+    auto ptrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
+    ptrDraw->SetFogEnabled(true);
+    ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    ptrDraw->SetTextureResource(L"BROWN_TX");
+
+    auto group = GetStage()->GetSharedObjectGroup(L"FireSphereGroup");
+    group->IntoGroup(GetThis&lt;GameObject>());
+
+}
+</pre>
+</div>
+　赤くなっているところのように、<b>CollisionSphere</b>を実装しますが、
+<div class="box1">
+<pre>
+ptrColl->SetAfterCollision(AfterCollision::None);
+</pre>
+</div>
+　により、<b>衝突後の処理</b>はしないようになっています。そうしておいて<b>FireSphere::OnUpdate()</b>では、
+<div class="box1">
+<pre>
+void FireSphere::OnUpdate() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    if (ptrTrans->GetPosition().y > m_ActiveMaxY) {
+        float elapsedTime = App::GetApp()->GetElapsedTime();
+        auto Pos = ptrTrans->GetPosition();
+        Pos += m_Velocity * elapsedTime;
+        ptrTrans->SetPosition(Pos);
+    }
+    else {
+        SetUpdateActive(false);
+        SetDrawActive(false);
+    }
+}
+</pre>
+</div>
+　のような記述になっています。<br />
+　ここで、自分のY位置と比較している<b>m_ActiveMaxY</b>は、コンストラクタに設定されています。<br />
+　<b>-5.0f</b>が設定されていて、Y位置がこれより上の場合は<b>アクティブ</b>そうでなければ<b>非アクティブ</b>となり、
+<div class="box1">
+<pre>
+        SetUpdateActive(false);
+        SetDrawActive(false);
+</pre>
+</div>
+　となります。こうすると更新も描画もしません。<br />
+　この砲弾と、プレイヤーや敵との衝突は<b>FireSphere::OnCollisionEnter()関数</b>に記載されています。<br />
+　砲弾ですから、何かに当たったら<b>エフェクトを出して消える</b>という処理になっています。<br />
+　プレイヤーもしくは敵に衝突すれば<b>サウンド</b>が鳴ります。<br />
+<div class="box1">
+<pre>
+void FireSphere::OnCollisionEnter(const CollisionPair& Pair) {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark", false);
+    if (PtrSpark) {
+        PtrSpark->InsertSpark(GetComponent&lt;Transform>()->GetPosition());
+    }
+
+    <span class="red">auto ptrBox = dynamic_pointer_cast&lt;Box>(Pair.m_Dest.lock()->GetGameObject());
+    auto ptrPlayer = dynamic_pointer_cast&lt;Player>(Pair.m_Dest.lock()->GetGameObject());
+    if (ptrBox) {
+        ptrBox->FirShellHitBehavior(m_Velocity);
+    }
+    if (ptrPlayer) {
+        ptrPlayer->FirShellHitBehavior(m_Velocity);
+    }</span>
+    auto pos = ptrTrans->GetPosition();
+    pos.y = m_ActiveMaxY;
+    ptrTrans->SetPosition(pos);
+    SetUpdateActive(false);
+    SetDrawActive(false);
+
+}
+</pre>
+</div>
+　赤くなっているところは相手を特定している部分です。もしプレイヤーか的であればそれぞれの<b>FirShellHitBehavior()関数</b>を呼び出します。それぞれこの関数内で、<b>砲弾にあたって吹き飛ぶ</b>という処理を行っています。
+<h4>砲弾の発射</h4>
+　さて、ではこのような砲弾クラスをどのタイミングで発射するのでしょうか？<br />
+　プレイヤーからの発射は<b>XボタンかXキー</b>で発射します。以下はその発射する部分です。
+<div class="box1">
+<pre>
+//Xボタン
+void Player::OnPushX() {
+    auto ptrTrans = GetComponent&lt;Transform>();
+    Vec3 pos = ptrTrans->GetPosition();
+    pos.y += 0.3f;
+    Quat qt = ptrTrans->GetQuaternion();
+    Vec3 rot = qt.toRotVec();
+    float rotY = rot.y;
+    Vec3 velo(sin(rotY), 0.1f, cos(rotY));
+    velo.normalize();
+    velo *= 15.0f;
+    auto group = GetStage()->GetSharedObjectGroup(L"FireSphereGroup");
+    auto& vec = group->GetGroupVector();
+    for (auto& v : vec) {
+        auto shObj = v.lock();
+        if (shObj) {
+            if (!shObj->IsUpdateActive()) {
+                auto shFire = dynamic_pointer_cast&lt;FireSphere>(shObj);
+                if (shFire) {
+                    shFire->Reset(pos, velo);
+                    return;
+                }
+            }
+        }
+    }
+    //空がなかったので新たに作成
+    GetStage()->AddGameObject&lt;FireSphere>(pos, velo);
+}
+</pre>
+</div>
+　ここでは<b>L"FireSphereGroup"</b>から現在配置されている<b>FireSphere</b>の中から<b>非アクティブ</b>のものを探し、もしあればそのオブジェクトの<b>Reset()関数</b>を呼び出します。この関数は、<b>非アクティブ</b>の状態から<b>アクティブ</b>の状態にして、発射位置と初速度を設定します。<br />
+　もし空きがなければ
+<div class="box1">
+<pre>
+    //空がなかったので新たに作成
+    GetStage()->AddGameObject&lt;FireSphere>(pos, velo);
+</pre>
+</div>
+　と新しくオブジェクトを構築します。<br />
+　この処理で、<b>使いまわし</b>ができるようになります。<br />
+<br />
+　敵キャラからの発射は<b>Box::FirShellBehavior()関数</b>で行います。この関数は、発射する確率を指定できるようになっていて、プレイヤーがより近いときにたくさん発射します。<br />
+　この辺りは<b>Boxクラス</b>のステートで行っていますので確認ください。
+<h4>物理処理との融合</h4>
+　さて、砲弾やプレイヤー、敵の動きは以上です。<br />
+　そのほかにこのステージには<b>物理的な動きをするオブジェクト</b>である、<b>ActivePsSphere、ActivePsCapsule、ActivePsBox</b>があります。<br />
+　それぞれ<b>ActivePsObject</b>の派生クラスとして実装されます。<br />
+　これらは<b>Rigidbodyコンポーネント</b>を保持します。また<b>Collisionコンポーネント</b>も保持します。こちらは<b>判定だけ</b>を行うように
+<div class="box1">
+<pre>
+    //衝突判定をつける
+    auto PtrCol = AddComponent&lt;CollisionObb>();
+    //衝突判定はNoneにする
+    PtrCol->SetAfterCollision(AfterCollision::None);
+</pre>
+</div>
+　といった処理になっています。<br />
+　こうすることにより、砲弾が当たった時に砲弾が爆発するエフェクトを出せるようになります。<br />
+<h4>レイキャスト</h4>
+　このサンプルにはこのほかに<b>マウスでオブジェクトをつまめる</b>ようになってます。<br />
+　物理オブジェクトである<b>ActivePsSphere、ActivePsCapsule、ActivePsBox</b>の上でマウスをクリックすると<b>選択状態</b>になり、マウスのドラッグドロップで移動できます。<br />
+　この処理は<b>GameStage::OnUpdate()</b>や<b>ActivePsObject::OnUpdate()</b>などに記述されいます。コードを追いかけて行って確認してみましょう。
+<h4>オーディオ</h4>
+　このサンプルには<b>ミュージック</b>および<b>サウンド</b>が実装されています。処理は<b>フルサンプル304</b>とほぼ同じです。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="11_03.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
