@@ -213,16 +213,15 @@ namespace basecross {
 
 	//更新
 	void TitleStage::OnUpdate() {
-		//コントローラの取得
-		auto CntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (CntlVec[0].bConnected) {
-			//Bボタン
-			if (CntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
-				PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
-			}
-		}
-
+		//コントローラチェックして入力があればコマンド呼び出し
+		m_InputHandler.PushHandle(GetThis<TitleStage>());
 	}
+
+	//Bボタン
+	void TitleStage::OnPushB(){
+		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToGameStage");
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	ウエイトステージクラス

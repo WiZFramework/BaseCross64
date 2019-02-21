@@ -44,6 +44,10 @@ namespace basecross{
 
 		//Aボタン
 		void OnPushA();
+		//Bボタン
+		void OnPushB() {
+			//何もしない
+		}
 		void MovePlayer();
 
 	};

@@ -51,6 +51,8 @@ namespace basecross {
 		void CreateViewLight();
 		//スプライトの作成
 		void CreateTitleSprite();
+		//入力ハンドラー
+		InputHandler<TitleStage> m_InputHandler;
 	public:
 		//構築と破棄
 		TitleStage() :Stage() {}
@@ -59,7 +61,12 @@ namespace basecross {
 		virtual void OnCreate()override;
 		//更新
 		virtual void OnUpdate()override;
-
+		//Aボタン
+		void OnPushA() {
+			//何もしない
+		}
+		//Bボタン
+		void OnPushB();
 	};
 
 	//--------------------------------------------------------------------------------------
