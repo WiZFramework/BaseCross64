@@ -12,18 +12,20 @@ namespace basecross {
 	//	ゲームステージクラス
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
+		//CSVファイルそのA
+		CsvFile m_GameStageCsvA;
+		//CSVファイルそのB
+		CsvFile m_GameStageCsvB;
 		//ビューの作成
 		void CreateViewLight();
 		//ボックスの作成
 		void CreateFixedBox();
-		//スパークの作成
-		void CreateSpark();
-		//敵の作成
-		void CreateEnemy();
-		//キャラクターの作成
-		void CreateChara();
+		//CSVのAオブジェクトの作成
+		void CreateCsvAObjects();
 		//プレイヤーの作成
 		void CreatePlayer();
+		//敵の作成
+		void CreateEnemy();
 	public:
 		//構築と破棄
 		GameStage() :Stage() {}

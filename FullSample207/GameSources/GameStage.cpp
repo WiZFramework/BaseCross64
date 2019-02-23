@@ -92,11 +92,6 @@ namespace basecross {
 
 	void GameStage::OnCreate() {
 		try {
-			wstring DataDir;
-			App::GetApp()->GetDataDirectory(DataDir);
-			////CSVファイルそのBの読み込み
-			m_GameStageCsvB.SetFileName(DataDir + L"GameStageB.csv");
-			m_GameStageCsvB.ReadCsv();
 			//ビューとライトの作成
 			CreateViewLight();
 			//ボックスの作成

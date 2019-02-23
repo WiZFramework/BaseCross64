@@ -1,0 +1,6 @@
+Name,Scale,,,Rot,,,Pos,,
+TilingFixedBox,50,1,50,0,0,0,0,-0.5,0,SKY_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5,WALL_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0,WALL_TX
