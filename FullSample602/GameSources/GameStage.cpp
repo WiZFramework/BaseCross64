@@ -76,7 +76,7 @@ namespace basecross {
 	}
 
 
-	//CSVのAオブジェクトの作成
+	//XMLのオブジェクトの作成
 	void GameStage::CreateXmlObjects() {
 		//オブジェクトのグループを作成する
 		auto group = CreateSharedObjectGroup(L"SeekGroup");

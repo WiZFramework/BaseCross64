@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１６．データの読み込み</h2>
+<h3>１６０３．オブジェクトビルダーを使ったデータの読み込み（CSV版）</h3>
+<br />
+　このサンプルは<b>FullSample603</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは現在Dx12版はありません。<br />
+<br />
+　実行結果は１６０１と変わりませんので、そちらを確認ください。<br />
+<h4>リフレクションについて</h4>
+　一般的なプログラミング言語の機能に<b>リフレクション</b>というのがあります。<br />
+　例えば<b>インスタンス構築</b>で
+<div class="box1">
+<pre>
+    class TestClass{
+    public:
+        TestClass(){}
+        //...
+    };
+
+    int main(){
+        //以下のようなコードは書けません
+        auto Ptr = new GetType("TestClass");
+        //...
+        return 0;
+    }
+</pre>
+</div>
+　のように記述できたら便利だとは思いませんか？<br />
+　どういうときに利用できるかというと、<b>文字列</b>を使って<b>クラスの構築</b>ができることです。こういう機能を<b>リフレクション</b>といいます。<br />
+　文字列でクラスのインスタンスを構築できれば、例えば<b>CSVやXML</b>にクラス名を記述しておくことで、そのクラスを構築することが可能になります。<br />
+　しかし残念ながらネイティブなC++にはこういう機能はありません（C++/CLIではできます）。ですので、ネイティブC++の場合は<b>リフレクション</b>を自作しなければいけません。<br />
+　<b>BaseCross</b>には<b>擬似的なリフレクション</b>を使った<b>ゲームオブジェクトビルダー</b>が実装されてます。この機能を使うと、CSVやXMLにクラスの識別名を記述することで、そのクラスのコンストラクタに、構築に必要なパラメータを渡すことが可能になります。<br />　<b>FullSample603</b>と<b>FullSample604</b>は<b>ゲームオブジェクトビルダー</b>を利用したサンプルです。<br />
+　今項で紹介する<b>FullSample603</b>は<b>リフレクションを使って、CSVからゲームオブジェクトを構築する</b>サンプルとなります。<br />
+　ビルドして実行すると前述したように<b>FullSample602</b>と同じステージになります。しかし<b>GameStage.cpp</b>を見ていただくと、構築用のコードがほとんど記述されてないのがわかると思います。構築用のデータは、ビューやプレイヤーなど一部のクラスを除いて<b>CSVファイル</b>から読み込んでいます。<br />
+<br />
+<h4>CSVの準備</h4>
+　<b>mediaディレクトリ</b>の中には<b>GameStage1.csv</b>があります。以下がその内容です。
+<div class="box1">
+<pre>
+TilingFixedBox,50,1,50,0,0,0,0,-0.5,0,1,1,SKY_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0,1,1,WALL_TX
+SeekObject,-10,0.25,0,,,,,,,,
+SeekObject,10,0.25,0,,,,,,,,
+SeekObject,0,0.25,-10,,,,,,,,
+SeekObject,0,0.25,10,,,,,,,,
+MoveBox,-15,0.5,0,,,,,,,,
+MoveBox,15,0.5,0,,,,,,,,
+MoveBox,0,0.5,-15,,,,,,,,
+MoveBox,0,0.5,15,,,,,,,,
+</pre>
+</div>
+　それぞれ<b>0列目（一番左）</b>にクラス名が記述されているのがわかります。<b>オブジェクトビルダー</b>は、このクラス名に対応するクラスを作成し、そのコンストラクタに該当の行を渡します。<br />
+　では、実装を見てみましょう。以下は<b>GameStage::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void GameStage::OnCreate() {
+    try {
+        //ビューとライトの作成
+        CreateViewLight();
+        //オブジェクトのグループを作成する
+        auto Group = CreateSharedObjectGroup(L"SeekGroup");
+        //ゲームオブジェクトビルダー
+        <span class="red">GameObjecttCSVBuilder Builder;
+        //ゲームオブジェクトの登録
+        Builder.Register&lt;TilingFixedBox>(L"TilingFixedBox");
+        Builder.Register&lt;SeekObject>(L"SeekObject");
+        Builder.Register&lt;MoveBox>(L"MoveBox");</span>
+        wstring DataDir;
+        App::GetApp()->GetDataDirectory(DataDir);
+        //CSVからゲームオブジェクトの構築
+        wstring CSVStr = DataDir + L"GameStage";
+        auto shScene = App::GetApp()->GetScene&lt;Scene>();
+        CSVStr += Util::IntToWStr(shScene->GetStageNum());
+        CSVStr += L".csv";
+        <span class="red">Builder.Build(GetThis&lt;Stage>(), CSVStr);</span>
+        //プレーヤーの作成
+        CreatePlayer();
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　<b>オブジェクトビルダー</b>にかかわる操作は赤くなっているところです。<br />
+　まず、
+<div class="box1">
+<pre>
+        <span class="red">GameObjecttCSVBuilder Builder;</span>
+</pre>
+</div>
+　と<b>GameObjecttCSVBuilder</b>のインスタンスを定義します。<br />
+　これは<b>CSV読み込み用</b>のビルダーです。次項には<b>XML読み込み用のビルダー</b>を紹介します。<br />
+　ビルダーの操作としては、まず、<b>クラス名</b>と<b>クラス名の文字列</b>の対を登録します。
+<div class="box1">
+<pre>
+        <span class="red">Builder.Register&lt;TilingFixedBox>(L"TilingFixedBox");</span>
+</pre>
+</div>
+　のような感じです。これは<b>TilingFixedBox型</b>を<b>L"TilingFixedBox"文字列</b>に対応させています。文字列はCSVに記述される文字列です。通常これは型名と同じ名前にします。<br />
+　冒頭に述べた<b>リフレクション</b>を使っているのが、<b>GameObjecttCSVBuilderとその関連クラス</b>です。興味がある人は読んでみましょう。<br />
+　クラス名の登録が終わったら、CSVファイル名を指定して
+<div class="box1">
+<pre>
+        <span class="red">Builder.Build(GetThis&lt;Stage>(), CSVStr);</span>
+</pre>
+</div>
+　と呼び出します。すると、各ゲームオブジェクトがCSVの内容に従って構築されます。<br />
+　ここで<b>CSVファイル名</b>を作成するのに<b>shScene->GetStageNum()</b>とシーンに用意したステージナンバーを使っています。この変数は<b>シーンクラス</b>にある変数です。<b>複数のゲームステージ</b>を作る場合の参考になると思います。（ここではCSVファイル名に数字を付けて使ってます。<br />
+　さて<b>FullSample601</b>や<b>FullSample602</b>にあった<b>CSVから個別データの取得</b>はどこに行ってしまったのでしょうか？<br />
+　実は、各ゲームオブジェクトクラスの<b>コンストラクタ</b>に記述します。<br />
+<br />
+　<b>GameObjecttCSVBuilderクラス</b>は、CSVを読み込んで、その各行の先頭のカラムにある文字列から、その文字列に対応するクラスを構築します。その時、そのCSVを1行だけコンストラクタに渡します。<br />
+　ですから、各ゲームオブジェクトは、その<b>1行の文字列を受け取るコンストラクタ</b>を記述する必要があります。以下は<b>TilingFixedBox</b>のコンストラクタです。<b>Character.cpp</b>にあります。
+<div class="box1">
+<pre>
+TilingFixedBox::TilingFixedBox(const shared_ptr&lt;Stage>& StagePtr, <span class="red">const wstring& Line</span>) :
+    GameObject(StagePtr)
+{
+    try {
+        //トークン（カラム）の配列
+        vector&lt;wstring> Tokens;
+        Util::WStrToTokenVector(Tokens, Line, L',');
+        //各トークン（カラム）をスケール、回転、位置に読み込む
+        m_Scale = Vec3(
+            (float)_wtof(Tokens[1].c_str()),
+            (float)_wtof(Tokens[2].c_str()),
+            (float)_wtof(Tokens[3].c_str())
+        );
+        //回転は<b>XM_PIDIV2</b>の文字列になっている場合がある
+        m_Rotation.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
+        m_Rotation.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
+        m_Rotation.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
+        m_Position = Vec3(
+            (float)_wtof(Tokens[7].c_str()),
+            (float)_wtof(Tokens[8].c_str()),
+            (float)_wtof(Tokens[9].c_str())
+        );
+        m_UPic = (float)_wtof(Tokens[10].c_str());
+        m_VPic = (float)_wtof(Tokens[11].c_str());
+        m_Texname = Tokens[12];
+    }
+    catch (...) {
+        throw;
+    }
+}
+</pre>
+</div>
+　赤くなっている<b>const wstring& Line</b>が<b>GameObjecttCSVBuilder</b>から渡される<b>1行分のCSV</b>です。ですから、コンストラクタではその文字列をトークンに分割して、必要なトークンをメンバ変数（m_Scaleやm_Position）に代入してます。<br />
+　この方式の利点は、<b>クラスごとの引数</b>を個別に変えられることです。渡される引数は<b>const wstring& Line</b>ですが、その内容は自由に設定できます。例えば<b>TilingFixedBoxクラス</b>は<b>スケーリング、回転、位置、テクスチャ</b>などの情報が入ってますが、<b>SeekObjectクラス</b>などは<b>位置（つまりPosition）</b>しか入ってません。<br />
+　つまり<b>行ごとにCSVの内容を変えて記述する</b>ことが可能です。<b>TilingPlateクラス</b>に渡されるCSV行は、左から2番目のカラム（1番目はクラス名が入る）は<b>Scale</b>ですが、<b>Enemy1クラス</b>に渡されるのは<b>Position</b>です。<br />
+　このように、各ゲームオブジェクトクラスのコンストラクタでCSV読み込みが完結するので、クラス単位で独立したコーディングが可能になります。
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="16_02.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="16_04.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
