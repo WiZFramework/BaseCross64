@@ -20,14 +20,7 @@ namespace basecross{
 		wstring m_Texname;
 	public:
 		//\’z‚Æ”jŠü
-		TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-			const Vec3& Scale,
-			const Vec3& Rotation,
-			const Vec3& Position,
-			float UPic,
-			float VPic,
-			const wstring& Texname
-		);
+		TilingFixedBox(const shared_ptr<Stage>& StagePtr, IXMLDOMNodePtr pNode);
 		virtual ~TilingFixedBox();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -49,7 +42,7 @@ namespace basecross{
 		Vec3 m_Velocity;
 	public:
 		//\’z‚Æ”jŠü
-		SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos);
+		SeekObject(const shared_ptr<Stage>& StagePtr, IXMLDOMNodePtr pNode);
 		virtual ~SeekObject();
 		//‰Šú‰»
 		virtual void OnCreate() override;
@@ -118,11 +111,7 @@ namespace basecross{
 		Vec3 m_Position;
 	public:
 		//\’z‚Æ”jŠü
-		MoveBox(const shared_ptr<Stage>& StagePtr,
-			const Vec3& Scale,
-			const Vec3& Rotation,
-			const Vec3& Position
-		);
+		MoveBox(const shared_ptr<Stage>& StagePtr, IXMLDOMNodePtr pNode);
 		virtual ~MoveBox();
 		//‰Šú‰»
 		virtual void OnCreate() override;

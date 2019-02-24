@@ -208,8 +208,7 @@ namespace basecross{
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),
-		m_Position(Position),
-		m_Velocity(0)
+		m_Position(Position)
 	{
 	}
 	MoveBox::~MoveBox() {}

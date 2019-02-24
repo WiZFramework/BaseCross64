@@ -82,7 +82,7 @@ namespace basecross {
 					AddGameObject<MoveBox>(
 						Vec3(1.0f, 1.0f, 1.0f),
 						Vec3(0.0f, 0.0f, 0.0f),
-						Vec3(XPos, 1.0f, ZPos));
+						Vec3(XPos, 0.5f, ZPos));
 				}
 			}
 		}

@@ -1,0 +1,13 @@
+TilingFixedBox,50,1,50,0,0,0,0,-0.5,0,1,1,SKY_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,19.5,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,0,0,0,0.5,-19.5,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,19.5,0.5,0,1,1,WALL_TX
+TilingFixedBox,40,1,1,0,XM_PIDIV2,0,-19.5,0.5,0,1,1,WALL_TX
+SeekObject,-10,0.25,0,,,,,,,,
+SeekObject,10,0.25,0,,,,,,,,
+SeekObject,0,0.25,-10,,,,,,,,
+SeekObject,0,0.25,10,,,,,,,,
+MoveBox,-15,0.5,0,,,,,,,,
+MoveBox,15,0.5,0,,,,,,,,
+MoveBox,0,0.5,-15,,,,,,,,
+MoveBox,0,0.5,15,,,,,,,,

@@ -11,22 +11,37 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	//　タイリングする固定のボックス
 	//--------------------------------------------------------------------------------------
-	TilingFixedBox::TilingFixedBox(const shared_ptr<Stage>& StagePtr,
-		const Vec3& Scale,
-		const Vec3& Rotation,
-		const Vec3& Position,
-		float UPic,
-		float VPic,
-		const wstring& Texname
-	) :
-		GameObject(StagePtr),
-		m_Scale(Scale),
-		m_Rotation(Rotation),
-		m_Position(Position),
-		m_UPic(UPic),
-		m_VPic(VPic),
-		m_Texname(Texname)
-	{}
+	TilingFixedBox::TilingFixedBox(const shared_ptr<Stage>& StagePtr, const wstring& Line) :
+		GameObject(StagePtr)
+	{
+		try {
+			//トークン（カラム）の配列
+			vector<wstring> Tokens;
+			Util::WStrToTokenVector(Tokens, Line, L',');
+			//各トークン（カラム）をスケール、回転、位置に読み込む
+			m_Scale = Vec3(
+				(float)_wtof(Tokens[1].c_str()),
+				(float)_wtof(Tokens[2].c_str()),
+				(float)_wtof(Tokens[3].c_str())
+			);
+			//回転は「XM_PIDIV2」の文字列になっている場合がある
+			m_Rotation.x = (Tokens[4] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[4].c_str());
+			m_Rotation.y = (Tokens[5] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[5].c_str());
+			m_Rotation.z = (Tokens[6] == L"XM_PIDIV2") ? XM_PIDIV2 : (float)_wtof(Tokens[6].c_str());
+			m_Position = Vec3(
+				(float)_wtof(Tokens[7].c_str()),
+				(float)_wtof(Tokens[8].c_str()),
+				(float)_wtof(Tokens[9].c_str())
+			);
+			m_UPic = (float)_wtof(Tokens[10].c_str());
+			m_VPic = (float)_wtof(Tokens[11].c_str());
+			m_Texname = Tokens[12];
+		}
+		catch (...) {
+			throw;
+		}
+	}
+
 	TilingFixedBox::~TilingFixedBox() {}
 	//初期化
 	void TilingFixedBox::OnCreate() {
@@ -71,14 +86,27 @@ namespace basecross{
 	//	追いかける配置オブジェクト
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
+	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const wstring& Line) :
 		GameObject(StagePtr),
-		m_StartPos(StartPos),
 		m_StateChangeSize(5.0f),
 		m_Force(0),
 		m_Velocity(0)
 	{
+		try {
+			//トークン（カラム）の配列
+			vector<wstring> Tokens;
+			Util::WStrToTokenVector(Tokens, Line, L',');
+			m_StartPos = Vec3(
+				(float)_wtof(Tokens[1].c_str()),
+				(float)_wtof(Tokens[2].c_str()),
+				(float)_wtof(Tokens[3].c_str())
+			);
+		}
+		catch (...) {
+			throw;
+		}
 	}
+
 	SeekObject::~SeekObject() {}
 
 	//初期化
@@ -200,17 +228,27 @@ namespace basecross{
 	//	class MoveBox : public GameObject;
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr,
-		const Vec3& Scale,
-		const Vec3& Rotation,
-		const Vec3& Position
-	) :
+	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr, const wstring& Line) :
 		GameObject(StagePtr),
-		m_Scale(Scale),
-		m_Rotation(Rotation),
-		m_Position(Position)
+		m_Scale(1.0),
+		m_Rotation(0),
+		m_Position(0)
 	{
+		try {
+			//トークン（カラム）の配列
+			vector<wstring> Tokens;
+			Util::WStrToTokenVector(Tokens, Line, L',');
+			m_Position = Vec3(
+				(float)_wtof(Tokens[1].c_str()),
+				(float)_wtof(Tokens[2].c_str()),
+				(float)_wtof(Tokens[3].c_str())
+			);
+		}
+		catch (...) {
+			throw;
+		}
 	}
+
 	MoveBox::~MoveBox() {}
 
 	//初期化
