@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１７．BaseCrossTool</h2>
+<h3>１７０１．BaseCrossToolの使い方</h3>
+<h4>BaseCrossToolってなんだ？</h4>
+　BaseCross64のレポジトリには<b>BaseCrossTool</b>というディレクトリがあり、その中にソリューションが入っています。<br />
+　このソリューションはほかのサンプルと違って、ユーザー（つまり皆さん）が、カスタマイズを前提とした、いわゆる<b>ひな型</b>となっています。<br />
+　ではどういう<b>ひな型</b>かというと<b>ツールを作るひな型</b>です。
+<h4>ツールとは</h4>
+　たとえばBaseCross64を使ってゲームを作成する場合、ひたすらコードを書き続けなければなりません。<br />
+　しかし、例えば<b>ステージエディタ</b>で、GUI敵にオブジェクトを配置して、<b>XMLデータ</b>などを保存出来たら便利だとは思いませんか？<br />
+　多くのフレームワークはこういう<b>GUIによるエディタ</b>を兼ね備えています。<br />
+　しかし<b>BaseCross64</b>は今のところありません。<br />
+　また<b>Fbxファイル</b>を<b>独自のデータ形式</b>のファイルに変換するツールがあると便利です。<b>BaseCross</b>は前のバージョンではありましたが、今のバージョン<b>BaseCross64</b>では、まだありません。<br />
+　また、<b>エフェクト</b>を作成するツールがあると便利だとは思いませんか？<br />
+　このように、ゲーム制作には<b>あると便利なツール</b>がたくさんあります。<b>ツール</b>によって、開発効率は大きく上がり、また修正も楽になります。<br />
+<h4>ツールが必要とする機能</h4>
+　ここでは<b>BaseCross64</b>で制作するのに便利なツール、を考えてみます。<br />
+　すると、まず必要なのは<b>ステージを再現できる機能</b>です。ほかのサンプルで利用している<b>ゲームオブジェクト</b>や<b>コンポーネント</b>が実装しやすくなければなりません。<br />
+　また、<b>BaseCross64</b>は<b>VisualC++</b>で作成します。つまり<b>C/C++</b>でネイティブで記述できる機能が必要です。<br />
+　そのように考えた場合、現時点では<b>MFC（MicrosoftFundationClass）ライブラリ</b>を使ったC++ネイティブなアプリケーションを作成し、そこから<b>BaseCross64</b>に介入できる環境、がベターでしょう。<br />
+　しかしそのような環境を<b>1から作成する</b>のは結構厄介です。ですので、最低限の機能を備えたひな型があると便利です。<br />
+　それが<b>BaseCrossTool</b>です。
+<h4>BaseCrossToolを使ってみよう</h4>
+　それでは早速<b>BaseCrossTool</b>を使ってみましょう。<br />
+　<b>BaseCrossTool</b>はカスタマイズされるのが前提のソリューションですから、<b>BaseCross64</b>から分離させて、新しい環境を作り、そこで作業を開始します。<br />
+　そうしないと、今後<b>GiHubのレポジトリ</b>から<b>プル</b>した場合、競合が発生してしまいます。
+<h4>必要なディレクトリを取り出す</h4>
+　まず作業用のディレクトリをデスクトップなどに作成して、その中に<b>BaseCross64</b>から、<b>Libs、Assets、BaseCrossTool</b>の3つのディレクトリをコピペします。<br />
+　以下の様な構成です。
+<div class="box1">
+<pre>
+[作業用のディレクトリ]-|-[Assets]
+ 　　　　　　　　　　 -|-[Libs]
+ 　　　　　　　　　　 -|-[BaseCrossTool]
+</pre>
+</div>
+　こんな感じです。コピペしたら<b>BaseCrossTool</b>の中の<b>BaseCrossTool.sln</b>を<b>VS2017</b>で開いて、<b>リビルド</b>してみましょう。<br />
+　ビルドが成功したら実行してみます。以下の画面が出れば成功です。
+<br />
+<p>&nbsp;</p>
+<img src="img/1701a.png" width="80%"/>
+<p>図1701a</p>
+<p>&nbsp;</p>
+　この画面は単なる<b>プレート</b>が配置されている画面です。しかし、他のサンプルとは違って<b>ウインドウ枠</b>があり<b>メニュー</b>もあります。<br />
+　つまり<b>普通のデスクトップアプリケーション</b>に<b>ゲーム画面</b>が表示される形となっています。
+<h4>オブジェクトを配置する</h4>
+　では、試しにこの<b>デスクトップアプリ</b>の世界から<b>ゲームオブジェクト</b>を配置してみましょう。<br/>
+　一般的なアプリケーションでは<b>メニュー</b>でいろんな機能を実装することが奨励されています。もっと複雑なアプリケーションではそのほかに<b>ツールボックス</b>とか<b>特別な操作用のウインドウ</b>が別に表示されていたりします。<br />
+　ここでは、単純な例として
+<div class="box1">
+<pre>
+１、ダイアログボックスでオブジェクトの大きさと場所を指定
+２、OKボタンで画面上に球体を配置する
+</pre>
+</div>
+　という操作を実装してみます。
+<h4>ダイアログボックスを作成する</h4>
+　まず<b>大きさと位置を指定する</b>ダイアログを作成します。<br />
+　<b>リソースビュー</b>を開いてみましょう。以下のようになります。
+<p>&nbsp;</p>
+<img src="img/1701b.png" width="40%"/>
+<p>図1701b</p>
+<p>&nbsp;</p>
+　ここから<b>BaseCrossTol.rc－Dialog</b>と下層に行って、<b>Dialog</b>を右クリックで<b>リソースの追加</b>を選びます。
+<p>&nbsp;</p>
+<img src="img/1701c.png" width="40%"/>
+<p>図1701c</p>
+<p>&nbsp;</p>
+　すると以下の様なダイアログが出るので<b>新規作成</b>をクリックします。
+<p>&nbsp;</p>
+<img src="img/1701d.png" width="40%"/>
+<p>図1701d</p>
+<p>&nbsp;</p>
+　すると以下の様なダイアログボックスの編集画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1701e.png" width="80%"/>
+<p>図1701e</p>
+<p>&nbsp;</p>
+　リソースビューにある<b>IDD_DIALOG1</b>というのはこのダイアログのIDです。これではわかりにくいので、編集用ダイアログの上で右クリックして、プロパティを開きます。<br />
+　すると、
+　では、ここに入力用のコントロールを配置します。まず、入力を促すテキスト<b>スタティックテキスト</b>を設置します。<br />
+　編集のyの<b>ツールボックス</b>からIDの項目を選択し
+<p>&nbsp;</p>
+<img src="img/1701f.png" width="40%"/>
+<p>図1701f</p>
+<p>&nbsp;</p>
+　<b>IDD_ADDOBJECT</b>に変更します。
+<p>&nbsp;</p>
+<img src="img/1701g.png" width="40%"/>
+<p>図1701g</p>
+<p>&nbsp;</p>
+　この要領でプロパティの下の方に<b>Caption</b>という項目がありますので<b>オブジェクトの追加</b>にします。するとダイアログのウインドウタイトルが変わります。<br />
+　続いて、<b>ツールボックス</b>を開いて<b>Static Text</b>を選択します。その上で編集用ダイアログの上で、クリックすると<b>スタティック</b>というオブジェクトがダイアログ上に配置されます。このようにして、5つのスタティックテキストを配置します。<br />
+　その状態が以下です。
+<p>&nbsp;</p>
+<img src="img/1701h.png" width="60%"/>
+<p>図1701h</p>
+<p>&nbsp;</p>
+　これらのスタティックテキストは選択状態で<b>プロパティ</b>の<b>Caption</b>を変更すると文字列が変わりますので、そのようにして以下のように文字を変更しつつ配置しなおします。ダイアログのサイズも大きいので小さくします。
+<p>&nbsp;</p>
+<img src="img/1701i.png" width="60%"/>
+<p>図1701i</p>
+<p>&nbsp;</p>
+　続いて、入力を受け付ける<b>エディットコントロール</b>を配置します。<b>ツールボックス</b>から<b>Edit Control</b>を選択し、以下のように配置します。<br />
+　その際、それぞれのIDは、大きさのところが<b>IDC_EDIT_SIZE</b>、位置が、それぞれ<b>IDC_EDIT_POSX、IDC_EDIT_POSY、IDC_EDIT_POSZ</b>とします。また、<b>OK</b>ボタンの<b>Caption</b>は<b>追加</b>とします。
+<p>&nbsp;</p>
+<img src="img/1701j.png" width="60%"/>
+<p>図1701j</p>
+<p>&nbsp;</p>
+<h4>ダイアログボックスのソースを記述する</h4>
+　続いてこのダイアログにソースを記述します。編集用ダイアログを右クリックし<b>クラスの追加</b>を選択します。<br />
+　すると設定用のダイアログが出ますので、以下のように設定します。
+<p>&nbsp;</p>
+<img src="img/1701k.png" width="80%"/>
+<p>図1701k</p>
+<p>&nbsp;</p>
+　<b>クラス名</b>のところに記述すると、自動的にファイル名も決定されます。<b>OK</b>を押すと、<b>CAddObjectDialogクラス</b>が生成されます。<br />
+　ここにソースを記述するわけですが、記述する前にそれぞれのエディットコントロールを変数化します。<br />
+　まず<b>IDC_EDIT_SIZE</b>のエディットボックスを右クリックし<b>変数の追加</b>を選びます。<br />
+　すると変数追加用のダイアログが出ますので、それぞれ<b>カテゴリ</b>は<b>値</b>として、変数の種類は<b>CString</b>にして、変数名を指定します。<br />
+　同様に、<b>IDC_EDIT_POSX、IDC_EDIT_POSY、IDC_EDIT_POSZ</b>も変数化します。<br />
+　各変数名は以下の通り
+<div class="box1">
+<pre>
+IDC_EDIT_SIZE   m_Size
+IDC_EDIT_POSX   m_PosX
+IDC_EDIT_POSY   m_PosY
+IDC_EDIT_POSZ   m_PosZ
+</pre>
+</div>
+　以下は<b>IDC_EDIT_POSX</b>の変数を追加しているところです。
+<p>&nbsp;</p>
+<img src="img/1701l.png" width="80%"/>
+<p>図1701l</p>
+<p>&nbsp;</p>
+　すると、<b>CAddObjectDialogクラス</b>に自動的に変数が追加されます。以下はヘッダ部です。
+<div class="box1">
+<pre>
+class CAddObjectDialog : public CDialogEx
+{
+    DECLARE_DYNAMIC(CAddObjectDialog)
+
+public:
+    CAddObjectDialog(CWnd* pParent = nullptr);   // 標準コンストラクター
+    virtual ~CAddObjectDialog();
+
+// ダイアログ データ
+#ifdef AFX_DESIGN_TIME
+    enum { IDD = IDD_ADDOBJECT };
+#endif
+
+protected:
+    virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV サポート
+
+    DECLARE_MESSAGE_MAP()
+public:
+    <span class="red">CString m_Size;
+    CString m_PosX;
+    CString m_PosY;
+    CString m_PosZ;</span>
+};
+</pre>
+</div>
+　赤くなっているところが、自動的に追加された変数です。
+<h4>ダイアログボックスのメッセージの追加</h4>
+　ここまできたら、いったん<b>ファイル－すべて保存</b>しましょう。保存は定期的にやっておきましょう。<br />
+　続いて、編集用ダイアログの<b>追加</b>ボタンをダブルクリックします。すると自動的に以下のソースが<b>CAddObjectDialog.cpp</b>に作成されます。
+<div class="box1">
+<pre>
+void CAddObjectDialog::OnBnClickedOk()
+{
+    // TODO: ここにコントロール通知ハンドラー コードを追加します。
+    CDialogEx::OnOK();
+}
+</pre>
+</div>
+
+
+となってますので
+<div class="box1">
+<pre>
+void CAddObjectDialog::OnBnClickedOk()
+{
+    <span class="red">UpdateData(TRUE);</span>
+    // TODO: ここにコントロール通知ハンドラー コードを追加します。
+    CDialogEx::OnOK();
+}
+</pre>
+</div>
+　と赤くなっている部分を記述します。
+<h4>ダイアログボックスを起動する</h4>
+　このダイアログボックスを起動するために<b>メニュー</b>を修正します。<br />
+　リソースビューから<b>Menu</b>を選択し<b>IDR_MAINFRAME</b>を選びます。
+<p>&nbsp;</p>
+<img src="img/1701m.png" width="60%"/>
+<p>図1701m</p>
+<p>&nbsp;</p>
+　ダブルクリックするとメニューの編集画面が表示されます。
+<p>&nbsp;</p>
+<img src="img/1701n.png" width="60%"/>
+<p>図1701n</p>
+<p>&nbsp;</p>
+　<b>ここに入力</b>という箇所がありますので<b>オブジェクト(&O)</b>と入力します。<br />
+　またこのメニューを移動し<b>編集</b>の後に入れます。
+<p>&nbsp;</p>
+<img src="img/1701o.png" width="60%"/>
+<p>図1701o</p>
+<p>&nbsp;</p>
+　ここで記入した<b>(&O)</b>は、<b>ショートカットキー</b>です。<br />
+　メニューにはなるべく<b>ショートカットキー</b>を記述しましょう。<br />
+　続いてサブメニューに<b>追加(&I)</b>と記述します。そうしてその個所を右クリックし、<b>イベントハンドラーの追加</b>を選択します。
+<p>&nbsp;</p>
+<img src="img/1701p.png" width="60%"/>
+<p>図1701p</p>
+<p>&nbsp;</p>
+　以下のようなダイアログが出ますので
+<div class="box1">
+<pre>
+クラスの一覧から、CBaseCrossToolAppを選択
+関数ハンドラー名を、OnAddObject
+</pre>
+</div>
+　として<b>追加して編集</b>ボタンをクリックします。
+<p>&nbsp;</p>
+<img src="img/1701q.png" width="80%"/>
+<p>図1701q</p>
+<p>&nbsp;</p>
+　すると、自動的に
+<div class="box1">
+<pre>
+void CBaseCrossToolApp::OnAddObject()
+{
+    // TODO: ここにコマンド ハンドラー コードを追加します。
+}
+</pre>
+</div>
+　という関数が作られますので、まず<b>BaseCrossTool.cpp</b>の上のヘッダインクルード部分に
+<div class="box1">
+<pre>
+#include "stdafx.h"
+#include "afxwinappex.h"
+#include "afxdialogex.h"
+#include "BaseCrossTool.h"
+#include "MainFrm.h"
+#include "Project.h"
+<span class="red">#include "CAddObjectDialog.h"</span>
+using namespace basecross;
+</pre>
+</div>
+　と赤くなっているように追加し、先ほどのメニュのハンドラに
+<div class="box1">
+<pre>
+void CBaseCrossToolApp::OnAddObject()
+{
+    // TODO: ここにコマンド ハンドラー コードを追加します。
+    <span class="red">CAddObjectDialog dialog;
+    if (dialog.DoModal() == IDOK) {
+        ;
+    }</span>
+}
+</pre>
+</div>
+　のように追加します。<br />
+　それで、ビルドし、メニューから<b>オブジェクト－追加</b>でダイアログボックスが出るかどうか、確認します。   <br/>
+　ここでは<b>追加</b>ボタンを押しても何もコードは記述してないので、ボタンを押してもダイアログが閉じるだけです。
+<h4>オブジェクトの作成</h4>
+　それでは、メニューとダイアログの準備ができたので、今度は<b>BaseCross64側</b>を作成します。<br />
+　まず、<b>Charcter.h</b>に以下を記述します。
+<div class="box1">
+<pre>
+    //--------------------------------------------------------------------------------------
+    //  class MoveSphere : public GameObject;
+    //--------------------------------------------------------------------------------------
+    class MoveSphere : public GameObject {
+        float m_Scale;
+        Vec3 m_Position;
+        float m_TotalTime;
+    public:
+        //構築と破棄
+        MoveSphere(const shared_ptr&lt;Stage>& StagePtr,
+            const float Scale,
+            const Vec3& Position
+        );
+        virtual ~MoveSphere();
+        //初期化
+        virtual void OnCreate() override;
+        //操作
+        virtual void OnUpdate() override;
+    };
+</pre>
+</div>
+　次に、<b>Charcter.cpp</b>に以下を記述します。
+<div class="box1">
+<pre>
+    //--------------------------------------------------------------------------------------
+    //  class MoveSphere : public GameObject;
+    //--------------------------------------------------------------------------------------
+    //構築と破棄
+    MoveSphere::MoveSphere(const shared_ptr&lt;Stage>& StagePtr,
+            const float Scale,
+            const Vec3& Position
+        ):
+        GameObject(StagePtr),
+        m_Scale(Scale),
+        m_Position(Position),
+        m_TotalTime(0.0f)
+    {}
+    MoveSphere::~MoveSphere() {}
+    //初期化
+    void MoveSphere::OnCreate() {
+        auto ptrTransform = GetComponent&lt;Transform>();
+        ptrTransform->SetScale(Vec3(m_Scale));
+        ptrTransform->SetRotation(Vec3(0));
+        ptrTransform->SetPosition(m_Position);
+        //影をつける（シャドウマップを描画する）
+        auto shadowPtr = AddComponent&lt;Shadowmap>();
+        //影の形（メッシュ）を設定
+        shadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+        auto ptrDraw = AddComponent&lt;BcPNTStaticDraw>();
+        ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+        ptrDraw->SetTextureResource(L"SKY_TX");
+        ptrDraw->SetFogEnabled(true);
+        ptrDraw->SetOwnShadowActive(true);
+
+    }
+    //操作
+    void MoveSphere::OnUpdate() {
+        auto elapsedTime = App::GetApp()->GetElapsedTime();
+        m_TotalTime += elapsedTime;
+        if (m_TotalTime >= XM_2PI) {
+            m_TotalTime = 0.0f;
+        }
+        auto ptrTransform = GetComponent&lt;Transform>();
+        Vec3 pos = m_Position;
+        pos.x += sin(m_TotalTime);
+        ptrTransform->SetPosition(pos);
+    }
+</pre>
+</div>
+　次に、<b>GameStage.h</b>に以下を追加します。赤い部分です。
+<div class="box1">
+<pre>
+    class GameStage : public Stage {
+        //リソースの作成
+        void CreateResourses();
+        //ビューの作成
+        void CreateViewLight();
+        //プレートの作成
+        void CreatePlate();
+    public:
+        //構築と破棄
+        GameStage() :Stage() {}
+        virtual ~GameStage() {}
+        //初期化
+        virtual void OnCreate()override;
+        <span class="red">//オブジェクト作成
+        void CreateMoveSphere(float Size, const Vec3& Pos);</span>
+
+    };
+</pre>
+</div>
+　次に、<b>GameStage.cpp</b>に以下を追加します。赤い部分です。
+<div class="box1">
+<pre>
+    <span class="red">//オブジェクト作成
+    void GameStage::CreateMoveSphere(float Size, const Vec3& Pos) {
+        AddGameObject&lt;MoveSphere>(Size, Pos);
+    }<span>
+</pre>
+</div>
+　最後に、<b>BaseCrossTool.cpp</b>の<b>CBaseCrossToolApp::OnAddObject()ハンドラ</b>を以下のように追記します。
+<div class="box1">
+<pre>
+void CBaseCrossToolApp::OnAddObject()
+{
+    // TODO: ここにコマンド ハンドラー コードを追加します。
+    CAddObjectDialog dialog;
+    if (dialog.DoModal() == IDOK) {
+        <span class="red">float size = (float)_tcstod(dialog.m_Size, NULL);
+        if (size &lt;= 0.0f) {
+            AfxMessageBox(L"サイズは0以下にできません");
+            return;
+        }
+        Vec3 pos;
+        pos.x = (float)_tcstod(dialog.m_PosX, NULL);
+        pos.y = (float)_tcstod(dialog.m_PosY, NULL);
+        pos.z = (float)_tcstod(dialog.m_PosZ, NULL);
+        auto ptrStage = App::GetApp()->GetScene&lt;Scene>()->GetActiveStage();
+        auto ptrGameStage = dynamic_pointer_cast&lt;GameStage>(ptrStage);
+        if (ptrGameStage) {
+            ptrGameStage->CreateMoveSphere(size, pos);
+        }</span>
+    }
+}
+</pre>
+</div>
+　ビルドして実行し、メニューから<b>オブジェクト-追加</b>を選択します。<br />
+　ダイアログで、以下のように設定します。
+<p>&nbsp;</p>
+<img src="img/1701r.png" width="40%"/>
+<p>図1701r</p>
+<p>&nbsp;</p>
+　<b>追加</b>ボタンをクリックして、以下の画面になれば成功です。球体が行ったり来たりします。
+<p>&nbsp;</p>
+<img src="img/1701s.png" width="80%"/>
+<p>図1701s</p>
+<p>&nbsp;</p>
+<h4>解説</h4>
+　この項では、MFCの簡単な使い方について説明しました。また、MFCのプログラムから<b>BaseCross64側</b>への値などの渡し方も説明しました。<br />
+　比較的長いドキュメントになってしまいましたが、MFCの機能としては、まだまだ入り口に立ったくらいです。<br />
+　MFCを使うことで、Windowsアプリケーション作成の部分は、かなり高度なこともできます。<br />
+　MFCは有名なライブラリなので、サンプルやヒントはネットにあふれています。ぜひ、<b>MFCとBaseCross64</b>を組み合わせて便利なツールを開発してください。
+<br />
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
