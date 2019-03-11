@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.421
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Fbx2BinVS2017", "Fbx2BinVS2017\Fbx2BinVS2017.vcxproj", "{6AF028B1-1997-498F-8A93-912336C67D48}"
+	ProjectSection(ProjectDependencies) = postProject
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{6031FBC7-8613-4963-A955-04F88F06E33A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\Libs\DirectXTex\DirectXTex_Desktop_2017_Win10.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11FullLib", "..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems", "{12B4EA0B-BF4F-4C4E-B659-DD6561EA2666}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11Lib", "..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\DxLib\DxLib.vcxitems", "{974C28F3-3934-456B-BE8E-408774EF14CF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxShaders", "..\Libs\BaseLib\DxShaders\DxShaders.vcxitems", "{577BCCEE-82DF-4F0E-BFCD-C4787D95AFD3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SharedLib", "..\Libs\BaseLib\SharedLib\SharedLib.vcxitems", "{CAA0470E-F76D-42A8-84FA-D6562FA70F4A}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems*{12b4ea0b-bf4f-4c4e-b659-dd6561ea2666}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		..\Libs\BaseLib\DxShaders\DxShaders.vcxitems*{577bccee-82df-4f0e-bfcd-c4787d95afd3}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11FullLib\Dx11FullLib.vcxitems*{6af028b1-1997-498f-8a93-912336c67d48}*SharedItemsImports = 4
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{6af028b1-1997-498f-8a93-912336c67d48}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{6af028b1-1997-498f-8a93-912336c67d48}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxShaders\DxShaders.vcxitems*{6af028b1-1997-498f-8a93-912336c67d48}*SharedItemsImports = 4
+		..\Libs\BaseLib\SharedLib\SharedLib.vcxitems*{6af028b1-1997-498f-8a93-912336c67d48}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
+		..\Libs\BaseLib\SharedLib\SharedLib.vcxitems*{caa0470e-f76d-42a8-84fa-d6562fa70f4a}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6AF028B1-1997-498F-8A93-912336C67D48}.Debug|x64.ActiveCfg = Debug|x64
+		{6AF028B1-1997-498F-8A93-912336C67D48}.Debug|x64.Build.0 = Debug|x64
+		{6AF028B1-1997-498F-8A93-912336C67D48}.Release|x64.ActiveCfg = Debug|x64
+		{6AF028B1-1997-498F-8A93-912336C67D48}.Release|x64.Build.0 = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.ActiveCfg = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.Build.0 = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.ActiveCfg = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.Build.0 = Debug|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+		{12B4EA0B-BF4F-4C4E-B659-DD6561EA2666} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+		{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+		{974C28F3-3934-456B-BE8E-408774EF14CF} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+		{577BCCEE-82DF-4F0E-BFCD-C4787D95AFD3} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+		{CAA0470E-F76D-42A8-84FA-D6562FA70F4A} = {6031FBC7-8613-4963-A955-04F88F06E33A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E7685E32-58CF-4580-98F5-848E4AE72151}
+	EndGlobalSection
+EndGlobal
