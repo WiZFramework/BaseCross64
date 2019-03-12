@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０８．オブジェクトカメラ</h3>
+　このサンプルは<b>FullSample208</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx12版</b>はありません。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1208a.png" width="80%"/>
+<p>図1208a</p>
+<p>&nbsp;</p>
+　プレイヤーを動かしていくと、プレイヤーの後ろの上方に、プレイヤーを追いかける白い球体があると思います。<br />
+　この球は<b>カメラマン</b>です。<br />
+　初期状態では、他のサンプルでも実装されている<b>MyCamera</b>が実装されていますが、<b>Bボタン</b>を押すと、その白い球が<b>カメラ</b>になります。もう一度<b>Bボタン</b>を押すと、カメラは<b>MyCamera</b>に戻ります。<br />
+　このカメラを<b>BaseCross64</b>では<b>オブジェクトカメラ</b>と称しています。<br />
+　以下が<b>オブジェクトカメラ</b>にした画面です。<br />
+<p>&nbsp;</p>
+<img src="img/1208b.png" width="80%"/>
+<p>図1208b</p>
+<p>&nbsp;</p>
+　<b>オブジェクトカメラ</b>の状態では、スティックは左スティックのみ有効です。
+<h4>ビューのインスタンスを保持する</h4>
+　さて、他の主なサンプルでは、カメラは<b>GameStage::CreateViewLight()関数</b>で作成し、サンプルを実行している間は切り替わることはありませんでした。<br/>
+　しかしこのサンプルでは<b>カメラを切り替える</b>ために、切り替える<b>ビュー</b>を<b>GameStage</b>で保持します。<br />
+　複数のカメラを保持することも可能ですが、カメラのポインタ（shared_ptr）は、BaseCross64ではビューが管理するために、このほうが理論上正しいと言えます。<br />
+　さて、<b>GameStage::CreateViewLight()関数</b>は以下のようになります。
+<div class="box1">
+<pre>
+void GameStage::CreateViewLight() {
+    <span class="red">//MyCamera用のビュー
+    m_MyCameraView = ObjectFactory::Create&lt;SingleView>(GetThis&lt;Stage>());
+    auto ptrMyCamera = ObjectFactory::Create&lt;MyCamera>();
+    ptrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
+    ptrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+    m_MyCameraView->SetCamera(ptrMyCamera);
+    //ObjCamera用のビュー
+    m_ObjCameraView = ObjectFactory::Create&lt;SingleView>(GetThis&lt;Stage>());
+    auto ptrObjCamera = ObjectFactory::Create&lt;ObjCamera>();
+    m_ObjCameraView->SetCamera(ptrObjCamera);
+    //初期状態ではm_MyCameraViewを使う
+    SetView(m_MyCameraView);
+    m_CameraSelect = CameraSelect::myCamera;</span>
+    //マルチライトの作成
+    auto PtrMultiLight = CreateLight&lt;MultiLight>();
+    //デフォルトのライティングを指定
+    PtrMultiLight->SetDefaultLighting();
+}
+</pre>
+</div>
+　赤くなっているところが、複数のビューを作成し、初期状態で<b>m_MyCameraView</b>を設定するところです。<br />
+　<b>m_MyCameraView</b>と<b>m_ObjCameraView</b>は<b>GameStage</b>のメンバ変数としてポインタを保持します。
+<h4>オブジェクトカメラのためのGameObject</h4>
+　<b>オブジェクトカメラ</b>は<b>GemeObject</b>としてオブジェクトを定義し、それにカメラを設定する手法です。<br />
+　ですので<b>GemeObject</b>の動きを客観的に実装することで、カメラの動きを定義できます。<br />
+　映画のカメラマンの動きを映画監督が指示できるような形です。<br />
+　カメラマンは<b>Cameramanクラス</b>です。<b>Character.h/cpp</b>にあります。以下はその<b>OnUpdate()関数</b>です。
+<div class="box1">
+<pre>
+void Cameraman::OnUpdate() {
+    auto ptrPlayer = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    auto playerPos = ptrPlayer->GetComponent&lt;Transform>()->GetPosition();
+    auto ptrTrans = GetComponent&lt;Transform>();
+    auto pos = ptrTrans->GetPosition();
+    Vec3 span = pos - playerPos;
+    float nowLen = length(span);
+    span.normalize();
+    span *= m_ToPlayerLen;
+    Vec3 target = playerPos + span;
+    target.y = playerPos.y + 1.0f;
+    Easing&lt;Vec3> easig;
+    Vec3 v;
+    if (nowLen &lt; 1.5f) {
+        v = easig.EaseIn(EasingType::Cubic, pos, target, 0.7, 1.0f);
+    }
+    else {
+        v = easig.EaseIn(EasingType::Cubic, pos, target, 0.3f, 1.0f);
+    }
+    ptrTrans->SetPosition(v);
+}
+</pre>
+</div>
+　ここでは、プレイヤーの動きに合わせて、そのあとを追いかけるように、補間処理をしています。<br />
+　プレイヤーそのものの動きは、<b>MyCamera</b>の場合も<b>Cameraman（ObjCamera）</b>の場合も変わりません。左スティックでカメラの逆方向に相対的に移動します。
+<h4>カメラの切り替え</h4>
+　カメラの切り替えは<b>GameStage::OnPushB()</b>で行います。GameStageにも、<b>InputHandler</b>は実装することが可能です。
+<div class="box1">
+<pre>
+void GameStage::OnPushB() {
+    auto ptrPlayer = GetSharedGameObject&lt;Player>(L"Player");
+    switch (m_CameraSelect) {
+    case CameraSelect::myCamera:
+    {
+        //ObjCameraに変更
+        auto ptrCameraman = GetSharedGameObject&lt;Cameraman>(L"Cameraman");
+        auto ptrObjCamera = dynamic_pointer_cast&lt;ObjCamera>(m_ObjCameraView->GetCamera());
+        if (ptrObjCamera) {
+            ptrObjCamera->SetCameraObject(ptrCameraman);
+            ptrObjCamera->SetTargetObject(ptrPlayer);
+            //m_ObjCameraViewを使う
+            SetView(m_ObjCameraView);
+            m_CameraSelect = CameraSelect::objCamera;
+        }
+    }
+    break;
+    case CameraSelect::objCamera:
+    {
+        //MyCameraに変更
+        auto ptrMyCamera = dynamic_pointer_cast&lt;MyCamera>(m_MyCameraView->GetCamera());
+        if (ptrMyCamera) {
+            ptrMyCamera->SetTargetObject(ptrPlayer);
+            //m_MyCameraViewを使う
+            SetView(m_MyCameraView);
+            m_CameraSelect = CameraSelect::myCamera;
+        }
+    }
+    break;
+    }
+}
+</pre>
+</div>
+　このような感じで、切り替えます。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_07.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
