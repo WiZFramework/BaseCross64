@@ -13,6 +13,10 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
+		//OpeningCameraView用のビュー
+		m_OpeningCameraView = ObjectFactory::Create<SingleView>(GetThis<Stage>());
+		auto ptrOpeningCamera = ObjectFactory::Create<OpeningCamera>();
+		m_OpeningCameraView->SetCamera(ptrOpeningCamera);
 		//MyCamera用のビュー
 		m_MyCameraView = ObjectFactory::Create<SingleView>(GetThis<Stage>());
 		auto ptrMyCamera = ObjectFactory::Create<MyCamera>();
@@ -23,9 +27,9 @@ namespace basecross {
 		m_ObjCameraView = ObjectFactory::Create<SingleView>(GetThis<Stage>());
 		auto ptrObjCamera = ObjectFactory::Create<ObjCamera>();
 		m_ObjCameraView->SetCamera(ptrObjCamera);
-		//初期状態ではm_MyCameraViewを使う
-		SetView(m_MyCameraView);
-		m_CameraSelect = CameraSelect::myCamera;
+		//初期状態ではm_OpeningCameraViewを使う
+		SetView(m_OpeningCameraView);
+		m_CameraSelect = CameraSelect::openingCamera;
 		//マルチライトの作成
 		auto PtrMultiLight = CreateLight<MultiLight>();
 		//デフォルトのライティングを指定
@@ -67,6 +71,10 @@ namespace basecross {
 		}
 	}
 
+	//ゴールオブジェクトの作成
+	void GameStage::CreateGoalObject() {
+		AddGameObject<GoalObject>();
+	}
 
 	//プレイヤーの作成
 	void GameStage::CreatePlayer() {
@@ -81,6 +89,18 @@ namespace basecross {
 		auto ptrCameraman = AddGameObject<Cameraman>(2.0f);
 		//シェア配列にCameramanを追加
 		SetSharedGameObject(L"Cameraman", ptrCameraman);
+		//
+		auto ptrOpeningCameraman = AddGameObject<OpeningCameraman>();
+		//シェア配列にOpeningCameramanを追加
+		SetSharedGameObject(L"OpeningCameraman", ptrOpeningCameraman);
+
+		auto ptrOpeningCamera = dynamic_pointer_cast<OpeningCamera>(m_OpeningCameraView->GetCamera());
+		if (ptrOpeningCamera) {
+			ptrOpeningCamera->SetCameraObject(ptrOpeningCameraman);
+			SetView(m_OpeningCameraView);
+			m_CameraSelect = CameraSelect::openingCamera;
+		}
+
 	}
 
 
@@ -90,6 +110,8 @@ namespace basecross {
 			CreateViewLight();
 			//ボックスの作成
 			CreateFixedBox();
+			//ゴールオブジェクトの作成
+			CreateGoalObject();
 			//プレーヤーの作成
 			CreatePlayer();
 			//カメラマンの作成
@@ -105,34 +127,44 @@ namespace basecross {
 		m_InputHandler.PushHandle(GetThis<GameStage>());
 	}
 
+
+	void GameStage::ToObjCamera() {
+		auto ptrPlayer = GetSharedGameObject<Player>(L"Player");
+		//ObjCameraに変更
+		auto ptrCameraman = GetSharedGameObject<Cameraman>(L"Cameraman");
+		auto ptrObjCamera = dynamic_pointer_cast<ObjCamera>(m_ObjCameraView->GetCamera());
+		if (ptrObjCamera) {
+			ptrObjCamera->SetCameraObject(ptrCameraman);
+			ptrObjCamera->SetTargetObject(ptrPlayer);
+			//m_ObjCameraViewを使う
+			SetView(m_ObjCameraView);
+			m_CameraSelect = CameraSelect::objCamera;
+		}
+	}
+	void GameStage::ToMyCamera() {
+		auto ptrPlayer = GetSharedGameObject<Player>(L"Player");
+		//MyCameraに変更
+		auto ptrMyCamera = dynamic_pointer_cast<MyCamera>(m_MyCameraView->GetCamera());
+		if (ptrMyCamera) {
+			ptrMyCamera->SetTargetObject(ptrPlayer);
+			//m_MyCameraViewを使う
+			SetView(m_MyCameraView);
+			m_CameraSelect = CameraSelect::myCamera;
+		}
+	}
+
+
 	//Bボタンカメラの変更
 	void GameStage::OnPushB() {
-		auto ptrPlayer = GetSharedGameObject<Player>(L"Player");
 		switch (m_CameraSelect) {
 		case CameraSelect::myCamera:
 		{
-			//ObjCameraに変更
-			auto ptrCameraman = GetSharedGameObject<Cameraman>(L"Cameraman");
-			auto ptrObjCamera = dynamic_pointer_cast<ObjCamera>(m_ObjCameraView->GetCamera());
-			if (ptrObjCamera) {
-				ptrObjCamera->SetCameraObject(ptrCameraman);
-				ptrObjCamera->SetTargetObject(ptrPlayer);
-				//m_ObjCameraViewを使う
-				SetView(m_ObjCameraView);
-				m_CameraSelect = CameraSelect::objCamera;
-			}
+			ToObjCamera();
 		}
 		break;
 		case CameraSelect::objCamera:
 		{
-			//MyCameraに変更
-			auto ptrMyCamera = dynamic_pointer_cast<MyCamera>(m_MyCameraView->GetCamera());
-			if (ptrMyCamera) {
-				ptrMyCamera->SetTargetObject(ptrPlayer);
-				//m_MyCameraViewを使う
-				SetView(m_MyCameraView);
-				m_CameraSelect = CameraSelect::myCamera;
-			}
+			ToMyCamera();
 		}
 		break;
 		}

@@ -9,6 +9,7 @@
 namespace basecross {
 
 	enum class CameraSelect {
+		openingCamera,
 		myCamera,
 		objCamera,
 	};
@@ -17,6 +18,8 @@ namespace basecross {
 	//	ゲームステージクラス
 	//--------------------------------------------------------------------------------------
 	class GameStage : public Stage {
+		//OpeningCamera用のビュー
+		shared_ptr<SingleView> m_OpeningCameraView;
 		//MyCamera用のビュー
 		shared_ptr<SingleView> m_MyCameraView;
 		//ObjCamera用のビュー
@@ -28,6 +31,8 @@ namespace basecross {
 		void CreateViewLight();
 		//ボックスの作成
 		void CreateFixedBox();
+		//ゴールオブジェクトの作成
+		void CreateGoalObject();
 		//プレイヤーの作成
 		void CreatePlayer();
 		//カメラマンの作成
@@ -47,6 +52,8 @@ namespace basecross {
 		CameraSelect GetCameraSelect() const {
 			return m_CameraSelect;
 		}
+		void ToObjCamera();
+		void ToMyCamera();
 
 	};
 

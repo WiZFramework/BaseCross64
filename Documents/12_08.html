@@ -14,15 +14,25 @@
 <!-- コンテンツ　-->
 <div id="contents">
 <h2>１２．Update系の操作</h2>
-<h3>１２０８．オブジェクトカメラ</h3>
+<h3>１２０８．演出カメラとオブジェクトカメラ</h3>
 　このサンプルは<b>FullSample208</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
 　このサンプルは<b>Dx12版</b>はありません。<br />
 <br />
-　実行結果は以下のような画面が出ます。
+　実行結果は、まず以下のような画面が出ます。
 <p>&nbsp;</p>
 <img src="img/1208a.png" width="80%"/>
 <p>図1208a</p>
+<p>&nbsp;</p>
+　ここから自動的にカメラが動き、右奥の赤いブロックを見せます。
+<p>&nbsp;</p>
+<img src="img/1208b.png" width="80%"/>
+<p>図1208b</p>
+<p>&nbsp;</p>
+　その後、カメラは中央を見るようになり、プレイヤーを動かせるようになります。<br />
+<p>&nbsp;</p>
+<img src="img/1208c.png" width="80%"/>
+<p>図1208c</p>
 <p>&nbsp;</p>
 　プレイヤーを動かしていくと、プレイヤーの後ろの上方に、プレイヤーを追いかける白い球体があると思います。<br />
 　この球は<b>カメラマン</b>です。<br />
@@ -30,8 +40,8 @@
 　このカメラを<b>BaseCross64</b>では<b>オブジェクトカメラ</b>と称しています。<br />
 　以下が<b>オブジェクトカメラ</b>にした画面です。<br />
 <p>&nbsp;</p>
-<img src="img/1208b.png" width="80%"/>
-<p>図1208b</p>
+<img src="img/1208d.png" width="80%"/>
+<p>図1208d</p>
 <p>&nbsp;</p>
 　<b>オブジェクトカメラ</b>の状態では、スティックは左スティックのみ有効です。
 <h4>ビューのインスタンスを保持する</h4>
@@ -42,7 +52,11 @@
 <div class="box1">
 <pre>
 void GameStage::CreateViewLight() {
-    <span class="red">//MyCamera用のビュー
+    <span class="red">//OpeningCameraView用のビュー
+    m_OpeningCameraView = ObjectFactory::Create&lt;SingleView>(GetThis&lt;Stage>());
+    auto ptrOpeningCamera = ObjectFactory::Create&lt;OpeningCamera>();
+    m_OpeningCameraView->SetCamera(ptrOpeningCamera);
+    //MyCamera用のビュー
     m_MyCameraView = ObjectFactory::Create&lt;SingleView>(GetThis&lt;Stage>());
     auto ptrMyCamera = ObjectFactory::Create&lt;MyCamera>();
     ptrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
@@ -52,9 +66,9 @@ void GameStage::CreateViewLight() {
     m_ObjCameraView = ObjectFactory::Create&lt;SingleView>(GetThis&lt;Stage>());
     auto ptrObjCamera = ObjectFactory::Create&lt;ObjCamera>();
     m_ObjCameraView->SetCamera(ptrObjCamera);
-    //初期状態ではm_MyCameraViewを使う
-    SetView(m_MyCameraView);
-    m_CameraSelect = CameraSelect::myCamera;</span>
+    //初期状態ではm_OpeningCameraViewを使う
+    SetView(m_OpeningCameraView);
+    m_CameraSelect = CameraSelect::openingCamera;</span>
     //マルチライトの作成
     auto PtrMultiLight = CreateLight&lt;MultiLight>();
     //デフォルトのライティングを指定
@@ -62,13 +76,104 @@ void GameStage::CreateViewLight() {
 }
 </pre>
 </div>
-　赤くなっているところが、複数のビューを作成し、初期状態で<b>m_MyCameraView</b>を設定するところです。<br />
-　<b>m_MyCameraView</b>と<b>m_ObjCameraView</b>は<b>GameStage</b>のメンバ変数としてポインタを保持します。
+　赤くなっているところが、複数のビューを作成し、初期状態で<b>m_OpeningCameraView</b>を設定するところです。<br />
+　<b>m_OpeningCameraView、m_MyCameraView</b>そして<b>m_ObjCameraView</b>は<b>GameStage</b>のメンバ変数としてポインタを保持します。
 <h4>オブジェクトカメラのためのGameObject</h4>
 　<b>オブジェクトカメラ</b>は<b>GemeObject</b>としてオブジェクトを定義し、それにカメラを設定する手法です。<br />
+　<b>m_OpeningCameraView</b>と<b>m_ObjCameraView</b>で実装しているカメラは<b>オブジェクトカメラ</b>を使用しています。<br />
 　ですので<b>GemeObject</b>の動きを客観的に実装することで、カメラの動きを定義できます。<br />
 　映画のカメラマンの動きを映画監督が指示できるような形です。<br />
-　カメラマンは<b>Cameramanクラス</b>です。<b>Character.h/cpp</b>にあります。以下はその<b>OnUpdate()関数</b>です。
+<h4>オープニングカメラ</h4>
+　<b>m_OpeningCameraView</b>に実装されているカメラは<b>Character.h/cpp</b>に実装されている、<b>OpeningCameramanクラス</b>に結び付けられています。<br />
+　<b>OpeningCameramanクラス</b>は<b>ステート</b>を持っています。<br />
+　<b>ゴール地点（赤いブロック）まで移動するステート</b>と、<b>プレイヤーを見るところまで移動するステート</b>、そして<b>オープニングが終了するステート</b>です。<br />
+　それぞれ<b>ステートの初期化関数</b>で、カメラの位置とカメラの見る場所を、移動する前、移動する後について値を設定します。<br />
+　以下は<b>OpeningCameramanToGoalState</b>における値の設定です。
+<div class="box1">
+<pre>
+void OpeningCameramanToGoalState::Enter(const shared_ptr&lt;OpeningCameraman>& Obj) {
+    <span class="red">Obj->ToGoalEnterBehavior();</span>
+}
+</pre>
+</div>
+　ここで呼び出している<b>Obj->ToGoalEnterBehavior()関数</b>は以下になります。
+<div class="box1">
+<pre>
+void OpeningCameraman::ToGoalEnterBehavior() {
+    m_StartPos = Vec3(-20.0f, 10.0f, -20.0f);
+    m_EndPos = Vec3(18.0f, 2.0f, 10.0f);
+    m_AtStartPos = Vec3(-10.0f, 0.0f, 0.0f);
+    m_AtEndPos = Vec3(18.0f, 0.0f, 18.0f);
+    m_AtPos = m_AtStartPos;
+    m_TotalTime = 0.0f;
+}
+</pre>
+</div>
+　このように初期化して、実際のカメラの移動は以下のように補完処理をしています。
+<div class="box1">
+<pre>
+bool OpeningCameraman::ExcuteBehavior(float totaltime) {
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += ElapsedTime;
+    if (m_TotalTime > totaltime) {
+        return true;
+    }
+    Easing&lt;Vec3> easing;
+    auto TgtPos = easing.EaseInOut(EasingType::Cubic, m_StartPos, m_EndPos, m_TotalTime, totaltime);
+    m_AtPos = easing.EaseInOut(EasingType::Cubic, m_AtStartPos, m_AtEndPos, m_TotalTime, totaltime);
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetPosition(TgtPos);
+    return false;
+}
+</pre>
+</div>
+　この関数は、初期化で設定された時間のあいだ補間処理を行い、時間がたてば、trueを返します。<br />
+　ですので、以下の呼び出し方が可能です。
+<div class="box1">
+<pre>
+void OpeningCameramanToGoalState::Execute(const shared_ptr&lt;OpeningCameraman>& Obj) {
+    if (Obj->ExcuteBehavior(5.0f)) {
+        Obj->GetStateMachine()->ChangeState(OpeningCameramanToStartState::Instance());
+    }
+}
+</pre>
+</div>
+　このように<b>true</b>が返ってきたらステートを変更します。<br />
+　このように、<b>ゴールまで移動</b>して<b>プレイヤーまで戻る</b>ことができたら、<b>OpeningCameramanEndState</b>にステートが変更されますので、
+<div class="box1">
+<pre>
+void OpeningCameramanEndState::Enter(const shared_ptr&lt;OpeningCameraman>& Obj) {
+    Obj->EndStateEnterBehavior();
+}
+</pre>
+</div>
+　のように、<b>オープニングが終わった</b>ことを<b>Obj->EndStateEnterBehavior()関数</b>で表現します。
+<div class="box1">
+<pre>
+void OpeningCameraman::EndStateEnterBehavior() {
+    auto ptrGameGtage = GetTypeStage&lt;GameStage>();
+    ptrGameGtage->ToMyCamera();
+}
+</pre>
+</div>
+　ここで呼び出しているゲームステージの<b>ToMyCamera()関数</b>は、<b>MyCameraにカメラを切り替える関数</b>です。以下が実体です。<div class="box1">
+<pre>
+void GameStage::ToMyCamera() {
+    auto ptrPlayer = GetSharedGameObject&lt;Player>(L"Player");
+    //MyCameraに変更
+    auto ptrMyCamera = dynamic_pointer_cast&lt;MyCamera>(m_MyCameraView->GetCamera());
+    if (ptrMyCamera) {
+        ptrMyCamera->SetTargetObject(ptrPlayer);
+        //m_MyCameraViewを使う
+        SetView(m_MyCameraView);
+        m_CameraSelect = CameraSelect::myCamera;
+    }
+}
+</pre>
+</div>
+　<b>MyCamera</b>に変わった後は、他のサンプルと同じようにプレイヤーを移動できます。そして<b>Bボタン</b>で、このサンプルのもう一つのカメラである<b>オブジェクトカメラ</b>に切り替わります。
+<h4>ObjCameraのためのGameObject</h4>
+　ObjCameraのカメラマンは<b>Cameramanクラス</b>です。<b>Character.h/cpp</b>にあります。以下はその<b>OnUpdate()関数</b>です。
 <div class="box1">
 <pre>
 void Cameraman::OnUpdate() {
@@ -101,39 +206,57 @@ void Cameraman::OnUpdate() {
 <div class="box1">
 <pre>
 void GameStage::OnPushB() {
-    auto ptrPlayer = GetSharedGameObject&lt;Player>(L"Player");
     switch (m_CameraSelect) {
     case CameraSelect::myCamera:
     {
-        //ObjCameraに変更
-        auto ptrCameraman = GetSharedGameObject&lt;Cameraman>(L"Cameraman");
-        auto ptrObjCamera = dynamic_pointer_cast&lt;ObjCamera>(m_ObjCameraView->GetCamera());
-        if (ptrObjCamera) {
-            ptrObjCamera->SetCameraObject(ptrCameraman);
-            ptrObjCamera->SetTargetObject(ptrPlayer);
-            //m_ObjCameraViewを使う
-            SetView(m_ObjCameraView);
-            m_CameraSelect = CameraSelect::objCamera;
-        }
+        <span class="red">ToObjCamera();</span>
     }
     break;
     case CameraSelect::objCamera:
     {
-        //MyCameraに変更
-        auto ptrMyCamera = dynamic_pointer_cast&lt;MyCamera>(m_MyCameraView->GetCamera());
-        if (ptrMyCamera) {
-            ptrMyCamera->SetTargetObject(ptrPlayer);
-            //m_MyCameraViewを使う
-            SetView(m_MyCameraView);
-            m_CameraSelect = CameraSelect::myCamera;
-        }
+        <span class="red">ToMyCamera();</span>
     }
     break;
     }
 }
 </pre>
 </div>
-　このような感じで、切り替えます。
+　このような感じで、切り替えます。ここで呼び出している<b>ToMyCamera()関数</b>は先ほど紹介した関数です。<br />
+　<b>ToObjCamera()関数</b>は以下のようになります。
+<div class="box1">
+<pre>
+void GameStage::ToObjCamera() {
+    auto ptrPlayer = GetSharedGameObject&lt;Player>(L"Player");
+    //ObjCameraに変更
+    auto ptrCameraman = GetSharedGameObject&lt;Cameraman>(L"Cameraman");
+    auto ptrObjCamera = dynamic_pointer_cast&lt;ObjCamera>(m_ObjCameraView->GetCamera());
+    if (ptrObjCamera) {
+        ptrObjCamera->SetCameraObject(ptrCameraman);
+        ptrObjCamera->SetTargetObject(ptrPlayer);
+        //m_ObjCameraViewを使う
+        SetView(m_ObjCameraView);
+        m_CameraSelect = CameraSelect::objCamera;
+    }
+}
+</pre>
+</div>
+<h4>プレイヤーの移動の制限</h4>
+　このサンプルは、最初の<b>オープニング</b>の時は<b>プレイヤー</b>は操作できなくしてあります。<br />
+　その処理は以下のように記述しています。
+<div class="box1">
+<pre>
+void Player::OnUpdate() {
+    auto ptrGameStage = dynamic_pointer_cast&lt;GameStage>(GetStage());
+    <span class="red">if (ptrGameStage->GetCameraSelect() == CameraSelect::openingCamera) {
+        return;
+    }</span>
+    //コントローラチェックして入力があればコマンド呼び出し
+    m_InputHandler.PushHandle(GetThis&lt;Player>());
+    MovePlayer();
+}
+</pre>
+</div>
+　このように<b>カメラがCameraSelect::openingCameraの場合</b>は、移動できなくしています。
 </div>
 <!-- /コンテンツ　-->
 <hr>

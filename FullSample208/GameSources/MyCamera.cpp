@@ -307,6 +307,25 @@ namespace basecross {
 	}
 
 	//--------------------------------------------------------------------------------------
+	//	オープニングカメラ（コンポーネントではない）
+	//--------------------------------------------------------------------------------------
+	OpeningCamera::OpeningCamera():
+		Camera()
+	{}
+	OpeningCamera::~OpeningCamera() {}
+
+	void OpeningCamera::OnUpdate() {
+		auto ptrOpeningCameraman = dynamic_pointer_cast<OpeningCameraman>(GetCameraObject());
+		if (ptrOpeningCameraman) {
+			auto pos = ptrOpeningCameraman->GetAtPos();
+			SetAt(pos);
+		}
+		Camera::OnUpdate();
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	//	オブジェクトカメラ（コンポーネントではない）
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
