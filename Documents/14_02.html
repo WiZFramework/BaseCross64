@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１４．Rigidbodyと物理世界</h2>
+<h3>１４０２．少し複雑な物理オブジェクト</h3>
+　このサンプルは<b>FullSample401</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
+<br />
+　実行結果は以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1402a.png" width="80%"/>
+<p>図1402a</p>
+<p>&nbsp;</p>
+<h4>凸型オブジェクト</h4>
+　<b>Rigidbody</b>にせよ、<b>Collision</b>にせよ、ボリューム境界の形状は<b>凸型オブジェクト</b>です。つまり、へっこんだ部分がなくすべて、出っ張った頂点（三角形）で表現されます。<br />
+　まず、このサンプルでは<b>正12面体</b>を作成して、それに物理計算を実装する形状を紹介しています。<br />
+　<b>Character.h/cpp</b>に<b>ActivePsConvexクラス</b>があります。これが<b>正12面体</b>の形状です。以下はその<b>OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void ActivePsConvex::OnCreate() {
+    if (!m_ConvexMesh || !m_PsConvexMesh) {
+        vector&lt;VertexPositionNormalTexture> vertices;
+        vector&lt;uint16_t> indices;
+        MeshUtill::CreateDodecahedron(0.5, vertices, indices);
+        m_ConvexMesh = MeshResource::CreateMeshResource(vertices, indices, false);
+        m_PsConvexMesh = PsConvexMeshResource::CreateMeshResource(vertices, indices);
+    }
+
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(Vec3(1.0f));
+    PtrTransform->SetQuaternion(Quat());
+    PtrTransform->SetPosition(m_Position);
+
+    //影をつける
+    auto ShadowPtr = AddComponent&lt;Shadowmap>();
+    ShadowPtr->SetMeshResource(m_ConvexMesh);
+
+    auto PtrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    PtrDraw->SetFogEnabled(true);
+    PtrDraw->SetMeshResource(m_ConvexMesh);
+    PtrDraw->SetTextureResource(L"WALL_TX");
+
+    <span class="red">//物理計算凸面
+    PsConvexParam param;
+    param.m_ConvexMeshResource = m_PsConvexMesh;
+    param.m_Mass = 1.0f;
+    //慣性テンソルの計算(球と同じにする)
+    param.m_Inertia = BasePhysics::CalcInertiaSphere(0.5f, param.m_Mass);
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = Quat();
+    param.m_Pos = m_Position;
+    auto PsPtr = AddComponent&lt;RigidbodyConvex>(param);
+    PsPtr->SetDrawActive(true);</span>
+    //親クラスのOnCreateを呼ぶ
+    SeekObject::OnCreate();
+}
+</pre>
+</div>
+　赤くなっているところが<b>物理計算の初期化</b>の部分です。<b>慣性テンソル</b>は球と同じにしています。<br />
+　この物体は、親クラスに<b>SeekObject</b>を持ち、プレイヤーを追いかけるようになっています。
+<h4>凹んだオブジェクト</h4>
+　場合によっては、くびれた（凹んだ）オブジェクトも表現したい場合があります。<br />
+　こういう場合は<b>凸型オブジェクト</b>を組み合わせて使用します。<br />
+　<b>ActivePsCombinedObject</b>は、組み合わせたオブジェクトです。以下がその<b>OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void ActivePsCombinedObject::OnCreate() {
+    auto PtrTransform = GetComponent&lt;Transform>();
+    PtrTransform->SetScale(Vec3(1.0f));
+    PtrTransform->SetQuaternion(m_Qt);
+    PtrTransform->SetPosition(m_Position);
+    //合成オブジェクトの準備
+    PsCombinedParam param;
+    //質量は重くする
+    param.m_Mass = 3.0f;
+    //Box用の慣性（慣性テンソル）を計算
+    param.m_Inertia = BasePhysics::CalcInertiaBox(Vec3(2.5f, 1.0f, 1.0f), param.m_Mass);
+    param.m_MotionType = PsMotionType::MotionTypeActive;
+    param.m_Quat = m_Qt;
+    param.m_Pos = m_Position;
+    //合成されるプリミティブ（0番目、ボックス）
+    PsCombinedPrimitive primitive;
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeBox;
+    primitive.m_HalfSize = Vec3(0.5f, 0.5f, 1.5f);
+    primitive.m_OffsetPosition = Vec3(-2.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);
+    //合成されるプリミティブ（1番目、ボックス）
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeBox;
+    primitive.m_HalfSize = Vec3(0.5f, 1.5f, 0.5f);
+    primitive.m_OffsetPosition = Vec3(2.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);
+    //合成されるプリミティブ（2番目、カプセル）
+    primitive.reset();
+    primitive.m_CombinedType = PsCombinedType::TypeCapsule;
+    primitive.m_HalfLen = 1.5f;
+    primitive.m_Radius = 0.5f;
+    primitive.m_OffsetPosition = Vec3(0.0f, 0.0f, 0.0f);
+    //合成オブジェクトに追加
+    param.AddPrim(primitive);
+    //物理コンポーネント（合成）
+    auto PsPtr = AddComponent&lt;RigidbodyCombined>(param);
+    PsPtr->SetDrawActive(true);
+    //物理コンポーネントに合わせて描画コンポーネント（影も）を作成
+    CreateDrawComp(param);
+}
+</pre>
+</div>
+　このように、１つ１つボックスやカプセルを作り出して、合成オブジェクトに追加しています。<br />
+　また<b>CreateDrawComp()関数</b>によって、描画コンポーネントを設定しています。
+<h4>発射する球体</h4>
+　このサンプルでは<b>Xボタン</b>で発射する球体が実装されています。<br />
+　物理オブジェクトに向かって<b>Xボタン</b>を押すと、球体が発射して、各物理オブジェクトと衝突します。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="14_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
