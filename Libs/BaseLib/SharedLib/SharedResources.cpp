@@ -193,7 +193,7 @@ namespace basecross {
 				pImpl->m_ProjMatrix = XMMatrixPerspectiveFovLH(pImpl->m_FovY, pImpl->m_Aspect, pImpl->m_Near, pImpl->m_Far);
 			}
 			else {
-				pImpl->m_ViewMatrix.identity();
+				pImpl->m_ViewMatrix = XMMatrixLookAtLH(pImpl->m_Eye, pImpl->m_At, pImpl->m_Up);
 				pImpl->m_ProjMatrix = XMMatrixOrthographicLH(pImpl->m_Width, pImpl->m_Height, pImpl->m_Near, pImpl->m_Far);
 			}
 		}
