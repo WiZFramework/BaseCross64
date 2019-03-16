@@ -78,6 +78,29 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
+	//	ìGÇÃãÖ
+	//--------------------------------------------------------------------------------------
+	class EnemySphere : public GameObject {
+		float m_Scale;
+		Vec3 m_Position;
+		shared_ptr<MeshResource> m_MeshRes;
+	public:
+		//ç\ízÇ∆îjä¸
+		EnemySphere(const shared_ptr<Stage>& StagePtr,
+			float Scale,
+			const Vec3& Position
+		);
+		virtual ~EnemySphere();
+		//èâä˙âª
+		virtual void OnCreate() override;
+		//ëÄçÏ
+		bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint);
+		bool IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint);
+	};
+
+
+
+	//--------------------------------------------------------------------------------------
 	//	ìGÇÃî†
 	//--------------------------------------------------------------------------------------
 	class EnemyBox : public GameObject {

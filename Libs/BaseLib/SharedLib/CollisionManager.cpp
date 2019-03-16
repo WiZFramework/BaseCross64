@@ -64,6 +64,9 @@ namespace basecross {
 		if (!SrcColl || !DestColl) {
 			return false;
 		}
+		if (!SrcColl->IsUpdateActive() || !DestColl->IsUpdateActive()) {
+			return false;
+		}
 		if (SrcColl->IsFixed()) {
 			return false;
 		}

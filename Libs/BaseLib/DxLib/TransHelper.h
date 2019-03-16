@@ -1479,6 +1479,18 @@ namespace basecross{
 			const bsm::Mat4x4& m) {
 			Set(baseA,baseB,baseC,m);
 		}
+		bool IsValid() {
+			if (m_A == m_B) {
+				return false;
+			}
+			if (m_A == m_C) {
+				return false;
+			}
+			if (m_B == m_C) {
+				return false;
+			}
+			return true;
+		}
 		bsm::Vec3 GetNormal()const {
 			bsm::Vec3 Ret =
 				bsm::cross(

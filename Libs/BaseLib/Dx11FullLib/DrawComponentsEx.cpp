@@ -750,6 +750,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
@@ -774,6 +778,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			//球体の移動はStartSpからEndSpに1.0とする
@@ -853,6 +861,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
@@ -878,6 +890,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_BcDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_BcDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_BcDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			//球体の移動はStartSpからEndSpに1.0とする

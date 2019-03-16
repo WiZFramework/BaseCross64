@@ -1026,6 +1026,8 @@ namespace basecross {
 	class GenericDraw :public ObjectInterface {
 		void PCWireFrameDraw(const shared_ptr<GameObject>& GameObjectPtr, const shared_ptr<MeshResource>& MeshRes,
 			const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& MeshToTransformMatrix);
+		void PCWireFrameDrawWithWorldMatrix(const shared_ptr<GameObject>& GameObjectPtr, const shared_ptr<MeshResource>& MeshRes,
+			const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& WorldMatrix);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -1052,12 +1054,23 @@ namespace basecross {
 		@brief	ワイアフレーム描画処理
 		@param[in]	GameObj	ゲームオブジェクト
 		@param[in]	Mesh	PCメッシュ
-
+		@param[in]	MeshToTransformMatrix	ワールド行列との相対行列
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
 		void DrawWireFrame(const shared_ptr<GameObject>& GameObj,
 			const shared_ptr<MeshResource>& Mesh,const bsm::Mat4x4& MeshToTransformMatrix = bsm::Mat4x4());
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ワイアフレーム描画処理
+		@param[in]	GameObj	ゲームオブジェクト
+		@param[in]	Mesh	PCメッシュ
+		@param[in]	MeshToTransformMatrix	ワールド行列との相対行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void DrawWireFrameWithWorldMatrix(const shared_ptr<GameObject>& GameObj,
+			const shared_ptr<MeshResource>& Mesh, const bsm::Mat4x4& WorldMatrix);
 
 	};
 

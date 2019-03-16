@@ -24,6 +24,13 @@ namespace basecross {
 		Draw.DrawWireFrame(GetGameObject(), res, meshtotrans);
 	}
 
+	void Rigidbody::DrawShapeWireFrameWithWorldMatrix(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& WorldMatrix) {
+		GenericDraw Draw;
+		Draw.DrawWireFrameWithWorldMatrix(GetGameObject(), res, WorldMatrix);
+
+	}
+
+
 	shared_ptr<MeshResource> Rigidbody::CreateCapsuleMesh(const PsCapsuleParam& param) {
 		vector<VertexPositionNormalTexture> vertices;
 		vector<VertexPositionColor> new_pc_vertices;
@@ -873,7 +880,7 @@ namespace basecross {
 							LocalPos				//位置
 						);
 						bsm::Mat4x4 DrawWorld = Local * World;
-						DrawShapeWireFrame(MeshRes, DrawWorld);
+						DrawShapeWireFrameWithWorldMatrix(MeshRes, DrawWorld);
 					}
 				}
 				break;
@@ -904,7 +911,7 @@ namespace basecross {
 							LocalPos				//位置
 						);
 						bsm::Mat4x4 DrawWorld = Local * World;
-						DrawShapeWireFrame(MeshRes, DrawWorld);
+						DrawShapeWireFrameWithWorldMatrix(MeshRes, DrawWorld);
 					}
 				}
 				break;
@@ -936,7 +943,7 @@ namespace basecross {
 							LocalPos				//位置
 						);
 						bsm::Mat4x4 DrawWorld = Local * World;
-						DrawShapeWireFrame(MeshRes, DrawWorld);
+						DrawShapeWireFrameWithWorldMatrix(MeshRes, DrawWorld);
 					}
 				}
 				break;
@@ -967,7 +974,7 @@ namespace basecross {
 							LocalPos				//位置
 						);
 						bsm::Mat4x4 DrawWorld = Local * World;
-						DrawShapeWireFrame(MeshRes, DrawWorld);
+						DrawShapeWireFrameWithWorldMatrix(MeshRes, DrawWorld);
 					}
 				}
 				break;

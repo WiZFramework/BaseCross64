@@ -6,7 +6,7 @@
 #include "stdafx.h"
 #include "Project.h"
 
-namespace basecross{
+namespace basecross {
 
 	//--------------------------------------------------------------------------------------
 	//class MultiSpark : public MultiParticle;
@@ -159,23 +159,31 @@ namespace basecross{
 				ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
 
 				auto EnemyPtr = GetStage()->GetSharedGameObject<EnemyBox>(L"EnemyBox");
+				auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
+				auto SpherePtr = GetStage()->GetSharedGameObject<EnemySphere>(L"EnemySphere");
+
+
+
 				Vec3 HitPoint;
 				TRIANGLE tri;
 				bool isModelHit = false;
-				if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+				if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
 					//スパークの放出
 					auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
 					PtrSpark->InsertSpark(HitPoint);
 					isModelHit = true;
 				}
-				else {
-					auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
-					if (BonePtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
-						//スパークの放出
-						auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
-						PtrSpark->InsertSpark(HitPoint);
-						isModelHit = true;
-					}
+				else if (BonePtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
+					//スパークの放出
+					auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+					PtrSpark->InsertSpark(HitPoint);
+					isModelHit = true;
+				}
+				else if (SpherePtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
+					//スパークの放出
+					auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+					PtrSpark->InsertSpark(HitPoint);
+					isModelHit = true;
 				}
 				if (isModelHit) {
 					m_Velocity.reflect(tri.GetNormal());
@@ -227,6 +235,97 @@ namespace basecross{
 	}
 
 	//--------------------------------------------------------------------------------------
+	//	敵の球
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	EnemySphere::EnemySphere(const shared_ptr<Stage>& StagePtr,
+		float Scale,
+		const Vec3& Position
+	) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Position(Position)
+	{}
+	EnemySphere::~EnemySphere(){}
+	//初期化
+	void EnemySphere::OnCreate() {
+		GetStage()->SetSharedGameObject(L"EnemySphere", GetThis<EnemySphere>());
+		//初期位置などの設定
+		auto ptrTrans = GetComponent<Transform>();
+		ptrTrans->SetScale(Vec3(m_Scale));
+		ptrTrans->SetRotation(Vec3(0));
+		ptrTrans->SetPosition(m_Position);
+		//CollisionSphere衝突判定を付ける(Sphere取り出しのため)
+		auto ptrColl = AddComponent<CollisionSphere>();
+		//無効にしておく
+		ptrColl->SetUpdateActive(false);
+		//影をつける（シャドウマップを描画する）
+		auto shadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		shadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+		//描画コンポーネントの設定
+		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
+		m_MeshRes = MeshResource::CreateMeshResource(vertices, indices,true);
+		ptrDraw->SetMeshResource(m_MeshRes);
+		//描画するテクスチャを設定
+		ptrDraw->SetTextureResource(L"WALL_TX");
+
+	}
+
+	bool EnemySphere::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
+		SPHERE StartSp;
+		StartSp.m_Center = StartPos;
+		StartSp.m_Radius = 0.25f;
+		SPHERE EndSp;
+		EndSp.m_Center = EndPos;
+		EndSp.m_Radius = 0.25f;
+		auto ptrColl = GetComponent<CollisionSphere>();
+		SPHERE sp1 = ptrColl->GetSphere();
+		SPHERE sp2 = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		Vec3 ret;
+		if (!HitTest::SPHERE_SPHERE(sp1, sp2)) {
+			//判定前処理
+			//これにより無駄な判定を避けられる
+			return false;
+		}
+
+		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
+		size_t hitIndex;
+		return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);
+	}
+
+	bool EnemySphere::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
+		auto ptrColl = GetComponent<CollisionSphere>();
+		SPHERE sp1 = ptrColl->GetSphere();
+		SPHERE sp2 = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		Vec3 ret;
+		if (!HitTest::SPHERE_SPHERE(sp1, sp2)) {
+			//判定前処理
+			//これにより無駄な判定を避けられる
+			return false;
+		}
+		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
+		size_t hitIndex;
+		if (PtrDraw->HitTestStaticMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex)) {
+			//hitindexを頂点のインデックスに換算
+			hitIndex *= 3;
+			auto& verVec = m_MeshRes->GetBackupVerteces<VertexPositionNormalTexture>();
+			vector<uint16_t>& indexVec = m_MeshRes->GetBackupIndices<VertexPositionNormalTexture>();
+			verVec[indexVec[hitIndex]].position *= 0.95;
+			verVec[indexVec[hitIndex + 1]].position *= 0.95;
+			verVec[indexVec[hitIndex + 2]].position *= 0.95;
+			m_MeshRes->UpdateVirtexBuffer(verVec);
+			return true;
+		}
+		return false;
+	}
+
+
+
+	//--------------------------------------------------------------------------------------
 	//	敵の箱
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
@@ -250,6 +349,11 @@ namespace basecross{
 		ptrTrans->SetRotation(m_Rotation);
 		ptrTrans->SetPosition(m_Position);
 
+		//CollisionObb衝突判定を付ける(OBB取り出しのため)
+		auto ptrColl = AddComponent<CollisionObb>();
+		//無効にしておく
+		ptrColl->SetUpdateActive(false);
+
 		//影をつける（シャドウマップを描画する）
 		auto shadowPtr = AddComponent<Shadowmap>();
 		//影の形（メッシュ）を設定
@@ -265,12 +369,36 @@ namespace basecross{
 	}
 
 	bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
+		auto ptrColl = GetComponent<CollisionObb>();
+		OBB obb = ptrColl->GetObb();
+		SPHERE StartSp;
+		StartSp.m_Center = StartPos;
+		StartSp.m_Radius = 0.25f;
+		SPHERE EndSp;
+		EndSp.m_Center = EndPos;
+		EndSp.m_Radius = 0.25f;
+		SPHERE sp = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		Vec3 ret;
+		if (!HitTest::SPHERE_OBB(sp, obb, ret)) {
+			//判定前処理
+			//これにより無駄な判定を避けられる
+			return false;
+		}
 		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
 		size_t hitIndex;
 		return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);
 	}
 
 	bool EnemyBox::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
+		auto ptrColl = GetComponent<CollisionObb>();
+		OBB obb = ptrColl->GetObb();
+		SPHERE sp = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		Vec3 ret;
+		if (!HitTest::SPHERE_OBB(sp, obb,ret)) {
+			//判定前処理
+			//これにより無駄な判定を避けられる
+			return false;
+		}
 		auto PtrDraw = GetComponent<BcPNTStaticDraw>();
 		size_t hitIndex;
 		return PtrDraw->HitTestStaticMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex);
@@ -324,6 +452,17 @@ namespace basecross{
 	}
 
 	bool BoneChara::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
+		SPHERE StartSp;
+		StartSp.m_Center = StartPos;
+		StartSp.m_Radius = 0.25f;
+		SPHERE EndSp;
+		EndSp.m_Center = EndPos;
+		EndSp.m_Radius = 0.25f;
+		SPHERE sp = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		if (length(sp.m_Center - GetComponent<Transform>()->GetPosition()) >= 5.0f) {
+			//距離が5.0以上離れていたらfalse
+			return false;
+		}
 		auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
 		size_t hitIndex;
 		return PtrDraw->HitTestSkinedMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);
@@ -331,6 +470,11 @@ namespace basecross{
 	}
 
 	bool BoneChara::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
+		SPHERE sp = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+		if (length(sp.m_Center - GetComponent<Transform>()->GetPosition()) >= 5.0f) {
+			//距離が5.0以上離れていたらfalse
+			return false;
+		}
 		auto PtrDraw = GetComponent<BcPNTnTBoneModelDraw>();
 		size_t hitIndex;
 		return PtrDraw->HitTestSkinedMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex);

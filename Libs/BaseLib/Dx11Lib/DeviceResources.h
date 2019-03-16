@@ -1070,6 +1070,49 @@ namespace basecross {
 			//アンマップ
 			pID3D11DeviceContext->Unmap(pVertexBuffer, 0);
 
+			//汎用頂点の作成
+			//インデックスをもとに作成する
+			m_MeshPrimData.m_Vertices.clear();
+			if (GetNumIndicis() > 0) {
+				auto& indices = GetBackupIndices<T>();
+				for (auto i : indices) {
+					VertexPosition vertex;
+					vertex.position = NewBuffer[i].position;
+					m_MeshPrimData.m_Vertices.push_back(vertex);
+					//スキン情報を持つかどうか
+					//VertexPositionNormalTangentColorTextureSkinningは未対応
+					if (typeid(T) == typeid(VertexPositionNormalTextureSkinning)) {
+						m_MeshPrimData.m_Skins.clear();
+						auto& ref = (VertexPositionNormalTextureSkinning&)NewBuffer[i];
+						SkinPrimData sdata;
+						for (int i = 0; i < 4; i++) {
+							sdata.indices[i] = ref.indices[i];
+							sdata.weights[i] = ref.weights[i];
+						}
+						m_MeshPrimData.m_Skins.push_back(sdata);
+
+					}
+					else if (typeid(T) == typeid(VertexPositionNormalTangentTextureSkinning)) {
+						m_MeshPrimData.m_Skins.clear();
+						auto& ref = (VertexPositionNormalTangentTextureSkinning&)NewBuffer[i];
+						SkinPrimData sdata;
+						for (int i = 0; i < 4; i++) {
+							sdata.indices[i] = ref.indices[i];
+							sdata.weights[i] = ref.weights[i];
+						}
+						m_MeshPrimData.m_Skins.push_back(sdata);
+					}
+				}
+			}
+			else {
+				//汎用頂点の作成
+				for (auto& v : NewBuffer) {
+					VertexPosition vertex;
+					vertex.position = v.position;
+					m_MeshPrimData.m_Vertices.push_back(vertex);
+				}
+			}
+
 		}
 	};
 

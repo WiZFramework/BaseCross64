@@ -98,6 +98,8 @@ namespace basecross{
 		SPHERE startSp(ptrTrans->GetBeforePosition(), 0.125f);
 		SPHERE endSp(ptrTrans->GetPosition(), 0.125f);
 		auto EnemyPtr = GetStage()->GetSharedGameObject<EnemyBox>(L"EnemyBox");
+		auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
+		auto SpherePtr = GetStage()->GetSharedGameObject<EnemySphere>(L"EnemySphere");
 		Vec3 HitPoint;
 		TRIANGLE tri;
 		if (EnemyPtr->IsHitSphereTriangles(startSp, endSp, tri, HitPoint)) {
@@ -105,14 +107,17 @@ namespace basecross{
 			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
 			PtrSpark->InsertSpark(HitPoint);
 		}
-		else {
-			auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
-			if (BonePtr->IsHitSphereTriangles(startSp, endSp, tri, HitPoint)) {
-				//スパークの放出
-				auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
-				PtrSpark->InsertSpark(HitPoint);
-			}
+		else if (BonePtr->IsHitSphereTriangles(startSp, endSp, tri, HitPoint)) {
+			//スパークの放出
+			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+			PtrSpark->InsertSpark(HitPoint);
 		}
+		if (SpherePtr->IsHitSphereTriangles(startSp, endSp, tri, HitPoint)) {
+			//スパークの放出
+			auto PtrSpark = GetStage()->GetSharedGameObject<MultiSpark>(L"MultiSpark");
+			PtrSpark->InsertSpark(HitPoint);
+		}
+
 	}
 
 

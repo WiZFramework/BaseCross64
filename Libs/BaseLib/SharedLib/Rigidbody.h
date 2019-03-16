@@ -38,6 +38,15 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void DrawShapeWireFrame(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& meshtotrans);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief ワイアフレームの描画
+		@param[in]	res	メッシュリソース
+		@param[in]	WorldMatrix	ワールド行列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void DrawShapeWireFrameWithWorldMatrix(const shared_ptr<MeshResource>& res, const bsm::Mat4x4& WorldMatrix);
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!

@@ -69,6 +69,7 @@ namespace basecross {
 
 	//“G‚Ìì¬
 	void GameStage::CreateEnemy() {
+		AddGameObject<EnemySphere>(5.0f, Vec3(0.0f, 2.5f, 10.0f));
 		AddGameObject<EnemyBox>(Vec3(1.0), Vec3(0.0f), Vec3(2.5f, 0.5f, 5.0f));
 	}
 

@@ -1189,6 +1189,75 @@ namespace basecross {
 		Dev->InitializeStates();
 	}
 
+	void GenericDraw::PCWireFrameDrawWithWorldMatrix(const shared_ptr<GameObject>& GameObjectPtr, const shared_ptr<MeshResource>& MeshRes,
+		const bsm::Col4& Emissive, const bsm::Col4& Diffuse, const bsm::Mat4x4& WorldMatrix) {
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
+		auto RenderState = Dev->GetRenderState();
+		//行列の定義
+		bsm::Mat4x4 World, ViewMat, ProjMat;
+		//ワールド行列の決定
+		World = WorldMatrix;
+		//転置する
+		World.transpose();
+		//カメラを得る
+		auto CameraPtr = GameObjectPtr->OnGetDrawCamera();
+		//ビューと射影行列を得る
+		ViewMat = CameraPtr->GetViewMatrix();
+		//転置する
+		ViewMat.transpose();
+		//転置する
+		ProjMat = CameraPtr->GetProjMatrix();
+		ProjMat.transpose();
+		//コンスタントバッファの準備
+		SimpleConstants sb;
+		sb.World = World;
+		sb.View = ViewMat;
+		sb.Projection = ProjMat;
+		//エミッシブ
+		sb.Emissive = Emissive;
+		//デフィーズはすべて通す
+		sb.Diffuse = Diffuse;
+		//コンスタントバッファの更新
+		pD3D11DeviceContext->UpdateSubresource(CBSimple::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
+
+		//ストライドとオフセット
+		UINT stride = sizeof(VertexPositionColor);
+		UINT offset = 0;
+		//頂点バッファのセット
+		pD3D11DeviceContext->IASetVertexBuffers(0, 1, MeshRes->GetVertexBuffer().GetAddressOf(), &stride, &offset);
+		//インデックスバッファのセット
+		pD3D11DeviceContext->IASetIndexBuffer(MeshRes->GetIndexBuffer().Get(), DXGI_FORMAT_R16_UINT, 0);
+
+		//描画方法（3角形）
+		pD3D11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		//コンスタントバッファの設定
+		ID3D11Buffer* pConstantBuffer = CBSimple::GetPtr()->GetBuffer();
+		ID3D11Buffer* pNullConstantBuffer = nullptr;
+		//頂点シェーダに渡す
+		pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
+		//ピクセルシェーダに渡す
+		pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
+		//シェーダの設定
+		pD3D11DeviceContext->VSSetShader(VSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+		pD3D11DeviceContext->PSSetShader(PSPCStatic::GetPtr()->GetShader(), nullptr, 0);
+		//インプットレイアウトの設定
+		pD3D11DeviceContext->IASetInputLayout(VSPCStatic::GetPtr()->GetInputLayout());
+		//ブレンドステート
+		//透明処理しない
+		pD3D11DeviceContext->OMSetBlendState(RenderState->GetOpaque(), nullptr, 0xffffffff);
+		//デプスステンシルステート
+		pD3D11DeviceContext->OMSetDepthStencilState(RenderState->GetDepthDefault(), 0);
+		//ラスタライザステート(ワイアフレーム)
+		pD3D11DeviceContext->RSSetState(RenderState->GetWireframe());
+		pD3D11DeviceContext->DrawIndexed(MeshRes->GetNumIndicis(), 0, 0);
+		//後始末
+		Dev->InitializeStates();
+
+	}
+
+
 
 	void GenericDraw::DrawWireFrame(const shared_ptr<GameObject>& GameObj,
 		const shared_ptr<MeshResource>& Mesh, const bsm::Mat4x4& MeshToTransformMatrix) {
@@ -1196,6 +1265,13 @@ namespace basecross {
 		PCWireFrameDraw(GameObj, Mesh,
 			bsm::Col4(0,0,0,0), bsm::Col4(1, 1, 1, 1), MeshToTransformMatrix);
 	}
+
+	void GenericDraw::DrawWireFrameWithWorldMatrix(const shared_ptr<GameObject>& GameObj,
+		const shared_ptr<MeshResource>& Mesh, const bsm::Mat4x4& WorldMatrix) {
+		PCWireFrameDrawWithWorldMatrix(GameObj, Mesh,
+			bsm::Col4(0, 0, 0, 0), bsm::Col4(1, 1, 1, 1), WorldMatrix);
+	}
+
 
 	//static変数の実体
 	vector<bsm::Vec3> DrawObjectBase::m_TempPositions;
@@ -1739,6 +1815,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
@@ -1763,6 +1843,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			//球体の移動はStartSpからEndSpに1.0とする
@@ -1840,6 +1924,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			if (HitTest::SEGMENT_TRIANGLE(StartPos, EndPos, tri, ret, t)) {
@@ -1865,6 +1953,10 @@ namespace basecross {
 			tri.m_A = pImpl->m_SmDrawObject.m_TempPositions[i];
 			tri.m_B = pImpl->m_SmDrawObject.m_TempPositions[i + 1];
 			tri.m_C = pImpl->m_SmDrawObject.m_TempPositions[i + 2];
+			if (!tri.IsValid()) {
+				//三角形が無効なら次にうつる
+				continue;
+			}
 			bsm::Vec3 ret;
 			float t;
 			//球体の移動はStartSpからEndSpに1.0とする
