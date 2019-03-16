@@ -25,10 +25,10 @@
 <p>図1207a</p>
 <p>&nbsp;</p>
 　プレイヤーはAボタンでジャンプ、Xボタンで球を発射します。この辺りは前項と同じです。<br />
-　このサンプルには２つのボックス型オブジェクトが配置されています。右のはスタティックなモデルで、左がボーンモデルです。<br />
+　このサンプルには２つのボックス型オブジェクトと、奥に大きい球体が配置されています。右と奥ははスタティックなモデルで、左がボーンモデルです。<br />
 　Xボタンで発射された球は、これらのオブジェクトにぶつかると、スパークを出し反発します。<br />
 　ボーンモデルの場合も、アニメーションされている場所で反発します。
-<h4>メッシュの三角形との衝突判定</h4>
+<h4>メッシュ内の三角形との衝突判定</h4>
 　前項で紹介した<b>衝突判定</b>は<b>ボリューム境界</b>を使用したものです。モデルなどを単純な３Ｄの形状と見立てて、判定を行います。<br />
 　しかし今回のサンプルでは、メッシュ内の各三角形と衝突判定を行います。<br />
 　まず、発射された球体との判定ですが、<b>Charaaacter.h/cpp</b>に記述があります<b>FireSphereクラス</b>です。<br />
@@ -50,34 +50,37 @@ void FireSphere::OnUpdate() {
         }
         else {
             ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
-
             <span class="red">auto EnemyPtr = GetStage()->GetSharedGameObject&lt;EnemyBox>(L"EnemyBox");
+            auto BonePtr = GetStage()->GetSharedGameObject&lt;BoneChara>(L"BoneChara");
+            auto SpherePtr = GetStage()->GetSharedGameObject&lt;EnemySphere>(L"EnemySphere");
             Vec3 HitPoint;
             TRIANGLE tri;
             bool isModelHit = false;
-            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
+            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
                 //スパークの放出
                 auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
                 PtrSpark->InsertSpark(HitPoint);
                 isModelHit = true;
             }
-            else {
-                auto BonePtr = GetStage()->GetSharedGameObject&lt;BoneChara>(L"BoneChara");
-                if (BonePtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
-                    //スパークの放出
-                    auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
-                    PtrSpark->InsertSpark(HitPoint);
-                    isModelHit = true;
-                }
+            else if (BonePtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
+                //スパークの放出
+                auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+                PtrSpark->InsertSpark(HitPoint);
+                isModelHit = true;
             }
+            else if (SpherePtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
+                //スパークの放出
+                auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+                PtrSpark->InsertSpark(HitPoint);
+                isModelHit = true;
+            }</span>
             if (isModelHit) {
                 m_Velocity.reflect(tri.GetNormal());
                 if (m_Velocity.length() > 20.0f) {
                     m_Velocity.normalize();
                     m_Velocity *= 20.0f;
                 }
-
-            }</span>
+            }
         }
     }
     else {
@@ -98,12 +101,26 @@ void FireSphere::OnUpdate() {
 　この関数は以下のようになっています。
 <div class="box1">
 <pre>
-    bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos,
-             TRIANGLE& tri, Vec3& HitPoint) {
-        auto PtrDraw = GetComponent&lt;BcPNTStaticDraw>();
-        size_t hitIndex;
-        return <span class="red">PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri,hitIndex);</span>
+bool EnemyBox::IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint) {
+    auto ptrColl = GetComponent&lt;CollisionObb>();
+    OBB obb = ptrColl->GetObb();
+    SPHERE StartSp;
+    StartSp.m_Center = StartPos;
+    StartSp.m_Radius = 0.25f;
+    SPHERE EndSp;
+    EndSp.m_Center = EndPos;
+    EndSp.m_Radius = 0.25f;
+    SPHERE sp = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+    Vec3 ret;
+    if (!HitTest::SPHERE_OBB(sp, obb, ret)) {
+        //判定前処理
+        //これにより無駄な判定を避けられる
+        return false;
     }
+    <span class="red">auto PtrDraw = GetComponent&lt;BcPNTStaticDraw>();
+    size_t hitIndex;
+    return PtrDraw->HitTestStaticMeshSegmentTriangles(StartPos, EndPos, HitPoint, tri, hitIndex);</span>
+}
 </pre>
 </div>
 　のようになっています。<br />
@@ -112,27 +129,27 @@ void FireSphere::OnUpdate() {
 　<b>FireSphere側</b>では、<b>FireSphere::OnUpdate()関数</b>で、
 <div class="box1">
 <pre>
-            if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri,HitPoint)) {
-                //スパークの放出
-                auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
-                PtrSpark->InsertSpark(HitPoint);
-                isModelHit = true;
-            }
+        if (EnemyPtr->IsHitSegmentTriangles(BeforePos, Pos, tri, HitPoint)) {
+            //スパークの放出
+            auto PtrSpark = GetStage()->GetSharedGameObject&lt;MultiSpark>(L"MultiSpark");
+            PtrSpark->InsertSpark(HitPoint);
+            isModelHit = true;
+        }
 </pre>
 </div>
 　とします。つまり、ヒットポイントをエミッターとしてエフェクトを送出します。また、<b>isModelHitフラグ</b>をtrueにします。<br />
-　同様の処理を<b>BoneChara</b>に対しても行います。左側のくねくねする物体です。このキャラクターのメンバ関数<b>BoneChara::IsHitSegmentTriangles()関数</b>では、<b>描画コンポーネント</b>の<b>HitTestSkinedMeshSegmentTriangles()関数</b>を呼び出します。<br />　こちらは<b>ボーン処理された三角形と線分</b>の衝突判定を行いますので、例えば、このくねくね物体が首をもたげても空中で衝突することはありません。こちらでも同様、スパークを放出します。<br />
+　同様の処理を<b>BoneCharaやEnemySphere</b>に対しても行います。BoneCharaは左側のくねくねする物体です。EnemySphereは奥の球体です。このキャラクターのメンバ関数、例えば<b>BoneChara::IsHitSegmentTriangles()関数</b>では、<b>描画コンポーネント</b>の<b>HitTestSkinedMeshSegmentTriangles()関数</b>を呼び出します。<br />　こちらは<b>ボーン処理された三角形と線分</b>の衝突判定を行いますので、例えば、このくねくね物体が首をもたげても空中で衝突することはありません。こちらでも同様、スパークを放出します。<br />
 　上記どちらかと衝突した場合、<b>isModelHitフラグ</b>はtrueになりますので、
 <div class="box1">
 <pre>
-            if (isModelHit) {
-                m_Velocity.reflect(tri.GetNormal());
-                if (m_Velocity.length() > 20.0f) {
-                    m_Velocity.normalize();
-                    m_Velocity *= 20.0f;
-                }
-
+        if (isModelHit) {
+            m_Velocity.reflect(tri.GetNormal());
+            if (m_Velocity.length() > 20.0f) {
+                m_Velocity.normalize();
+                m_Velocity *= 20.0f;
             }
+
+        }
 </pre>
 </div>
 　という処理で反発（reflect）させます。こうすることで、<b>FireSphere</b>は跳ね返ります。<br />
@@ -168,11 +185,12 @@ void FireSphere::OnCollisionExcute(const CollisionPair& Pair) {
 </pre>
 </div>
 <h4>プレイヤー三角形との衝突判定</h4>
-　プレイヤーも三角形と衝突します。先ほどのボックスやくねくねする物体の三角形との衝突があった場合、エフェクトを放出します。<br />
+　このサンプルではプレイヤーも三角形と衝突します。先ほどのボックスやくねくねする物体の三角形、あるいは奥の球体との衝突があった場合、エフェクトを放出します。<br />
 　プレイヤーは<b>線</b>ではなく<b>球体として</b>判定を行っています。ここは、プレイヤーの1つ前のターン位置と現在の位置をとってきて、<b>線</b>として判定する方法もあるでしょう、ただこのサンプルでは<b>球体として</b>行います。<br />
 　プレイヤーの判定部分は、<b>Player::ChkModelCollision()関数</b>で行ってます。この中から、各物体の<b>三角形と球の判定</b>の関数を呼び出しています。<br />
-　FireSphereとは違い、プレイヤーでは衝突後の処理は記述してません。例えばくねくねする物体の<b>曲がった部分に乗る</b>のような処理があればよりリアルなのでしょうが、その部分は各自検討してください。<br />
-　その処理をするためにはプレイヤーに<b>速度</b>という概念をおいて、コリジョンコンポーネントがやってるような処理を実装する必要があるでしょう。
+　FireSphereとは違い、プレイヤー側では衝突後の処理は記述してません。例えばくねくねする物体の<b>曲がった部分に乗る</b>のような処理があればよりリアルなのでしょうが、その部分は各自検討してください。<br />
+　その処理をするためにはプレイヤーに<b>速度</b>という概念をおいて、コリジョンコンポーネントがやってるような処理を実装する必要があるでしょう。<br />
+　ただし、奥の球体は、球体側で特殊な処理をしています。それは後述します。
 <h4>ボーン情報をとってくる</h4>
 　このサンプルでは<b>スキンメッシュのボーン情報を取得する</b>ことも紹介されています。<br />
 　<b>Character.h/cpp</b>には<b>BallChara</b>というオブジェクトも実装されています。<br />
@@ -217,7 +235,125 @@ void BallChara::OnUpdate() {
 </pre>
 </div>
 　で位置と回転を取り出して設定すれば、<b>BoneChara</b>の特定のボーンに吸着する動きを実装することができます。
-
+<h4>メッシュ内の三角形のデータを変更する</h4>
+　奥にある球体にプレイヤーが衝突すると、球体が削り取られるように壊れていきます。<br />
+　これは、動的にメッシュの内容を変更していくことで実装しています。<br />
+　では<b>動的にメッシュの内容を変更する</b>とはどういうことなのでしょうか？<br />
+　以下の画像に注目ください。最初は球体だったのが、プレイヤーが衝突することで、形状が削り取られています
+<p>&nbsp;</p>
+<img src="img/1207b.png" width="80%"/>
+<p>図1207b</p>
+<p>&nbsp;</p>
+　このサンプルのプレイヤーは、空中でジャンプすることも可能です。球体は大きいですが、球体の上部までジャンプしていって、どこでも削り取ることが可能となっています。<br />
+　さて、実装ですが、まず、このような<b>使いまわしをしない（つまりインスタンスは、ステージ内で1つ）</b>のようなメッシュは、ゲームオブジェクトのメンバ変数として実装しておくと扱いが便利になります。<br />
+　以下、大きい球体（EnemySphere）の宣言部ですが
+<div class="box1">
+<pre>
+class EnemySphere : public GameObject {
+    float m_Scale;
+    Vec3 m_Position;
+    <span class="red">shared_ptr&lt;MeshResource> m_MeshRes;</span>
+public:
+    //構築と破棄
+    EnemySphere(const shared_ptr&lt;Stage>& StagePtr,
+        float Scale,
+        const Vec3& Position
+    );
+    virtual ~EnemySphere();
+    //初期化
+    virtual void OnCreate() override;
+    //操作
+    bool IsHitSegmentTriangles(const Vec3& StartPos, const Vec3& EndPos, TRIANGLE& tri, Vec3& HitPoint);
+    bool IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint);
+};
+</pre>
+</div>
+　赤い部分がメッシュのポインタです。ここに専用のメッシュを作成して設定します。<br />
+　以下、<b>EnemySphere::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void EnemySphere::OnCreate() {
+    GetStage()->SetSharedGameObject(L"EnemySphere", GetThis&lt;EnemySphere>());
+    //初期位置などの設定
+    auto ptrTrans = GetComponent&lt;Transform>();
+    ptrTrans->SetScale(Vec3(m_Scale));
+    ptrTrans->SetRotation(Vec3(0));
+    ptrTrans->SetPosition(m_Position);
+    //CollisionSphere衝突判定を付ける(Sphere取り出しのため)
+    auto ptrColl = AddComponent&lt;CollisionSphere>();
+    //無効にしておく
+    ptrColl->SetUpdateActive(false);
+    //描画コンポーネントの設定
+    auto ptrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    <span class="red">vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    MeshUtill::CreateSphere(1.0f, 18, vertices, indices);
+    m_MeshRes = MeshResource::CreateMeshResource(vertices, indices,true);</span>
+    ptrDraw->SetMeshResource(m_MeshRes);
+    //描画するテクスチャを設定
+    ptrDraw->SetTextureResource(L"WALL_TX");
+    //影をつける（シャドウマップを描画する）
+    auto shadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    shadowPtr->SetMeshResource(m_MeshRes);
+}
+</pre>
+</div>
+　赤い部分がメッシュを作成しているところです。
+<div class="box1">
+<pre>
+    m_MeshRes = MeshResource::CreateMeshResource(vertices, indices,<span class="red">true</span>);
+</pre>
+</div>
+　上記のように、CreateMeshResource()関数の最後の引数を<b>true</b>にすると、このメッシュの頂点を変更できるようになります。<br />
+　そして、以下は<b>プレイヤーが衝突したらメッシュの形状を変える</b>処理をしているところです。
+<div class="box1">
+<pre>
+bool EnemySphere::IsHitSphereTriangles(const SPHERE& StartSp, const SPHERE& EndSp, TRIANGLE& tri, Vec3& HitPoint) {
+    auto ptrColl = GetComponent&lt;CollisionSphere>();
+    SPHERE sp1 = ptrColl->GetSphere();
+    SPHERE sp2 = HitTest::SphereEnclosingSphere(StartSp, EndSp);
+    Vec3 ret;
+    if (!HitTest::SPHERE_SPHERE(sp1, sp2)) {
+        //判定前処理
+        //これにより無駄な判定を避けられる
+        return false;
+    }
+    auto PtrDraw = GetComponent&lt;BcPNTStaticDraw>();
+    size_t hitIndex;
+    if (PtrDraw->HitTestStaticMeshSphereTriangles(StartSp, EndSp, HitPoint, tri, hitIndex)) {
+        <span class="red">//hitindexを頂点のインデックスに換算
+        hitIndex *= 3;
+        auto& verVec = m_MeshRes->GetBackupVerteces&lt;VertexPositionNormalTexture>();
+        vector&lt;uint16_t>& indexVec = m_MeshRes->GetBackupIndices&lt;VertexPositionNormalTexture>();
+        verVec[indexVec[hitIndex]].position *= 0.95;
+        verVec[indexVec[hitIndex + 1]].position *= 0.95;
+        verVec[indexVec[hitIndex + 2]].position *= 0.95;
+        m_MeshRes->UpdateVirtexBuffer(verVec);</span>
+        return true;
+    }
+    return false;
+}
+</pre>
+</div>
+　球体（プレイヤー）と、このメッシュ内の三角形が衝突した場合<b>hitIndex</b>には、三角形のインデックス（並び順）が返されます。<br />
+　これを<b>hitIndex *= 3</b>とすることで、<b>頂点の順番（三角形の最初の頂点の順番）</b>に変更できます。ですので、<b>頂点の順番</b>というのは、メッシュ上は<b>インデックスバッファが指す頂点の順番</b>ですから
+<div class="box1">
+<pre>
+        verVec[indexVec[hitIndex]].position *= 0.95;
+        verVec[indexVec[hitIndex + 1]].position *= 0.95;
+        verVec[indexVec[hitIndex + 2]].position *= 0.95;
+</pre>
+</div>
+　のようにすることで、バックアップされている頂点を変更できます。最後に
+<div class="box1">
+<pre>
+        m_MeshRes->UpdateVirtexBuffer(verVec);
+</pre>
+</div>
+　とすることで、このメッシュリソースの頂点を変更します。<br />
+　<b>position *= 0.95</b>というのは、<b>position</b>には、<b>球体のローカルポジション</b>が入っていて、それらは、原点<b>Vec3(0,0,0)</b>からの相対的な位置情報になります。ですので、0.95倍することで、原点に頂点が近づきますので、<b>凹む</b>ように表現できます。<br />
+　この処理は<b>MeshUtill::CreateSphere()で作成するのメッシュだからできる</b>処理です。実際のモデルなどに適用する場合は、注意が必要です。
 </div>
 <!-- /コンテンツ　-->
 <hr>

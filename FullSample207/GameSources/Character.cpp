@@ -157,13 +157,9 @@ namespace basecross {
 			}
 			else {
 				ptrDraw->SetDiffuse(Col4(1.0f, 1.0f, 1.0f, 1.0f));
-
 				auto EnemyPtr = GetStage()->GetSharedGameObject<EnemyBox>(L"EnemyBox");
 				auto BonePtr = GetStage()->GetSharedGameObject<BoneChara>(L"BoneChara");
 				auto SpherePtr = GetStage()->GetSharedGameObject<EnemySphere>(L"EnemySphere");
-
-
-
 				Vec3 HitPoint;
 				TRIANGLE tri;
 				bool isModelHit = false;
@@ -191,7 +187,6 @@ namespace basecross {
 						m_Velocity.normalize();
 						m_Velocity *= 20.0f;
 					}
-
 				}
 			}
 		}
@@ -259,10 +254,6 @@ namespace basecross {
 		auto ptrColl = AddComponent<CollisionSphere>();
 		//無効にしておく
 		ptrColl->SetUpdateActive(false);
-		//影をつける（シャドウマップを描画する）
-		auto shadowPtr = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		shadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
 		//描画コンポーネントの設定
 		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		vector<VertexPositionNormalTexture> vertices;
@@ -272,6 +263,10 @@ namespace basecross {
 		ptrDraw->SetMeshResource(m_MeshRes);
 		//描画するテクスチャを設定
 		ptrDraw->SetTextureResource(L"WALL_TX");
+		//影をつける（シャドウマップを描画する）
+		auto shadowPtr = AddComponent<Shadowmap>();
+		//影の形（メッシュ）を設定
+		shadowPtr->SetMeshResource(m_MeshRes);
 
 	}
 
