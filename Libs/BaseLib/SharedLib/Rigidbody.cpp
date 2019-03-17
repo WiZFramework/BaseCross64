@@ -252,7 +252,17 @@ namespace basecross {
 		return sp;
 	}
 
-
+	bool RigidbodySphere::CollisionTestBase(const SPHERE& src) {
+		return HitTest::SPHERE_SPHERE(src, GetSPHERE());
+	}
+	bool RigidbodySphere::CollisionTestBase(const CAPSULE& src) {
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_CAPSULE(GetSPHERE(),src,ret);
+	}
+	bool RigidbodySphere::CollisionTestBase(const OBB& src) {
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_OBB(GetSPHERE(), src, ret);
+	}
 
 	void RigidbodySphere::Reset(const PsSphereParam& param, uint16_t index) {
 		m_PsSphere = GetGameObject()->GetStage()->GetBasePhysics().AddSphere(param, index);
@@ -296,6 +306,17 @@ namespace basecross {
 		return obb;
 	}
 
+	bool RigidbodyBox::CollisionTestBase(const SPHERE& src) {
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_OBB(src, GetOBB(),ret);
+	}
+	bool RigidbodyBox::CollisionTestBase(const CAPSULE& src) {
+		bsm::Vec3 ret;
+		return HitTest::CAPSULE_OBB( src, GetOBB(), ret);
+	}
+	bool RigidbodyBox::CollisionTestBase(const OBB& src) {
+		return HitTest::OBB_OBB(src, GetOBB());
+	}
 
 	void RigidbodyBox::Reset(const PsBoxParam& param, uint16_t index) {
 		m_PsBox = GetGameObject()->GetStage()->GetBasePhysics().AddBox(param, index);
@@ -351,13 +372,23 @@ namespace basecross {
 		return cap;
 	}
 
-
+	bool RigidbodyCapsule::CollisionTestBase(const SPHERE& src) {
+		bsm::Vec3 ret;
+		return HitTest::SPHERE_CAPSULE(src, GetCAPSULE(), ret);
+	}
+	bool RigidbodyCapsule::CollisionTestBase(const CAPSULE& src) {
+		bsm::Vec3 ret1,ret2;
+		return HitTest::CAPSULE_CAPSULE(src, GetCAPSULE(), ret1,ret2);
+	}
+	bool RigidbodyCapsule::CollisionTestBase(const OBB& src) {
+		bsm::Vec3 ret;
+		return HitTest::CAPSULE_OBB(GetCAPSULE(), src,ret);
+	}
 
 	void RigidbodyCapsule::Reset(const PsCapsuleParam& param, uint16_t index) {
 		m_PsCapsule = GetGameObject()->GetStage()->GetBasePhysics().AddCapsule(param, index);
 		m_CapsuleMesh = Rigidbody::CreateCapsuleMesh(param);
 	}
-
 
 	void RigidbodyCapsule::OnDraw() {
 		//トランスフォームからの差分
