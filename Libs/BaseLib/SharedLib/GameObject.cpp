@@ -1913,7 +1913,7 @@ namespace basecross {
 
 	void StageCellMap::OnDraw() {
 		//Dx12‚ª‘Î‰ž‚Å‚«‚é‚Ü‚Å‹Lq‚ðÁ‚·
-/*
+#if (BASECROSS_DXVERSION == 11)
 
 		if (pImpl->m_IsCellStringActive) {
 			GameObject::OnDraw();
@@ -1989,7 +1989,8 @@ namespace basecross {
 		pD3D11DeviceContext->Draw((UINT)pImpl->m_Vertices.size(), 0);
 		//ŒãŽn––
 		Dev->InitializeStates();
-*/
+#endif
+
 	}
 
 
