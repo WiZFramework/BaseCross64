@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１２．Update系の操作</h2>
+<h3>１２０９．経路探索</h3>
+　このサンプルは<b>FullSample209</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>Dx12版</b>はありません。<br />
+<br />
+　実行結果は、まず以下のような画面が出ます。
+<p>&nbsp;</p>
+<img src="img/1209a.png" width="80%"/>
+<p>図1209a</p>
+<p>&nbsp;</p>
+　ここで、プレイヤーをマス目の中に移動します。すると、奥にいる赤い球（敵です）が、プレイヤーを追いかけてきます。<br />
+　その際、障害物をよけるように（多少ぶつかったりはしますが）追いかけてきます。<br />
+　プレイヤーがマス目の外に出ると、敵は、最初いた位置に戻ります。
+<h4>グラフ探索</h4>
+　このように、追いかける対象の位置が変化するのに合わせて、ルートを変えて探索するアルゴリズムを<b>グラフ探索</b>といいます。<br />
+　<b>グラフ探索</b>にはいろいろ方法はありますが、<b>BaseCross64</b>に実装されているのは<b>A-Star</b>という探索アルゴリズムです。<br />
+　このサンプルはこの実装方法を紹介したものです。
+<h4>セルマップ</h4>
+　ステージ上にあるマス目を<b>セルマップ</b>といいます。AIをする対象の<b>領地</b>というか、<b>探索する領域</b>のようなものです。<br />
+　ステージ上にはセルマップは複数配置することができ、例えば、敵ごとに別々の領域を設定することも可能です（このサンプルでは敵は1体で、セルマップも一つです）。<br/>
+　<b>セルマップ</b>は<b>GameObject</b>です。ですから<b>AddGameObject()関数</b>により、以下のように設置します。<br />
+　以下、<b>GameStage::CreateStageCellMap()関数</b>ですが
+<div class="box1">
+<pre>
+//セルマップの作成
+void GameStage::CreateStageCellMap() {
+    float  PieceSize = 1.0f;
+    auto Ptr = AddGameObject&lt;StageCellMap>(<span class="red">Vec3(-12.0f, 0, 1.0f), PieceSize,26, 16</span>);
+    //セルマップの区画を表示する場合は以下の設定
+    Ptr->SetDrawActive(true);
+    //さらにセルのインデックスとコストを表示する場合は以下の設定
+    //Ptr->SetCellStringActive(true);
+    SetSharedGameObject(L"StageCellMap", Ptr);
+    <span class="red">//セルマップへのボックスのコスト設定
+    SetCellMapCost();</span>
+}
+</pre>
+</div>
+　ここで<b>AddGameObject</b>のパラメータは注意が必要です。
+<div class="box1">
+<pre>
+Vec3(-12.0f, 0, 1.0f)　セルマップの開始点
+PieceSize　1ピースのサイズ
+26　横方向（X方向）の数
+16　奥方向（Z方向）の数
+</pre>
+</div>
+　となります。またここでは
+<div class="box1">
+<pre>
+    <span class="red">//セルマップへのボックスのコスト設定
+    SetCellMapCost();</span>
+</pre>
+</div>
+　とコストを設定します。以下コードです。
+<div class="box1">
+<pre>
+void GameStage::SetCellMapCost() {
+    //セルマップ内にFixedBoxの情報をセット
+    auto PtrCellmap = GetSharedGameObject&lt;StageCellMap>(L"StageCellMap");
+    auto BoxGroup = GetSharedObjectGroup(L"FixedBoxes");
+    //セルマップからセルの配列を取得
+    auto& CellVec = PtrCellmap->GetCellVec();
+    //ボックスグループからボックスの配列を取得
+    auto& BoxVec = BoxGroup->GetGroupVector();
+    vector&lt;AABB> ObjectsAABBVec;
+    for (auto& v : BoxVec) {
+        auto FixedBoxPtr = dynamic_pointer_cast&lt;TilingFixedBox>(v.lock());
+        if (FixedBoxPtr) {
+            auto ColPtr = FixedBoxPtr->GetComponent&lt;CollisionObb>();
+            //ボックスの衝突判定かラッピングするAABBを取得して保存
+            ObjectsAABBVec.push_back(ColPtr->GetObb().GetWrappedAABB());
+        }
+    }
+    //セル配列からセルをスキャン
+    for (auto& v : CellVec) {
+        for (auto& v2 : v) {
+            for (auto& vObj : ObjectsAABBVec) {
+                if (HitTest::AABB_AABB_NOT_EQUAL(v2.m_PieceRange, vObj)) {
+                    //ボックスのABBとNOT_EQUALで衝突判定
+                    <span class="red">v2.m_Cost = -1;</span>
+                    break;
+                }
+            }
+        }
+    }
+}
+</pre>
+</div>
+　それぞれのセルに何も障害物がなければ、コストは、<b>1</b>になります（デフォルトです）。例えばでこぼこの道だった場合は、<b>2</b>とかにします。<br />
+　ここでは障害物のボックスのコストを設定します。完全に通れないセルと設定する場合は<b>-1</b>にします。<br />
+　また、ここではボックスを検索してコストを設定しますので、ボックスがすでにステージに配置されていなければなりません。
+<h4>探索アルゴリズムの設定</h4>
+　セルマップを設置したら、敵に探索のアルゴリズムを設置します。以下、<b>Enemy::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void Enemy::OnCreate() {
+    //初期位置などの設定
+    auto ptr = GetComponent&lt;Transform>();
+    ptr->SetScale(0.5f, 0.5f, 0.5f);
+    ptr->SetRotation(0.0f, 0.0f, 0.0f);
+    ptr->SetPosition(m_StartPosition);
+    //CollisionSphere衝突判定を付ける
+    AddComponent&lt;CollisionSphere>();
+    <span class="red">auto MapPtr = m_CelMap.lock();
+    if (MapPtr) {
+        AddComponent&lt;PathSearch>(MapPtr);
+    }</span>
+    //影をつける（シャドウマップを描画する）
+    auto shadowPtr = AddComponent&lt;Shadowmap>();
+    //影の形（メッシュ）を設定
+    shadowPtr->SetMeshResource(L"DEFAULT_SPHERE");
+    //描画コンポーネントの設定
+    auto ptrDraw = AddComponent&lt;BcPNTStaticDraw>();
+    ptrDraw->SetFogEnabled(true);
+    //描画するメッシュを設定
+    ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
+    ptrDraw->SetDiffuse(Col4(1.0f, 0, 0, 1.0f));
+}
+</pre>
+</div>
+　<b>m_CelMap</b>というのはセルマップの<b>weak_pre</b>です。敵のコンストラクタでステージから渡しておきます。<br />
+　その<b>m_CelMap</b>を使って、<b>PathSearch</b>というコンポーネントを追加します。これが探索アルゴリズムをコンポーネント化したものです。<br />
+　実際の探索は、<b>Enemy::OnUpdate()</b>で行います。ここから、いくつかのメンバ関数を呼んでいるわけですが、実際に探索するのは<b>Enemy::Search()関数</b>です。この関数は<b>Enemy::SeekBehavior()関数</b>から呼ばれます。探索結果によって、その場所に<b>Seek</b>するか<b>Arrive</b>するかを決定します。<br />
+　<b>Seek</b>や<b>Arrive</b>は、<b>１２０４．さまざまなステアリング</b>でも紹介しています。<br />
+　ステアリングを実行するのには<b>フォースと速度</b>が必要です。敵クラスは、それぞれ<b>m_Force、m_Velocity</b>というメンバ変数を持っています。それらを前提にして、以下<b>Enemy::OnUpdate()</b>ですが
+<div class="box1">
+<pre>
+void Enemy::OnUpdate() {
+    m_Force.setAll(0.0f);
+    auto PlayerPtr = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    auto PlayerPos = PlayerPtr->GetComponent&lt;Transform>()->GetPosition();
+    PlayerPos.y = GetStartPosition().y;
+    if (SeekBehavior(PlayerPos) == CellSearchFlg::Failed) {
+        if (SeekBehavior(GetStartPosition()) == CellSearchFlg::Arrived) {
+            ArriveBehavior(GetStartPosition());
+        }
+    }
+    float ElapsedTime = App::GetApp()->GetElapsedTime();
+    m_Velocity += m_Force * ElapsedTime;
+    auto EnemyPos = GetComponent&lt;Transform>()->GetPosition();
+    if (length(EnemyPos - PlayerPos) &lt;= 1.8f) {
+        m_Velocity *= 0.95f;
+    }
+    auto Pos = GetComponent&lt;Transform>()->GetPosition();
+    Pos += m_Velocity * ElapsedTime;
+    GetComponent&lt;Transform>()->SetPosition(Pos);
+}
+</pre>
+</div>
+　のようになります。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="12_08.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
