@@ -36,15 +36,6 @@ namespace basecross{
 		strTexture = dataDir + L"Brown.png";
 		App::GetApp()->RegisterTexture(L"BROWN_TX", strTexture);
 
-		//ボーンモデルのタンジェント付きリソース
-		auto modelMesh = MeshResource::CreateBoneModelMeshWithTangent(dataDir, L"TangentTest.bmf");
-		App::GetApp()->RegisterResource(L"BONE_MESH_WITH_TAN", modelMesh);
-		//法線マップ
-		strTexture = dataDir + L"Tx_Checker_Normal.png";
-		App::GetApp()->RegisterTexture(L"BONE_MESH_NORMAL_TX", strTexture);
-
-		
-
 	}
 
 	void Scene::OnCreate(){
