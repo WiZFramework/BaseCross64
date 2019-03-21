@@ -147,12 +147,23 @@ namespace basecross {
 		proj = PtrCamera->GetProjMatrix();
 		auto viewport = GetView()->GetTargetViewport();
 
+		//フルスクリーンだった時の対応
+		App::GetApp()->GetDeviceResources()->GetD3DDevice();
+		auto width = viewport.Width;
+		auto height = viewport.Height;
+		auto winLong = GetWindowLong(App::GetApp()->GetHWnd(), GWL_STYLE);
+		if (!(winLong & WS_OVERLAPPEDWINDOW)) {
+			//フルスクリーン
+			width = (float)GetSystemMetrics(SM_CXSCREEN);
+			height = (float)GetSystemMetrics(SM_CYSCREEN);
+		}
+
 		Near = XMVector3Unproject(
 			Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, 0),
 			viewport.TopLeftX,
 			viewport.TopLeftY,
-			viewport.Width,
-			viewport.Height,
+			width,
+			height,
 			viewport.MinDepth,
 			viewport.MaxDepth,
 			proj,
@@ -163,8 +174,8 @@ namespace basecross {
 			Vec3((float)m_MousePoint.x, (float)m_MousePoint.y, 1.0),
 			viewport.TopLeftX,
 			viewport.TopLeftY,
-			viewport.Width,
-			viewport.Height,
+			width,
+			height,
 			viewport.MinDepth,
 			viewport.MaxDepth,
 			proj,
