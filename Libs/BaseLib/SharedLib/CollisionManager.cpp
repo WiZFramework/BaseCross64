@@ -47,6 +47,26 @@ namespace basecross {
 			if (Src->IsSleep()) {
 				return false;
 			}
+			if (!Src->GetGameObject()->IsUpdateActive() || !Dest->GetGameObject()->IsUpdateActive()) {
+				return false;
+			}
+			if (!Src->IsUpdateActive() || !Dest->IsUpdateActive()) {
+				return false;
+			}
+			if (Src->IsFixed()) {
+				return false;
+			}
+			if (Src->IsExcludeCollisionObject(Dest->GetGameObject()) || Dest->IsExcludeCollisionObject(Src->GetGameObject())) {
+				return false;
+			}
+			bsm::Vec3 SrcCenter = Src->GetCenterPosition();
+			bsm::Vec3 DestCenter = Dest->GetCenterPosition();
+			bsm::Vec3 DestMoveVec = DestCenter - Pair.m_DestCalcHitCenter;
+			bsm::Vec3 SrcLocalVec = SrcCenter - Pair.m_SrcCalcHitCenter - DestMoveVec;
+			float SrcV = bsm::dot(SrcLocalVec, Pair.m_SrcHitNormal);
+			if (SrcV >= 0.0f) {
+				return false;
+			}
 			return Dest->SimpleCollisionCall(Src);
 		}
 		return false;

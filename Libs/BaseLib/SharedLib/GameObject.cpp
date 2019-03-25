@@ -1022,7 +1022,7 @@ namespace basecross {
 		//追加・削除まちオブジェクトの追加と削除
 		SetWaitToObjectVec();
 		//Transformコンポーネントの値をバックアップにコピー
-		for (auto ptr : GetGameObjectVec()) {
+		for (auto& ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				auto ptr2 = ptr->GetComponent<Transform>();
 				ptr2->SetToBefore();
@@ -1033,7 +1033,7 @@ namespace basecross {
 			pImpl->m_BasePhysics.InitForce();
 		}
 		//配置オブジェクトの更新処理
-		for (auto ptr : GetGameObjectVec()) {
+		for (auto& ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				ptr->OnUpdate();
 			}
@@ -1047,7 +1047,7 @@ namespace basecross {
 			pImpl->m_BasePhysics.Update(false);
 		}
 		//配置オブジェクトのコンポーネント更新
-		for (auto ptr : GetGameObjectVec()) {
+		for (auto& ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				ptr->ComponentUpdate();
 			}
@@ -1055,7 +1055,7 @@ namespace basecross {
 		////衝突判定
 		UpdateCollision();
 		//配置オブジェクトの更新後処理
-		for (auto ptr : GetGameObjectVec()) {
+		for (auto& ptr : GetGameObjectVec()) {
 			if (ptr->IsUpdateActive()) {
 				ptr->OnUpdate2();
 			}
@@ -1066,12 +1066,12 @@ namespace basecross {
 		}
 
 		//自身のビューをアップデート
-		auto ViewPtr = GetView(false);
+		auto& ViewPtr = GetView(false);
 		if (ViewPtr && ViewPtr->IsUpdateActive()) {
 			ViewPtr->OnUpdate();
 		}
 		//子供ステージの更新
-		for (auto PtrChileStage : GetChileStageVec()) {
+		for (auto& PtrChileStage : GetChileStageVec()) {
 			PtrChileStage->UpdateStage();
 		}
 	}
@@ -1108,7 +1108,7 @@ namespace basecross {
 		//レイヤーの取得と設定
 		set<int> DrawLayers;
 		//Spriteかそうでないかを分離
-		for (auto ptr : GetGameObjectVec()) {
+		for (auto& ptr : GetGameObjectVec()) {
 			if (ptr->IsDrawActive()) {
 				//描画レイヤーに登録
 				DrawLayers.insert(ptr->GetDrawLayer());
@@ -1122,7 +1122,7 @@ namespace basecross {
 			}
 		}
 		//3Dの透明と非透明を分離
-		for (auto ptr : pImpl->m_Object3DVec) {
+		for (auto& ptr : pImpl->m_Object3DVec) {
 			if (ptr->IsDrawActive()) {
 				if (ptr->IsAlphaActive()) {
 					pImpl->m_Object3DAlphaVec.push_back(ptr);
@@ -1155,11 +1155,11 @@ namespace basecross {
 		std::sort(pImpl->m_Object3DAlphaVec.begin(), pImpl->m_Object3DAlphaVec.end(), func);
 
 		//3Dノーマルオブジェクトの描画準備
-		for (auto ptr : pImpl->m_Object3DNormalVec) {
+		for (auto& ptr : pImpl->m_Object3DNormalVec) {
 			ptr->OnPreDraw();
 		}
 		//3D透明オブジェクトの描画準備
-		for (auto ptr : pImpl->m_Object3DAlphaVec) {
+		for (auto& ptr : pImpl->m_Object3DAlphaVec) {
 			ptr->OnPreDraw();
 		}
 		//パーティクルの描画準備（透明）
@@ -1167,7 +1167,7 @@ namespace basecross {
 		//パーティクルの描画準備（加算）
 		GetParticleManager(true)->OnPreDraw();
 		//スプライトオブジェクトの描画準備
-		for (auto ptr : pImpl->m_SpriteVec) {
+		for (auto& ptr : pImpl->m_SpriteVec) {
 			ptr->OnPreDraw();
 		}
 
@@ -1191,13 +1191,13 @@ namespace basecross {
 		for (auto it = DrawLayers.begin(); it != DrawLayers.end(); it++) {
 			int Tgt = *it;
 			//3Dノーマルオブジェクトの描画
-			for (auto ptr : pImpl->m_Object3DNormalVec) {
+			for (auto& ptr : pImpl->m_Object3DNormalVec) {
 				if (ptr->GetDrawLayer() == Tgt) {
 					ptr->OnDraw();
 				}
 			}
 			//3D透明オブジェクトの描画
-			for (auto ptr : pImpl->m_Object3DAlphaVec) {
+			for (auto& ptr : pImpl->m_Object3DAlphaVec) {
 				if (ptr->GetDrawLayer() == Tgt) {
 					ptr->OnDraw();
 				}
@@ -1210,7 +1210,7 @@ namespace basecross {
 			//加算処理
 			GetParticleManager(true)->OnDraw();
 			//スプライトオブジェクトの描画
-			for (auto ptr : pImpl->m_SpriteVec) {
+			for (auto& ptr : pImpl->m_SpriteVec) {
 				if (ptr->GetDrawLayer() == Tgt) {
 					ptr->OnDraw();
 				}

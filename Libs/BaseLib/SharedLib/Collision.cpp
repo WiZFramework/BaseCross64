@@ -474,6 +474,12 @@ namespace basecross {
 		return SrcSphere.m_Center;
 	}
 
+	AABB CollisionSphere::GetEnclosingAABB()const {
+		AABB enc = GetBeforeSphere().GetWrappedAABB();
+		enc.UnionAABB(GetSphere().GetWrappedAABB());
+		return enc;
+	}
+
 	void CollisionSphere::OnDraw() {
 		GenericDraw Draw;
 		bsm::Mat4x4 MeshToTransformMatrix;
@@ -777,6 +783,13 @@ namespace basecross {
 		return SrcCapsule.GetCenter();
 	}
 
+	AABB CollisionCapsule::GetEnclosingAABB()const {
+		AABB enc = GetBeforeCapsule().GetWrappedAABB();
+		enc.UnionAABB(GetCapsule().GetWrappedAABB());
+		return enc;
+	}
+
+
 	void CollisionCapsule::OnDraw() {
 		GenericDraw Draw;
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CAPSULE"));
@@ -1037,6 +1050,13 @@ namespace basecross {
 		OBB SrcObb = GetObb();
 		return SrcObb.m_Center;
 	}
+
+	AABB CollisionObb::GetEnclosingAABB()const {
+		AABB enc = GetBeforeObb().GetWrappedAABB();
+		enc.UnionAABB(GetObb().GetWrappedAABB());
+		return enc;
+	}
+
 
 	void CollisionObb::OnDraw() {
 		GenericDraw Draw;

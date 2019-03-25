@@ -89,12 +89,15 @@ namespace basecross {
 		bsm::Vec3 m_Pivot;
 		bsm::Quat m_Quaternion;
 		bsm::Vec3 m_Position;
+		bsm::Mat4x4 m_WorldMatrix;
+		bool m_DirtyFlg;
 		//親オブジェクト
 		weak_ptr<GameObject> m_Parent;
 		Impl():
 			//スケールのみ初期化（他はデフォルト処理でよい）
 			m_BeforeScale(1.0f,1.0f,1.0f),
-			m_Scale(1.0f, 1.0f, 1.0f)
+			m_Scale(1.0f, 1.0f, 1.0f),
+			m_DirtyFlg(true)
 		{}
 		~Impl() {}
 	};
@@ -131,6 +134,10 @@ namespace basecross {
 		return pImpl->m_BeforePosition;
 	}
 
+	bsm::Vec3 Transform::GetBeforeWorldPosition() const {
+		return GetBeforeWorldMatrix().transInMatrix();
+	}
+
 	bool Transform::IsSameBeforeWorldMatrix(const bsm::Mat4x4& mat) const {
 		return mat.equalInt(GetBeforeWorldMatrix());
 	}
@@ -162,6 +169,7 @@ namespace basecross {
 
 	void Transform::SetScale(const bsm::Vec3& Scale) {
 		pImpl->m_Scale = Scale;
+		pImpl->m_DirtyFlg = true;
 	}
 	void Transform::SetScale(float x, float y, float z) {
 		SetScale(bsm::Vec3(x, y, z));
@@ -172,6 +180,7 @@ namespace basecross {
 	}
 	void Transform::SetPivot(const bsm::Vec3& Pivot) {
 		pImpl->m_Pivot = Pivot;
+		pImpl->m_DirtyFlg = true;
 	}
 	void Transform::SetPivot(float x, float y, float z) {
 		SetPivot(bsm::Vec3(x, y, z));
@@ -183,6 +192,7 @@ namespace basecross {
 	void Transform::SetQuaternion(const bsm::Quat& quaternion) {
 		pImpl->m_Quaternion = quaternion;
 		pImpl->m_Quaternion.normalize();
+		pImpl->m_DirtyFlg = true;
 	}
 	bsm::Vec3 Transform::GetRotation() const {
 		bsm::Vec3 r = pImpl->m_Quaternion.toRotVec();
@@ -205,6 +215,7 @@ namespace basecross {
 
 	void Transform::SetPosition(const bsm::Vec3& Position) {
 		pImpl->m_Position = Position;
+		pImpl->m_DirtyFlg = true;
 	}
 	void Transform::SetPosition(float x, float y, float z) {
 		SetPosition(bsm::Vec3(x, y, z));
@@ -213,6 +224,7 @@ namespace basecross {
 	void Transform::ResetPosition(const bsm::Vec3& Position) {
 		pImpl->m_BeforePosition = Position;
 		pImpl->m_Position = Position;
+		pImpl->m_DirtyFlg = true;
 	}
 
 	bsm::Vec3 Transform::GetWorldPosition() const {
@@ -251,20 +263,23 @@ namespace basecross {
 
 
 	const bsm::Mat4x4 Transform::GetWorldMatrix() const{
-		auto ParPtr = GetParent();
-		Mat4x4 WorldMat;
-		WorldMat.affineTransformation(
+		if (pImpl->m_DirtyFlg) {
+			auto ParPtr = GetParent();
+			//Mat4x4 WorldMat;
+			pImpl->m_WorldMatrix.affineTransformation(
 				pImpl->m_Scale,
 				pImpl->m_Pivot,
 				pImpl->m_Quaternion,
 				pImpl->m_Position
 			);
-		if (ParPtr) {
-			auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
-			ParWorld.scaleIdentity();
-			WorldMat *= ParWorld;
+			if (ParPtr) {
+				auto ParWorld = ParPtr->GetComponent<Transform>()->GetWorldMatrix();
+				ParWorld.scaleIdentity();
+				pImpl->m_WorldMatrix *= ParWorld;
+			}
+			pImpl->m_DirtyFlg = false;
 		}
-		return WorldMat;
+		return pImpl->m_WorldMatrix;
 	}
 
 	const bsm::Mat4x4 Transform::Get2DWorldMatrix() const {
@@ -286,6 +301,7 @@ namespace basecross {
 			ParWorld.scaleIdentity();
 			WorldMat *= ParWorld;
 		}
+		pImpl->m_DirtyFlg = true;
 		return WorldMat;
 	}
 
@@ -326,6 +342,7 @@ namespace basecross {
 			//nullptrが渡された
 			ClearParent();
 		}
+		pImpl->m_DirtyFlg = true;
 	}
 
 	void Transform::ClearParent() {
@@ -335,6 +352,7 @@ namespace basecross {
 			SetToBefore();
 		}
 		pImpl->m_Parent.reset();
+		pImpl->m_DirtyFlg = true;
 	}
 	bsm::Vec3 Transform::GetVelocity() const {
 		//前回のターンからの時間
@@ -349,18 +367,10 @@ namespace basecross {
 	}
 
 	void Transform::SetToBefore() {
-		if (pImpl->m_BeforeScale != pImpl->m_Scale) {
-			pImpl->m_BeforeScale = pImpl->m_Scale;
-		}
-		if (pImpl->m_BeforePivot != pImpl->m_Pivot) {
-			pImpl->m_BeforePivot = pImpl->m_Pivot;
-		}
-		if (pImpl->m_BeforeQuaternion != pImpl->m_Quaternion) {
-			pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
-		}
-		if (pImpl->m_BeforePosition != pImpl->m_Position) {
-			pImpl->m_BeforePosition = pImpl->m_Position;
-		}
+		pImpl->m_BeforeScale = pImpl->m_Scale;
+		pImpl->m_BeforePivot = pImpl->m_Pivot;
+		pImpl->m_BeforeQuaternion = pImpl->m_Quaternion;
+		pImpl->m_BeforePosition = pImpl->m_Position;
 	}
 
 	bsm::Vec3 Transform::GetForword() const {
