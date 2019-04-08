@@ -361,7 +361,6 @@ namespace basecross {
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
 		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
-
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//球の場合は、すべて移動以外変化なしとする
@@ -370,6 +369,10 @@ namespace basecross {
 		//相手のCollisionSphere
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
+		//簡易的な判定
+		if (!HitTest::SPHERE_SPHERE(SrcSphere, DestSphere)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereSphere(SrcBeforSphere, SpanVelocity, DestBeforeSphere, 0, ElapsedTime, HitTime)) {
@@ -398,7 +401,6 @@ namespace basecross {
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
 		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
-
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
 		//移動以外変化なし
@@ -407,6 +409,11 @@ namespace basecross {
 		//相手
 		CAPSULE DestCap = DestColl->GetCapsule();
 		CAPSULE DestBeforeCap = DestColl->GetBeforeCapsule();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::SPHERE_CAPSULE(SrcSphere, DestCap,ret)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereCapsule(SrcBeforSphere, SpanVelocity, DestBeforeCap, 0, ElapsedTime, HitTime)) {
@@ -447,6 +454,11 @@ namespace basecross {
 		//相手
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::SPHERE_OBB(SrcSphere, DestObb, ret)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestSphereObb(SrcBeforSphere, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
@@ -667,6 +679,11 @@ namespace basecross {
 		//相手のCollisionSphere
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::SPHERE_CAPSULE(DestSphere, SrcCapsule, ret)) {
+			return;
+		}
 		//SPHEREとCAPSULEの扱いが逆になる
 		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
@@ -707,6 +724,11 @@ namespace basecross {
 		//相手のCollisionCapsule
 		CAPSULE DestCapsule = DestColl->GetCapsule();
 		CAPSULE DestBeforeCapsule = DestColl->GetBeforeCapsule();
+		//簡易的な判定
+		bsm::Vec3 ret1,ret2;
+		if (!HitTest::CAPSULE_CAPSULE(SrcCapsule, DestCapsule, ret1,ret2)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleCapsule(SrcBeforCapsule, SpanVelocity, DestBeforeCapsule, 0, ElapsedTime, HitTime)) {
@@ -752,6 +774,11 @@ namespace basecross {
 		//相手のCollisionObb
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::CAPSULE_OBB(SrcCapsule, DestObb, ret)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestCapsuleObb(SrcBeforCapsule, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {
@@ -937,6 +964,11 @@ namespace basecross {
 		//相手
 		SPHERE DestSphere = DestColl->GetSphere();
 		SPHERE DestBeforeSphere = DestColl->GetBeforeSphere();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::SPHERE_OBB(DestSphere, SrcObb, ret)) {
+			return;
+		}
 		//SPHEREとOBBの扱いが逆になる
 		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
@@ -977,6 +1009,11 @@ namespace basecross {
 		//相手
 		CAPSULE DestCapsule = DestColl->GetCapsule();
 		CAPSULE DestBeforeCapsule = DestColl->GetBeforeCapsule();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::CAPSULE_OBB(DestCapsule, SrcObb, ret)) {
+			return;
+		}
 		//SPHEREとOBBの扱いが逆になる
 		bsm::Vec3 SpanVelocity = DestVelocity - SrcVelocity;
 		float HitTime = 0;
@@ -1015,13 +1052,16 @@ namespace basecross {
 		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
 		//前回のターンからの時間
 		float ElapsedTime = App::GetApp()->GetElapsedTime();
-
 		//移動以外変化なし
 		OBB SrcObb = GetObb();
 		OBB SrcBeforeObb = GetBeforeObb();
 		//相手
 		OBB DestObb = DestColl->GetObb();
 		OBB DestBeforeObb = DestColl->GetBeforeObb();
+		//簡易的な判定
+		if (!HitTest::OBB_OBB(SrcObb, DestObb)) {
+			return;
+		}
 		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
 		float HitTime = 0;
 		if (HitTest::CollisionTestObbObb(SrcBeforeObb, SpanVelocity, DestBeforeObb, 0, ElapsedTime, HitTime)) {

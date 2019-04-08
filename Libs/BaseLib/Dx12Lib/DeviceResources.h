@@ -826,6 +826,20 @@ namespace basecross {
 		ComPtr<ID3D12Device> GetDevice() const;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief  D3D11On12デバイスを得る
+		@return	デバイス
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11On12Device> Get11On12Device() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief  D3D11DeviceContextを得る
+		@return	デバイス
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11DeviceContext> GetD3D11DeviceContext() const;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief シャドウマップのレンダリングターゲットの作成
 		@param[in] ShadowMapDimension	シャドウマップの幅及び高さ
 		@return	シャドウマップのレンダリングターゲット
@@ -855,11 +869,27 @@ namespace basecross {
 		ComPtr<ID3D12Resource> GetRenderTarget(UINT Index) const;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief  2Dレンダリングターゲットを得る
+		@return	2Dレンダリングターゲット
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID2D1Bitmap1> Get2DRenderTargets(UINT Index) const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 指定したインデックスのバックバッファを得る
+		@return	指定したインデックスのバックバッファ
+		*/
+		//--------------------------------------------------------------------------------------
+		ComPtr<ID3D11Resource> GetWrappedBackBuffer(UINT Index) const;
+
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief コマンドアロケータを得る
 		@return	コマンドアロケータ
 		*/
 		//--------------------------------------------------------------------------------------
 		ComPtr<ID3D12CommandAllocator> GetCommandAllocator() const;
+		ComPtr<ID3D12CommandAllocator> GetCommandAllocator(UINT Index) const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コマンドキューを得る
@@ -959,14 +989,14 @@ namespace basecross {
 		@return	D2D1DeviceContext1インターフェイス
 		*/
 		//--------------------------------------------------------------------------------------
-		ID2D1DeviceContext1* GetD2DDeviceContext() const;
+		ID2D1DeviceContext2* GetD2DDeviceContext() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	DWriteFactory2インターフェイスの取得
 		@return	DWriteFactory2インターフェイス
 		*/
 		//--------------------------------------------------------------------------------------
-		IDWriteFactory2* GetDWriteFactory() const;
+		IDWriteFactory* GetDWriteFactory() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	WICImagingFactory2インターフェイスの取得
@@ -1578,7 +1608,7 @@ namespace basecross {
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				Dev->GetCommandAllocator().Get(),
+				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
 				nullptr,
 				IID_PPV_ARGS(&Ret)),
 				L"コマンドリストの作成に失敗しました",
@@ -1595,7 +1625,7 @@ namespace basecross {
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				Dev->GetCommandAllocator().Get(),
+				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
 				pipelineState.Get(),
 				IID_PPV_ARGS(&Ret)),
 				L"コマンドリストの作成に失敗しました",
@@ -1611,7 +1641,7 @@ namespace basecross {
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_COPY,
-				Dev->GetCommandAllocator().Get(),
+				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
 				pipelineState.Get(),
 				IID_PPV_ARGS(&Ret)),
 				L"コマンドリストの作成に失敗しました",
@@ -1624,7 +1654,7 @@ namespace basecross {
 		static inline  void Reset(const ComPtr<ID3D12GraphicsCommandList>& commandList) {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
-			ThrowIfFailed(commandList->Reset(Dev->GetCommandAllocator().Get(), nullptr),
+			ThrowIfFailed(commandList->Reset(Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(), nullptr),
 				L"コマンドリストのリセットに失敗しました",
 				L"commandList->Reset(Dev->GetCommandAllocator().Get(),nullptr)",
 				L"CommandList::Reset()"
@@ -1634,7 +1664,7 @@ namespace basecross {
 		static inline  void Reset(const ComPtr<ID3D12PipelineState>& pipelineState, const ComPtr<ID3D12GraphicsCommandList>& commandList) {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
-			ThrowIfFailed(commandList->Reset(Dev->GetCommandAllocator().Get(), pipelineState.Get()),
+			ThrowIfFailed(commandList->Reset(Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(), pipelineState.Get()),
 				L"コマンドリストのリセットに失敗しました",
 				L"commandList->Reset(Dev->GetCommandAllocator().Get(),pipelineState.Get())",
 				L"CommandList::Reset()"

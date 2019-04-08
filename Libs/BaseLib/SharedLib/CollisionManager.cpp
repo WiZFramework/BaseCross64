@@ -36,6 +36,7 @@ namespace basecross {
 		m_CollisionPairVec[1].clear();
 		m_TempKeepVec.resize(1024);
 		m_TempKeepVec.clear();
+		m_TempExitVec.resize(1024);
 		m_TempExitVec.clear();
 	}
 	CollisionManager::~CollisionManager() {}

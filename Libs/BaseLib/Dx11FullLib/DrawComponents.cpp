@@ -128,6 +128,9 @@ namespace basecross {
 		case BlendState::NonPremultiplied:
 			pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetNonPremultiplied(), nullptr, 0xffffffff);
 			break;
+		case BlendState::AlphaToCoverage:
+			pID3D11DeviceContext->OMSetBlendState(RenderStatePtr->GetAlphaToCoverage(), nullptr, 0xffffffff);
+			break;
 		}
 	}
 

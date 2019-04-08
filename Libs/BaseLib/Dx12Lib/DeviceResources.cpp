@@ -439,16 +439,19 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct DeviceResources::Impl {
 
-		static const UINT FrameCount = 2;
+		static const UINT FrameCount = 3;
 		//パイプラインobjects.
 		D3D12_VIEWPORT m_Viewport;
 		D3D12_RECT m_ScissorRect;
 		ComPtr<IDXGISwapChain3> m_SwapChain;
 		ComPtr<ID3D12Device> m_Device;
+		ComPtr<ID3D11On12Device> m_d3d11On12Device;
 		ComPtr<ID3D12Resource> m_RenderTargets[FrameCount];
+		ComPtr<ID3D11Resource> m_WrappedBackBuffers[FrameCount];
+		ComPtr<ID2D1Bitmap1> m_d2dRenderTargets[FrameCount];
 		ComPtr<ID3D12Resource> m_DepthStencil;
-
-		ComPtr<ID3D12CommandAllocator> m_CommandAllocator;
+		
+		ComPtr<ID3D12CommandAllocator> m_CommandAllocator[FrameCount];
 		ComPtr<ID3D12CommandQueue> m_CommandQueue;
 		//RenderTargerView Heap
 		ComPtr<ID3D12DescriptorHeap> m_RtvHeap;
@@ -474,16 +477,17 @@ namespace basecross {
 		//コマンドリスト実行用の配列
 		vector<ID3D12CommandList*> m_DrawCommandLists;
 
+		// Dx11コンテキスト
+		ComPtr<ID3D11DeviceContext> m_d3d11DeviceContext;
 
 		// Direct2D 描画コンポーネント。
-		ComPtr<ID2D1Factory2>		m_d2dFactory;
-		ComPtr<ID2D1Device1>		m_d2dDevice;
-		ComPtr<ID2D1DeviceContext1>	m_d2dContext;
+		ComPtr<ID2D1Factory3>		m_d2dFactory;
+		ComPtr<ID2D1Device2>		m_d2dDevice;
+		ComPtr<ID2D1DeviceContext2>	m_d2dDeviceContext;
 
 		// DirectWrite 描画コンポーネント。
-		ComPtr<IDWriteFactory2>		m_dwriteFactory;
+		ComPtr<IDWriteFactory>		m_dwriteFactory;
 		ComPtr<IWICImagingFactory2>	m_wicFactory;
-
 
 
 		//同期オブジェクト
@@ -573,6 +577,10 @@ namespace basecross {
 
 */
 
+		UINT dxgiFactoryFlags = 0;
+		UINT d3d11DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+		D2D1_FACTORY_OPTIONS d2dFactoryOptions = {};
+
 #if defined(_DEBUG)
 		//D3D12 debug 有効.
 		{
@@ -580,9 +588,56 @@ namespace basecross {
 			if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 			{
 				debugController->EnableDebugLayer();
+
+				// Enable additional debug layers.
+				dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+				d3d11DeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+				d2dFactoryOptions.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
 			}
 		}
 #endif
+
+/*
+#if defined(_DEBUG)
+		// Filter a debug error coming from the 11on12 layer.
+		ComPtr<ID3D12InfoQueue> infoQueue;
+		if (SUCCEEDED(m_Device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
+		{
+			// Suppress whole categories of messages.
+			//D3D12_MESSAGE_CATEGORY categories[] = {};
+
+			// Suppress messages based on their severity level.
+			D3D12_MESSAGE_SEVERITY severities[] =
+			{
+				D3D12_MESSAGE_SEVERITY_INFO,
+			};
+
+			// Suppress individual messages by their ID.
+			D3D12_MESSAGE_ID denyIds[] =
+			{
+				// This occurs when there are uninitialized descriptors in a descriptor table, even when a
+				// shader does not access the missing descriptors.
+				D3D12_MESSAGE_ID_INVALID_DESCRIPTOR_HANDLE,
+			};
+
+			D3D12_INFO_QUEUE_FILTER filter = {};
+			//filter.DenyList.NumCategories = _countof(categories);
+			//filter.DenyList.pCategoryList = categories;
+			filter.DenyList.NumSeverities = _countof(severities);
+			filter.DenyList.pSeverityList = severities;
+			filter.DenyList.NumIDs = _countof(denyIds);
+			filter.DenyList.pIDList = denyIds;
+
+			ThrowIfFailed(infoQueue->PushStorageFilter(&filter),
+				L"",
+				L"infoQueue->PushStorageFilter(&filter)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+		}
+#endif
+*/
+
+
 		//DXGIFactoryの作成
 		ComPtr<IDXGIFactory4> factory;
 		ThrowIfFailed(CreateDXGIFactory1(IID_PPV_ARGS(&factory)),
@@ -613,6 +668,7 @@ namespace basecross {
 
 			}
 		}
+
 		//コマンドキューの作成.
 		{
 			D3D12_COMMAND_QUEUE_DESC queueDesc = {};
@@ -624,25 +680,40 @@ namespace basecross {
 				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 			);
 		}
+
 		//スワップチェーンの作成.
 		{
-			DXGI_SWAP_CHAIN_DESC swapChainDesc = {};
+			DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 			swapChainDesc.BufferCount = FrameCount;
-			swapChainDesc.BufferDesc.Width = Width;
-			swapChainDesc.BufferDesc.Height = Height;
-			swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			swapChainDesc.Width = Width;
+			swapChainDesc.Height = Height;
+			swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 			swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 			swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-			swapChainDesc.OutputWindow = hWnd;
 			swapChainDesc.SampleDesc.Count = 1;
-			swapChainDesc.Windowed = TRUE;
+			//swapChainDesc.OutputWindow = hWnd;
+			//swapChainDesc.Windowed = TRUE;
 
-			ComPtr<IDXGISwapChain> swapChain;
-			ThrowIfFailed(factory->CreateSwapChain(m_CommandQueue.Get(), &swapChainDesc, &swapChain),
+			ComPtr<IDXGISwapChain1> swapChain;
+			ThrowIfFailed(factory->CreateSwapChainForHwnd(
+				m_CommandQueue.Get(),
+				hWnd,
+				&swapChainDesc,
+				nullptr,
+				nullptr, 
+				&swapChain
+			),
 				L"スワップチェーンの作成に失敗しました",
 				L"factory->CreateSwapChain(m_CommandQueue.Get(), &swapChainDesc, &swapChain)",
 				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 			);
+
+			ThrowIfFailed(factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER),
+				L"Windowモードからフルスクリーンへの変更停止が設定できませんでした",
+				L"factory->MakeWindowAssociation(hWnd, DXGI_MWA_NO_ALT_ENTER)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
 			ThrowIfFailed(swapChain.As(&m_SwapChain),
 				L"スワップチェーンのバージョン変更に失敗しました",
 				L"swapChain.As(&m_SwapChain)",
@@ -651,6 +722,78 @@ namespace basecross {
 			//フレームインデックスを設定しておく
 			m_FrameIndex = m_SwapChain->GetCurrentBackBufferIndex();
 		}
+		//Dx11デバイスの作成
+		{
+			ComPtr<ID3D11Device> d3d11Device;
+			ThrowIfFailed(D3D11On12CreateDevice(
+				m_Device.Get(),
+				d3d11DeviceFlags,
+				nullptr,
+				0,
+				reinterpret_cast<IUnknown**>(m_CommandQueue.GetAddressOf()),
+				1,
+				0,
+				&d3d11Device,
+				&m_d3d11DeviceContext,
+				nullptr
+			),
+				L"スワップチェーンのバージョン変更に失敗しました",
+				L"swapChain.As(&m_SwapChain)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
+			ThrowIfFailed(d3d11Device.As(&m_d3d11On12Device),
+				L"",
+				L"d3d11Device.As(&m_d3d11On12Device)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+		}
+		// Create D2D/DWrite components.
+		{
+			D2D1_DEVICE_CONTEXT_OPTIONS deviceOptions = D2D1_DEVICE_CONTEXT_OPTIONS_NONE;
+			ThrowIfFailed(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory3), &d2dFactoryOptions, &m_d2dFactory),
+				L"",
+				L"D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory3), &d2dFactoryOptions, &m_d2dFactory)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
+			ComPtr<IDXGIDevice> dxgiDevice;
+			ThrowIfFailed(m_d3d11On12Device.As(&dxgiDevice),
+				L"",
+				L"m_d3d11On12Device.As(&dxgiDevice)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
+			ThrowIfFailed(m_d2dFactory->CreateDevice(dxgiDevice.Get(), &m_d2dDevice),
+				L"",
+				L"m_d2dFactory->CreateDevice(dxgiDevice.Get(), &m_d2dDevice)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
+			ThrowIfFailed(m_d2dDevice->CreateDeviceContext(deviceOptions, &m_d2dDeviceContext),
+				L"",
+				L"m_d2dDevice->CreateDeviceContext(deviceOptions, &m_d2dDeviceContext)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+
+			ThrowIfFailed(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &m_dwriteFactory),
+				L"",
+				L"DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), &m_dwriteFactory)",
+				L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+			);
+		}
+		// Query the desktop's dpi settings, which will be used to create
+		 // D2D's render targets.
+		float dpiX;
+		float dpiY;
+		m_d2dFactory->GetDesktopDpi(&dpiX, &dpiY);
+		D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+			D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+			dpiX,
+			dpiY
+		);
+
 		//デスクプリタヒープの作成.
 		{
 			//レンダーターゲットビューのデスクプリタヒープ作成
@@ -675,6 +818,7 @@ namespace basecross {
 			);
 			m_RtvDescriptorSize = m_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 		}
+
 		//RTVのフレームリソースの作成
 		{
 			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_RtvHeap->GetCPUDescriptorHandleForHeapStart());
@@ -687,7 +831,51 @@ namespace basecross {
 					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 				);
 				m_Device->CreateRenderTargetView(m_RenderTargets[n].Get(), nullptr, rtvHandle);
+			
+				// Create a wrapped 11On12 resource of this back buffer. Since we are 
+				// rendering all D3D12 content first and then all D2D content, we specify 
+				// the In resource state as RENDER_TARGET - because D3D12 will have last 
+				// used it in this state - and the Out resource state as PRESENT. When 
+				// ReleaseWrappedResources() is called on the 11On12 device, the resource
+				D3D11_RESOURCE_FLAGS d3d11Flags = { D3D11_BIND_RENDER_TARGET };
+
+				ThrowIfFailed(m_d3d11On12Device->CreateWrappedResource(
+					m_RenderTargets[n].Get(),
+					&d3d11Flags,
+					D3D12_RESOURCE_STATE_RENDER_TARGET,
+					D3D12_RESOURCE_STATE_PRESENT,
+					IID_PPV_ARGS(&m_WrappedBackBuffers[n])
+				),
+					L"d3d11On12デバイスの作成に失敗しました",
+					L"m_d3d11On12Device->CreateWrappedResource()",
+					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+				);
+
+				// Create a render target for D2D to draw directly to this back buffer.
+				ComPtr<IDXGISurface> surface;
+				ThrowIfFailed(m_WrappedBackBuffers[n].As(&surface),
+					L"WrappedBackBuffersD2DRenderTargetの作成に失敗しました",
+					L"m_WrappedBackBuffers[n].As(&surface)",
+					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+				);
+
+				ThrowIfFailed(m_d2dDeviceContext->CreateBitmapFromDxgiSurface(
+					surface.Get(),
+					&bitmapProperties,
+					&m_d2dRenderTargets[n]
+				),
+					L"BitmapFromDxgiSurfaceの作成に失敗しました",
+					L"m_d2dDeviceContext->CreateBitmapFromDxgiSurface()",
+					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+				);
+
 				rtvHandle.Offset(1, m_RtvDescriptorSize);
+
+				ThrowIfFailed(m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator[n])),
+					L"コマンドアロケータの作成に失敗しました",
+					L"CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator[n])",
+					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
+				);
 			}
 		}
 
@@ -719,12 +907,6 @@ namespace basecross {
 			m_Device->CreateDepthStencilView(m_DepthStencil.Get(), &depthStencilDesc, m_DsvHeap->GetCPUDescriptorHandleForHeapStart());
 		}
 
-		ThrowIfFailed(m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator)),
-			L"コマンドアロケータの作成に失敗しました",
-			L"m_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&m_CommandAllocator)",
-			L"Dx12DeviceResources::Impl::CreateDeviceResources()"
-		);
-
 		{
 			CD3DX12_ROOT_SIGNATURE_DESC rootSignatureDesc;
 			rootSignatureDesc.Init(0, nullptr, 0, nullptr, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
@@ -755,7 +937,7 @@ namespace basecross {
 
 		//画面クリア用のコマンドリスト
 		ThrowIfFailed(
-			m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_CommandList)),
+			m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_CommandList)),
 			L"コマンドリストの作成に失敗しました",
 			L"m_Device->CreateCommandList()",
 			L"Dx12DeviceResources::Impl::CreateDeviceResources()"
@@ -767,7 +949,7 @@ namespace basecross {
 		);
 		//プレゼント用のコマンドリスト
 		ThrowIfFailed(
-			m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator.Get(), nullptr, IID_PPV_ARGS(&m_PresentCommandList)),
+			m_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, m_CommandAllocator[m_FrameIndex].Get(), nullptr, IID_PPV_ARGS(&m_PresentCommandList)),
 			L"コマンドリストの作成に失敗しました",
 			L"m_Device->CreateCommandList()",
 			L"Dx12DeviceResources::Impl::CreateDeviceResources()"
@@ -864,16 +1046,18 @@ namespace basecross {
 
 	//通常描画のクリア
 	void DeviceResources::ClearDefaultViews(const bsm::Col4& col) {
-		ThrowIfFailed(pImpl->m_CommandAllocator->Reset(),
+		ThrowIfFailed(pImpl->m_CommandAllocator[pImpl->m_FrameIndex]->Reset(),
 			L"コマンドアロケータのリセットに失敗しました",
 			L"m_CommandAllocator->Reset()",
 			L"Dx12DeviceResources::ClearDefultViews()"
 		);
-		ThrowIfFailed(pImpl->m_CommandList->Reset(pImpl->m_CommandAllocator.Get(), pImpl->m_PipelineState.Get()),
+
+		ThrowIfFailed(pImpl->m_CommandList->Reset(pImpl->m_CommandAllocator[pImpl->m_FrameIndex].Get(), pImpl->m_PipelineState.Get()),
 			L"コマンドリストのリセットに失敗しました",
 			L"pImpl->m_CommandList->Reset()",
 			L"Dx12DeviceResources::ClearDefultViews()"
 		);
+
 		pImpl->m_CommandList->SetGraphicsRootSignature(pImpl->m_RootSignature.Get());
 		pImpl->m_CommandList->RSSetViewports(1, &GetViewport());
 		pImpl->m_CommandList->RSSetScissorRects(1, &GetScissorRect());
@@ -907,7 +1091,7 @@ namespace basecross {
 
 	void DeviceResources::Present(unsigned int SyncInterval, unsigned int  Flags) {
 
-		ThrowIfFailed(pImpl->m_PresentCommandList->Reset(pImpl->m_CommandAllocator.Get(), pImpl->m_PipelineState.Get()),
+		ThrowIfFailed(pImpl->m_PresentCommandList->Reset(pImpl->m_CommandAllocator[pImpl->m_FrameIndex].Get(), pImpl->m_PipelineState.Get()),
 			L"コマンドリストのリセットに失敗しました",
 			L"pImpl->m_CommandList->Reset()",
 			L"Dx12DeviceResources::ClearDefultViews()"
@@ -927,6 +1111,12 @@ namespace basecross {
 
 		// Execute the command list.
 		pImpl->m_CommandQueue->ExecuteCommandLists((UINT)pImpl->m_DrawCommandLists.size(), &pImpl->m_DrawCommandLists[0]);
+
+		// ステートをクリアし，デフォルト状態にします.
+		// TODO : ここに記述していいか確認要必要
+		pImpl->m_d3d11DeviceContext->ClearState();
+		pImpl->m_d3d11DeviceContext->Flush();
+
 		// Present the frame.
 		ThrowIfFailed(pImpl->m_SwapChain->Present(SyncInterval, Flags),
 			L"スワップチェーンのプレゼントに失敗しました",
@@ -999,6 +1189,16 @@ namespace basecross {
 	ComPtr<ID3D12Device> DeviceResources::GetDevice() const {
 		return pImpl->m_Device;
 	}
+
+	ComPtr<ID3D11On12Device> DeviceResources::Get11On12Device() const {
+		return pImpl->m_d3d11On12Device;
+	}
+
+	ComPtr<ID3D11DeviceContext> DeviceResources::GetD3D11DeviceContext() const
+	{
+		return pImpl->m_d3d11DeviceContext;
+	}
+
 	ComPtr<ID3D12Resource>* DeviceResources::GetRenderTargets() const {
 		return pImpl->m_RenderTargets;
 
@@ -1014,9 +1214,40 @@ namespace basecross {
 		return pImpl->m_RenderTargets[Index];
 
 	}
-	ComPtr<ID3D12CommandAllocator> DeviceResources::GetCommandAllocator() const {
-		return pImpl->m_CommandAllocator;
+
+	ComPtr<ID2D1Bitmap1> DeviceResources::Get2DRenderTargets(UINT Index) const
+	{
+		if (Index >= pImpl->FrameCount) {
+			ThrowBaseException(
+				L"インデックスが上限を超えています",
+				L"if (Index >= pImpl->FrameCount)",
+				L"Dx12DeviceResources::GetRenderTarget()"
+			);
+		}
+		return pImpl->m_d2dRenderTargets[Index];
 	}
+
+	ComPtr<ID3D11Resource> DeviceResources::GetWrappedBackBuffer(UINT Index) const
+	{
+		if (Index >= pImpl->FrameCount) {
+			ThrowBaseException(
+				L"インデックスが上限を超えています",
+				L"if (Index >= pImpl->FrameCount)",
+				L"Dx12DeviceResources::GetRenderTarget()"
+			);
+		}
+		return pImpl->m_WrappedBackBuffers[Index];
+
+	}
+
+	ComPtr<ID3D12CommandAllocator> DeviceResources::GetCommandAllocator() const {
+		return pImpl->m_CommandAllocator[pImpl->FrameCount];
+	}
+
+	ComPtr<ID3D12CommandAllocator> DeviceResources::GetCommandAllocator(UINT Index) const {
+		return pImpl->m_CommandAllocator[Index];
+	}
+
 	ComPtr<ID3D12CommandQueue> DeviceResources::GetCommandQueue() const {
 		return pImpl->m_CommandQueue;
 
@@ -1081,8 +1312,8 @@ namespace basecross {
 	// D2D アクセサー。
 	ID2D1Factory2*			DeviceResources::GetD2DFactory() const { return pImpl->m_d2dFactory.Get(); }
 	ID2D1Device1*			DeviceResources::GetD2DDevice() const { return pImpl->m_d2dDevice.Get(); }
-	ID2D1DeviceContext1*	DeviceResources::GetD2DDeviceContext() const { return pImpl->m_d2dContext.Get(); }
-	IDWriteFactory2*		DeviceResources::GetDWriteFactory() const { return pImpl->m_dwriteFactory.Get(); }
+	ID2D1DeviceContext2*	DeviceResources::GetD2DDeviceContext() const { return pImpl->m_d2dDeviceContext.Get(); }
+	IDWriteFactory*			DeviceResources::GetDWriteFactory() const { return pImpl->m_dwriteFactory.Get(); }
 	IWICImagingFactory2*	DeviceResources::GetWicImagingFactory() const { return pImpl->m_wicFactory.Get(); }
 
 
@@ -1111,6 +1342,7 @@ namespace basecross {
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct ShadowMapRenderTarget::Impl {
+
 		//シャドウマップの大きさ
 		const float m_ShadowMapDimension;
 		//シャドウマップのデスクプリタヒープ
@@ -1219,7 +1451,7 @@ namespace basecross {
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				Dev->GetCommandAllocator().Get(),
+				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
 				PipelineState.Get(),
 				IID_PPV_ARGS(&pImpl->m_CommandList)),
 				L"コマンドリストの作成に失敗しました",
@@ -1227,11 +1459,12 @@ namespace basecross {
 				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
 			);
 			CommandList::Close(pImpl->m_CommandList);
+
 			//End用コマンドリスト
 			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
-				Dev->GetCommandAllocator().Get(),
+				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
 				PipelineState.Get(),
 				IID_PPV_ARGS(&pImpl->m_EndCommandList)),
 				L"コマンドリストの作成に失敗しました",

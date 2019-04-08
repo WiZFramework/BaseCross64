@@ -108,6 +108,8 @@ namespace basecross {
 		auto Transptr = GetComponent<Transform>();
 		auto RightPtr = GetComponent<Rigidbody>(false);
 		auto CollisionPtr = GetComponent<Collision>(false);
+		auto StringSpritePtr = GetComponent<StringSprite>(false);
+
 		//ƒ}ƒbƒv‚ğŒŸØ‚µ‚ÄDraw
 		list<type_index>::iterator it = m_CompOrder.begin();
 		while (it != m_CompOrder.end()) {
@@ -121,6 +123,7 @@ namespace basecross {
 					&& (it2->second != Transptr)
 					&& (it2->second != RightPtr)
 					&& (it2->second != CollisionPtr)
+					&& (it2->second != StringSpritePtr)
 					) {
 					it2->second->OnDraw();
 				}
@@ -135,9 +138,12 @@ namespace basecross {
 			//Collision‚ª‚ ‚ê‚ÎDraw()
 			CollisionPtr->OnDraw();
 		}
-		//Transform‚ÌDraw
 		if (Transptr->IsDrawActive()) {
 			Transptr->OnDraw();
+		}
+		if (StringSpritePtr && StringSpritePtr->IsDrawActive()) {
+			//StringSprite‚ÌDraw()
+			StringSpritePtr->OnDraw();
 		}
 	}
 

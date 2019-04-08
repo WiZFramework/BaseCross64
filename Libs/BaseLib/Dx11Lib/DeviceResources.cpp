@@ -1635,6 +1635,8 @@ namespace basecross {
 
 		ComPtr<ID3D11BlendState> m_AdditivePtr;
 		ComPtr<ID3D11BlendState> m_NonPremultipliedPtr;
+		ComPtr<ID3D11BlendState> m_AlphaToCoveragePtr;
+
 		//デプスステンシルステート
 		ComPtr<ID3D11DepthStencilState> m_DepthNonePtr;
 		ComPtr<ID3D11DepthStencilState> m_DepthDefaultPtr;
@@ -1973,6 +1975,44 @@ namespace basecross {
 			pImpl->CreateBlendState(D3D11_BLEND_SRC_ALPHA, D3D11_BLEND_INV_SRC_ALPHA, pResult);
 		});
 	}
+
+	ID3D11BlendState* RenderState::GetAlphaToCoverage()const {
+		if (!pImpl->m_AlphaToCoveragePtr) {
+			auto Dev = App::GetApp()->GetDeviceResources();
+			auto pDx11Device = Dev->GetD3DDevice();
+
+			CD3D11_DEFAULT default_state;
+			CD3D11_BLEND_DESC bddesc(default_state);
+			bddesc.AlphaToCoverageEnable = TRUE;
+			D3D11_BLEND_DESC* pdesc = &bddesc;
+
+/*
+			D3D11_BLEND_DESC desc;
+			ZeroMemory(&desc, sizeof(desc));
+
+			desc.RenderTarget[0].BlendEnable = true;
+			desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+			desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+			desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+			desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+			desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+			desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+*/
+
+			HRESULT hr = pDx11Device->CreateBlendState(pdesc, &pImpl->m_AlphaToCoveragePtr);
+			if (FAILED(hr)) {
+				// 初期化失敗
+				throw BaseException(
+					L"ブレンドステート作成に失敗しました。",
+					L"if(FAILED(pDx11Device->CreateBlendState()))",
+					L"BasicState::GetAlphaToCoverage()"
+				);
+			}
+		}
+		return pImpl->m_AlphaToCoveragePtr.Get();
+	}
+
 
 	//--------------------------------------------------------------------------------------
 	//	用途: デプスステンシルステートアクセッサ
