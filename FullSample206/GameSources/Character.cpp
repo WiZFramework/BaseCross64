@@ -90,6 +90,19 @@ namespace basecross{
 
 	void FireSphere::OnUpdate() {
 		auto ptrTrans = GetComponent<Transform>();
+
+		auto camera = OnGetDrawCamera();
+		auto norm = camera->GetAt() - camera->GetEye();
+		auto test = ptrTrans->GetPosition() - camera->GetEye();
+		norm.normalize();
+		auto dot = bsm::dot(norm, test);
+		if (dot < 0.0f) {
+			SetDrawActive(false);
+		}
+		else {
+			SetDrawActive(true);
+		}
+
 		if (ptrTrans->GetPosition().y > m_ActiveMaxY) {
 			float elapsedTime = App::GetApp()->GetElapsedTime();
 			auto Pos = ptrTrans->GetPosition();
