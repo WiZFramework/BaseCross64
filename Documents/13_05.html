@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１３．Draw系の操作とオーディオ</h2>
+<h3>１３０５．インスタンス描画</h3>
+　このサンプルは<b>FullSample305</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは<b>リリースモード</b>で起動してください（デバッグモードでは重すぎます）。<br />
+<p>&nbsp;</p>
+<img src="img/1305a.png" width="80%"/>
+<p>図1305a</p>
+　中央で回転する球は<b>点</b>の集合です。プレイヤーで当たってみましょう。<br />
+　すると、プレイヤーと衝突した点は、上部にはね、周りに散らばります。<br />
+　どんどんやっていくと以下の様な状態になります。
+<p>&nbsp;</p>
+<img src="img/1305b.png" width="80%"/>
+<p>図1305b</p>
+<h4>インスタンス描画</h4>
+　この<b>球を形成する点</b>は<b>インスタンン描画</b>という手法で描画しています。<br />
+　<b>インスタンス描画</b>とは<b>一度のシェーダ描画で1つのメッシュを複数個描画する</b>手法です。<br />
+　この描画方法をとることで、ハイスピードな描画を実装できます。<br />
+　<b>インスタンス描画</b>自体は古くからある手法なのです。Dx11の場合、<b>ワールド行列</b>は通常<b>コンスタントバッファ</b>に入力しますが、<b>インスタンス描画</b>をする場合は<b>複数のワールド行列</b>を<b>スロット</b>に入れてしまいます。そうすることで、<b>頂点シェーダ</b>ではスロットに入った<b>ワールド行列ごとに</b>処理をします。<br />
+　<b>BaseCross64</b>で内部的に<b>インスタンス描画</b>を行っているのは<b>マルチパーティクル（つまりエフェクト）</b>の描画です。<b>エフェクト</b>は、単純でありますが大量のメッシュをできるだけ速く描画する必要があるためにそのような実装になっています。<br/>
+　一般的な<b>ゲームオブジェクト</b>では<b>PCTStaticDraw</b>など、先頭に<b>Bcがつかない</b>描画コンポーネントで<b>インスタンス描画</b>が実装できるようになっています。<br />
+　<b>BcPCTStaticDraw</b>などの<b>Bcがつく</b>描画コンポーネントでは、コンスタントバッファにライティングに必要な情報が入っているために、対応できていません。（作りこめばできるのでしょうが、そこまで用意してません）<br />
+<h4>位置の集合の作成</h4>
+　このサンプルでは<b>球のメッシュ</b>から<b>頂点位置データ</b>のみを取り出し、それを<b>ワールド行列化</b>して実装しています。<br />
+　具体的には<b>Character.h/cpp</b>にある<b>PointsBallクラス</b>です。<br />
+　<b>PointsBall::OnCreate()関数</b>を見てみましょう。
+<div class="box1">
+<pre>
+void PointsBall::OnCreate() {
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    <span class="red">//球体を作成
+    MeshUtill::CreateSphere(1.0f, 28,vertices, indices);</span>
+    for (auto& v : vertices) {
+        LocalData tempLocalData;
+        tempLocalData.m_LocalPosition = v.position;
+        //各頂点をインスタンスの位置に設定
+        m_LocalDataVec.push_back(tempLocalData);
+    }
+    //描画用メッシュの作成
+    float helfSize = 0.04f;
+    Col4 col(1.0f, 1.0f, 0.0f, 1.0f);
+    //頂点配列
+    vector&lt;VertexPositionColorTexture> meshVertices = {
+        { VertexPositionColorTexture(Vec3(-helfSize, helfSize, 0),col, Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, helfSize, 0),col, Vec2(1.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-helfSize, -helfSize, 0),col, Vec2(0.0f, 1.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, -helfSize, 0),col, Vec2(1.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> meshIndex = { 0, 1, 2, 1, 3, 2 };
+    //2次元平面とする（頂点数が少ないため）
+    m_MeshRes = MeshResource::CreateMeshResource(meshVertices, meshIndex, true);
+    //全体の位置関連
+    auto ptrTransform = GetComponent&lt;Transform>();
+    ptrTransform->SetScale(Vec3(m_Scale));
+    ptrTransform->SetRotation(Vec3(0));
+    ptrTransform->SetPosition(m_Position);
+    //描画コンポーネントの追加（インスタンス描画）
+    <span class="red">auto PtrDraw = AddComponent&lt;PCTStaticInstanceDraw>();</span>
+    PtrDraw->SetMeshResource(m_MeshRes);
+    PtrDraw->SetTextureResource(L"SPARK_TX");
+    PtrDraw->SetDepthStencilState(DepthStencilState::Read);
+    //各頂点ごとに行列を作成
+    for (auto& v : m_LocalDataVec) {
+        Mat4x4 tempMat;
+        tempMat.affineTransformation(
+            Vec3(1.0f),
+            Vec3(0.0f),
+            Quat(),
+            v.m_LocalPosition
+        );
+        <span class="red">//インスタンス描画の行列として設定
+        PtrDraw->AddMatrix(tempMat);</span>
+    }
+    SetAlphaActive(true);
+}
+</pre>
+</div>
+　ここではまず
+<div class="box1">
+<pre>
+    <span class="red">//球体を作成
+    MeshUtill::CreateSphere(1.0f, 28,vertices, indices);</span>
+</pre>
+</div>
+　と球体のメッシュを作成します。<b>28</b>というのは分割数です。こうすると、2000個弱の頂点の球が出来上がります。<br />
+　<b>BaseCross64</b>のインスタンス描画で使用する描画数は<b>2000個</b>です。この値を変更することもできますが、2000個以上使用すると目に見えて描画速度が落ちますので注意しましょう。<br />
+　続いて
+<div class="box1">
+<pre>
+    for (auto& v : vertices) {
+        LocalData tempLocalData;
+        tempLocalData.m_LocalPosition = v.position;
+        //各頂点をインスタンスの位置に設定
+        m_LocalDataVec.push_back(tempLocalData);
+    }
+</pre>
+</div>
+　という形で、球の頂点を位置情報を<b>LocalDataのm_LocalPosition</b>にセットします。<br />
+　<b>LocalData</b>は<b>ヘッダ部</b>に宣言されている構造体で
+<div class="box1">
+<pre>
+struct LocalData {
+    LocalState m_State;
+    Vec3 m_LocalPosition;
+    Mat4x4 m_FixedMatrix;
+    Vec3 m_Velocity;
+    LocalData() :
+        m_State(LocalState::Roll),
+        m_LocalPosition(0.0f),
+        m_FixedMatrix(),
+        m_Velocity(0.0f)
+    {}
+};
+</pre>
+</div>
+　というメンバです。<b>LocalState</b>は<b>enum class</b>で
+<div class="box1">
+<pre>
+enum class LocalState {
+    Roll,
+    Down,
+    Fix
+};
+</pre>
+</div>
+　となっています。<b>LocalData</b>には<b>1つの点</b>が入るのですが、その<b>状態</b>を表します。<b>ステートマシン</b>の<b>ステート</b>のようなものです。初期値は<b>Roll</b>となります。<br />
+　<b>PointsBall::OnCreate()関数</b>では、一つ一つの点を
+<div class="box1">
+<pre>
+        //各頂点をインスタンスの位置に設定
+        m_LocalDataVec.push_back(tempLocalData);
+</pre>
+</div>
+　と<b>m_LocalDataVec配列</b>に取っておきます。<br />
+　ここで注意したいのは<b>m_LocalDataVec</b>は<b>ローカル座標</b>だということです。ここでの<b>ローカル座標</b>は<b>球の中心を原点</b>とした座標系です。<br />
+<h4>メッシュの作成</h4>
+　点の集合はできましたが、実際に描画するには<b>メッシュ</b>が必要です。球体や四角形などのメッシュを描画することはかのうですが、出来るだけ軽くするために<b>平面のメッシュ</b>を使います。これだと3角形を2つ描画するだけですみます。
+<div class="box1">
+<pre>
+    //描画用メッシュの作成
+    float helfSize = 0.04f;
+    Col4 col(1.0f, 1.0f, 0.0f, 1.0f);
+    //頂点配列
+    vector&lt;VertexPositionColorTexture> meshVertices = {
+        { VertexPositionColorTexture(Vec3(-helfSize, helfSize, 0),col, Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, helfSize, 0),col, Vec2(1.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-helfSize, -helfSize, 0),col, Vec2(0.0f, 1.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, -helfSize, 0),col, Vec2(1.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> meshIndex = { 0, 1, 2, 1, 3, 2 };
+    //2次元平面とする（頂点数が少ないため）
+    m_MeshRes = MeshResource::CreateMeshResource(meshVertices, meshIndex, true);
+</pre>
+</div>
+　こんな感じです。<br />
+　ここで<b>helfSize</b>は<b>0.04f</b>です。これで、<b>1辺が0.08</b>の四角形メッシュが作成されます。
+<h4>コンポーネントの設定</h4>
+　コンポーネントはまず<b>Transform</b>を設定します。これは<b>大きな球体のTransform</b>です。<br />
+　<b>スケーリング</b>と<b>位置情報</b>がコンストラクタで渡されますのでそれを設定します。
+<div class="box1">
+<pre>
+    //全体の位置関連
+    auto ptrTransform = GetComponent&lt;Transform>();
+    ptrTransform->SetScale(Vec3(m_Scale));
+    ptrTransform->SetRotation(Vec3(0));
+    ptrTransform->SetPosition(m_Position);
+</pre>
+</div>
+　続いて描画コンポーネントです。
+<div class="box1">
+<pre>
+    //描画コンポーネントの追加（インスタンス描画）
+    <span class="red">auto PtrDraw = AddComponent&lt;PCTStaticInstanceDraw>();</span>
+    PtrDraw->SetMeshResource(m_MeshRes);
+    PtrDraw->SetTextureResource(L"SPARK_TX");
+    PtrDraw->SetDepthStencilState(DepthStencilState::Read);
+    //各頂点ごとに行列を作成
+    for (auto& v : m_LocalDataVec) {
+        Mat4x4 tempMat;
+        tempMat.affineTransformation(
+            Vec3(1.0f),
+            Vec3(0.0f),
+            Quat(),
+            v.m_LocalPosition
+        );
+        <span class="red">//インスタンス描画の行列として設定
+        PtrDraw->AddMatrix(tempMat);</span>
+    }
+    SetAlphaActive(true);
+</pre>
+</div>
+　この<b>PCTStaticInstanceDrawコンポーネント</b>がこのサンプルの主人公です。<b>インスタンス描画</b>を行います。<br />
+　メッシュは先ほど作成した四角形のメッシュ、テクスチャは、あらかじめリソース化した<b>L"SPARK_TX"</b>を設定します。<br />
+　インスタンス描画コンポーネントでは<b>AddMatrix()関数</b>によりあらかじめ、描画する行列を設定しておきます。<br />
+　データ内容的には<b>OnUpdate()関数</b>で変更するので、意味のある物でなくてもかまいません。
+<h4>更新処理</h4>
+　<b>PointsBall::OnUpdate()関数</b>は以下のように2つの関数を呼んでいます。
+<div class="box1">
+<pre>
+void PointsBall::OnUpdate() {
+    //ステートのUpdate
+    UpdateState();
+    //各インスタンスのUpdate
+    UpdateInstances();
+}
+</pre>
+</div>
+　以下は、最初に呼ばれる関数です。各インスタンスの状態のチェックを行い、必要なら状態を変更します。
+<div class="box1">
+<pre>
+//ステートのUpdate
+void PointsBall::UpdateState() {
+    if (m_MatVec.size() != m_LocalDataVec.size()) {
+        //m_MatVecがまだ初期化されてない可能性がある
+        return;
+    }
+    //各定数
+    const float baseY = m_Scale * 0.02f;
+    const float velocityPower = 3.0f;
+    const Vec3 gravity(0, -9.8f, 0);
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    auto playerSh = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    auto playerPos = playerSh->GetComponent&lt;Transform>()->GetWorldPosition();
+    //各頂点でループ
+    for (size_t i = 0; i &lt; m_LocalDataVec.size(); i++) {
+        switch (m_LocalDataVec[i].m_State) {
+        case LocalState::Roll:
+            //回転している状態
+            {
+                auto len = length(playerPos - m_MatVec[i].transInMatrix());
+                if (len &lt; 0.4f) {
+                    <span class="red">//lenが0.4未満なら衝突してると判断
+                    //ステートを変更
+                    //衝突していたら球から飛び出すように速度を設定
+                    m_LocalDataVec[i].m_State = LocalState::Down;
+                    m_LocalDataVec[i].m_Velocity = playerPos - m_MatVec[i].transInMatrix();
+                    m_LocalDataVec[i].m_Velocity.normalize();
+                    m_LocalDataVec[i].m_Velocity.y = 1.0f;
+                    m_LocalDataVec[i].m_Velocity *= velocityPower;</span>
+                }
+            }
+            break;
+        case LocalState::Down:
+            //落下中の状態
+            <span class="red">if (m_MatVec[i].transInMatrix().y &lt;= baseY) {</span>
+                //落下終了
+                m_LocalDataVec[i].m_State = LocalState::Fix;
+                //終了時の行列を保存
+                //Y値を0.1にする
+                m_MatVec[i]._42 = baseY;
+                <span class="red">//m_LocalDataVecとm_MatVecは各インスタンスは同じインデックスである
+                m_LocalDataVec[i].m_FixedMatrix = m_MatVec[i];</span>
+            }
+            else {
+                m_LocalDataVec[i].m_Velocity += gravity * elapsedTime;
+                m_LocalDataVec[i].m_LocalPosition += m_LocalDataVec[i].m_Velocity * elapsedTime;
+            }
+            break;
+        case LocalState::Fix:
+            //落下終了の状態
+            break;
+        }
+    }
+}
+</pre>
+</div>
+　ここで注目すべき点は、プレイヤーが各点に当たったときの処理です。<br/>
+　上方に<b>ぴょん</b>とはねるように飛び出すわけですが、そこは<b>case LocalState::Roll:</b>ステート時に
+<div class="box1">
+<pre>
+                    <span class="red">//lenが0.4未満なら衝突してると判断
+                    //ステートを変更
+                    //衝突していたら球から飛び出すように速度を設定
+                    m_LocalDataVec[i].m_State = LocalState::Down;
+                    m_LocalDataVec[i].m_Velocity = playerPos - m_MatVec[i].transInMatrix();
+                    m_LocalDataVec[i].m_Velocity.normalize();
+                    m_LocalDataVec[i].m_Velocity.y = 1.0f;
+                    m_LocalDataVec[i].m_Velocity *= velocityPower;</span>
+</pre>
+</div>
+　といった処理で<b>速度</b>を変え<b>m_LocalDataVec[i].m_State = LocalState::Down;</b>とステートを変更します。<br />
+　<b>LocalState::Down</b>ステート時は、まだ
+<div class="box1">
+<pre>
+            <span class="red">if (m_MatVec[i].transInMatrix().y &lt;= baseY) {</span>
+</pre>
+</div>
+　と<b>地面につかないかどうか</b>を確認し、落下中であれば重力を設定します。<br />
+　地面についたら<b>LocalState::Fix</b>ステートに変更します。その際
+
+<div class="box1">
+<pre>
+                //終了時の行列を保存
+                //Y値を0.1にする
+                m_MatVec[i]._42 = baseY;
+</pre>
+</div>
+　と行列中の位置データのY座標をbaseYにし
+<div class="box1">
+<pre>
+                <span class="red">//m_LocalDataVecとm_MatVecは各インスタンスは同じインデックスである
+                m_LocalDataVec[i].m_FixedMatrix = m_MatVec[i];</span>
+</pre>
+</div>
+　と<b>m_LocalDataVec[i].m_FixedMatrix</b>に<b>m_MatVec[i]</b>を設定します。<br />
+　<b>m_LocalDataVec</b>と<b>m_MatVec</b>は、同じ点は同じインデックスを保持するので、このような処理が可能になります。<br />
+<br />
+　更新処理のもう一つの関数は<b>PointsBall::UpdateInstances()関数</b>ですが、以下の処理になります。
+<div class="box1">
+<pre>
+void PointsBall::UpdateInstances() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    auto ptrDraw = GetComponent&lt;PCTStaticInstanceDraw>();
+    auto camera = OnGetDrawCamera();
+    //カメラのレイを作成しておく
+    auto lay = camera->GetAt() - camera->GetEye();
+    lay.normalize();
+    Quat qtCamera;
+    //回転は常にカメラを向くようにする
+    qtCamera.facing(lay);
+    auto ptrTransform = GetComponent&lt;Transform>();
+    //全体を回転させる
+    auto worldQt = ptrTransform->GetQuaternion();
+    Quat spanQt(Vec3(0, 1, 0), elapsedTime);
+    worldQt *= spanQt;
+    ptrTransform->SetQuaternion(worldQt);
+    //行列の配列をクリア
+    m_MatVec.clear();
+    Mat4x4 worldMat;
+    for (auto& v : m_LocalDataVec) {
+        <span class="red">if (v.m_State == LocalState::Fix) {</span>
+            //落下終了の状態
+            worldMat.affineTransformation(
+                v.m_FixedMatrix.scaleInMatrix(),
+                Vec3(0.0f),
+                qtCamera,
+                v.m_FixedMatrix.transInMatrix()
+            );
+        }
+        else {
+            Mat4x4 localMat;
+            localMat.affineTransformation(
+                Vec3(1.0f),
+                Vec3(0.0f),
+                Quat(),
+                v.m_LocalPosition
+            );
+            worldMat = localMat * ptrTransform->GetWorldMatrix();
+            worldMat.affineTransformation(
+                worldMat.scaleInMatrix(),
+                Vec3(0.0f),
+                qtCamera,
+                worldMat.transInMatrix()
+            );
+        }
+        m_MatVec.push_back(worldMat);
+    }
+    //インスタンス行列の更新
+    ptrDraw->UpdateMultiMatrix(m_MatVec);
+}
+</pre>
+</div>
+　ここでは
+<div class="box1">
+<pre>
+        <span class="red">if (v.m_State == LocalState::Fix) {</span>
+</pre>
+</div>
+　かどうかで処理を変えているのですが、<b>落下終了</b>の場合は<b>v.m_FixedMatrix</b>を使用します。<br />
+<br />
+　また、この関数では、各点を<b>カメラのほうを向く</b>処理をします。<br />
+　これは、メッシュが平面のため、つねにカメラのほうを向く処理をしないと平面が斜めになってしまうためです。<br />
+　この辺は<b>エフェクト</b>と同じ処理です。
+<div class="box1">
+<pre>
+            worldMat.affineTransformation(
+                v.m_FixedMatrix.scaleInMatrix(),
+                Vec3(0.0f),
+                qtCamera,
+                v.m_FixedMatrix.transInMatrix()
+            );
+</pre>
+</div>
+　もしくは
+<div class="box1">
+<pre>
+            worldMat = localMat * ptrTransform->GetWorldMatrix();
+            worldMat.affineTransformation(
+                worldMat.scaleInMatrix(),
+                Vec3(0.0f),
+                qtCamera,
+                worldMat.transInMatrix()
+            );
+</pre>
+</div>
+　という方法で<b>worldMat</b>を決定します。<br />
+　<b>worldMat</b>が出来上がったら
+<div class="box1">
+<pre>
+        m_MatVec.push_back(worldMat);
+</pre>
+</div>
+　と、<b>m_MatVec</b>に設定し
+<div class="box1">
+<pre>
+    //インスタンス行列の更新
+    ptrDraw->UpdateMultiMatrix(m_MatVec);
+</pre>
+</div>
+　とすることで、すべてのインスタンスの行列が更新されます。<br />
+<h4>まとめ</h4>
+　この項では<b>インスタンス描画</b>について解説しました。<br />
+　同じゲームオブジェクトを大量に表示させたい場合などは開発中に出てでてきます。<br />
+　ゲームオブジェクトは機能は豊富ですが、その分コストがかかります。<br />
+　そんなに厳密な処理を必要としないオブジェクトの場合は、ぜひ<b>インスタンス描画</b>を検討してみて下さい。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="13_04.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
