@@ -13,167 +13,453 @@
 </div>
 <!-- コンテンツ　-->
 <div id="contents">
-<h2>１５．パターン集</h2>
-<h3>１５０１．AbstractFactory</h3>
-　この章は<b>パターン集</b>です。今日では<b>デザインパターン（いわゆるGoF）</b>をはじめ、いろんな<b>パターン</b>（つまりはクラス設計などの型）が紹介されていますが、それらを、実際のアプリ（ゲームもアプリです）で使う場合、どのようにしたらいいのか、ぴんと来ないこともあるかと思います。<br />
-　そこでこの章では<b>BaseCross64</b>で<b>パターン</b>を使う場合の例を紹介したいと思います。<br />
-　とはいえ、<b>BaseCross64</b>は、全体の構造も<b>パターン</b>のかたまりのようなもので、例えばこの項で紹介する、<b>AbstractFactory</b>も<b>Stageクラスとその派生クラス（GameStageなど）</b>の関係のようなものです。<br />
-　ですが、その関係を<b>GemaObjectの派生</b>として作成することで<b>AbstractFactoryとは何か</b>を確認することが可能です。<br />
+<h2>１５．シェーダーを自作する（Dx11版）</h2>
+<h3>１５０１．コンピュートシェーダーで計算する（１）</h3>
 <br />
 　このサンプルは<b>FullSample501</b>というディレクトリに含まれます。<br />
 　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
-　<b>BaseCrossDx12.sln</b>というソリューションを開くと<b>Dx12版</b>が起動します。<br />
-<br />
-　実行結果は以下のような画面のいずれかが出ます。
+　このサンプルは現在Dx12版はありません。<br />
 <p>&nbsp;</p>
 <img src="img/1501a.png" width="80%"/>
 <p>図1501a</p>
 <p>&nbsp;</p>
+<br />
+　<b>シェーダー</b>の自作はシンプルバージョンでは必須になっていますが<b>フルバージョン</b>の場合は、ほとんどの場合描画コンポーネントに隠されているので、あまり目に触れることはありません。<br />
+　しかし、特別な演出など必要になったときに、<b>いつでもシェーダーが書ける</b>環境にないと不便です。<br />
+　そこでこの章では<b>フルバージョン</b>でのシェーダの作成方法を説明します。<br />
+　まず手始めに<b>コンピュートシェーダー</b>を紹介します。<br />
+　というのは<b>頂点シェーダー</b>や<b>ピクセルシェーダー</b>はGoogle先生に聞けば、いろんなテクニックが紹介されています。<br />
+　<b>BaseCross64</b>でもシンプルバージョンで基本的な<b>頂点シェーダー</b>や<b>ピクセルシェーダー</b>は紹介されています。<br />
+　しかし<b>コンピュートシェーダー</b>はなかなかサンプルがありません。あっても、ちょっと高度な計算（わざわざGPUに計算させるので当たり前といえば当たり前なのですが）が多いのも事実です。<br />
+　そのために初心者がとっつきやすいように、本当に最低限の計算をする<b>コンピュートシェーダー</b>を紹介します。
+<h4>コンピュートシェーダーとは何か</h4>
+　そもそも<b>コンピュートシェーダー</b>とは何でしょうか？<br />
+　計算シェーダとも言われ、ようは<b>GPUで計算をしてもらう</b>仕組みです。<br />
+　<b>GPU</b>は内部で高度な浮動小数点演算を高速で行うので、計算が得意と言えば得意なチップです。<br />
+　しかしほとんどの場合は<b>描画処理</b>に使われるので、例えば<b>Update処理</b>の間は、休んでいます。<br />
+　しかし、<b>Update処理</b>の中では、衝突判定や物理計算、あるいは大量のデータのソートなど、CPUの計算ではアップアップする演算が続きます。<br />
+　<b>コンピュートシェーダー</b>を使うことで、大忙しのCPUの処理をある程度任せることができます。
+<h4>最低限の計算</h4>
+　このサンプルでは<b>GPUに最低限の計算</b>をさせています。どのような計算かというと、<b>sin計算</b>です。いったりきたりするオブジェクトはよく<b>サインカーブ</b>を使いますが、それをGPUに計算させます。<br />
+　ですから、この処理は通常は全くと言っていいほど<b>コンピュートシェーダー</b>を使う理由はありません。<br />
+　しかし、単純な計算を体験することで<b>コンピュートシェーダー</b>の理解の助けになればと思っています。
+<h4>シェーダーの作成</h4>
+　以下サンプルではすでに実装済みですが、<b>フルバージョン</b>における<b>シェーダーの作成</b>は、いろいろ方法がありますが、まず、コンテンツの<b>GameSources</b>ディレクトリの中に<b>Shaders</b>といった<b>シェーダー専用ディレクトリ</b>を作るといいでしょう。<br />
+　そして<b>ソリューションエクスプローラ</b>で<b>GameSourcesフィルタ</b>に<b>Shadersフィルタ</b>を作成し、右クリックでその中の<b>追加－新しい項目</b>で、以下の画面で<b>CSCalcbody.hlsl</b>という名の<b>計算シェーダ</b>を作成します。
+<p>&nbsp;</p>
 <img src="img/1501b.png" width="80%"/>
 <p>図1501b</p>
 <p>&nbsp;</p>
-　<b>AbstractFactory</b>というパターンは<b>Factory（いわゆる工場）クラス</b>を選択することで、<b>別のオブジェクトの組み合わせ</b>を作成するパターンです。<br />
-　それを<b>BaseCross64</b>で考えた場合は、<b>別のオブジェクトの組み合わせ</b>というのは、<b>別のゲームステージ</b>のように考えることができます。<br />
-　ということは<b>Stageを親に持つGameStageクラス群</b>というのも、<b>AbstractFactory</b>と考えることができます。<br />
-　しかしそれではあまり面白くないので、<b>GameStageクラス</b>の中で<b>GameObjectの派生クラス</b>の形で<b>AbstractFactory</b>を作成してみました。<br />
-<h4>AbstractFactoryクラス</h4>
-　<b>GameStage.h/cpp</b>にある、<b>AbstractFactoryクラス</b>を見てください。以下はヘッダ部です。
+　作成したシェーダーの<b>プロパティ</b>の全般で<b>シェーダモデル</b>は<b>Shader Model 5.0 (/5_0)</b>にし、<b>出力ファイルが</b>以下のようになるのを確認してください。
+<p>&nbsp;</p>
+<img src="img/1501c.png" width="80%"/>
+<p>図1501c</p>
+<p>&nbsp;</p>
+　そして以下を記述します。
 <div class="box1">
 <pre>
 //--------------------------------------------------------------------------------------
-//  親ファクトリー
+// コンスタントバッファ
 //--------------------------------------------------------------------------------------
-class AbstractFactory : public GameObject {
-protected:
-    //構築と破棄
-    AbstractFactory(const shared_ptr&lt;Stage>& StagePtr)
-        :GameObject(StagePtr) {}
-    virtual ~AbstractFactory() {}
-    //ビューの作成
-    void CreateViewLight();
-    //プレイヤーの作成
-    void CreatePlayer();
+cbuffer CB : register(b0)
+{
+    float4  g_paramf;
 };
+
+//--------------------------------------------------------------------------------------
+// エレメントデータ
+//--------------------------------------------------------------------------------------
+struct ElemData
+{
+    float4 pos;
+};
+
+//入出力用バッファ
+RWStructuredBuffer&lt;ElemData> posData : register(u0);
+//共有変数
+groupshared float4 sharedPos;
+
+
+[numthreads(1, 1, 1)]
+void main( uint3 DTid : SV_DispatchThreadID )
+{
+    sharedPos = posData[DTid.x].pos;
+    GroupMemoryBarrierWithGroupSync();
+    <span class="red">sharedPos.x = sin(g_paramf.x);</span>
+    GroupMemoryBarrierWithGroupSync();
+    posData[DTid.x].pos = sharedPos;
+}
 </pre>
 </div>
-　このクラスは<b>Factory</b>の親クラスです。この派生クラスとして<b>Factory1およびFactory2クラス</b>があります。
-<h4>Factoryクラス（派生クラス）</h4>
-　<b>Factory1およびFactory2クラス</b>は以下の様な構造です。<b>Factory1</b>ですが
+　一番重要な部分は赤くなっているところです。ここでサインカーブを<b>ポジションのX</b>に計算します。<br />
+　ようはこの1行を書くために、<b>GPUとのインターフェイス</b>を作成するのがこのサンプルです。
+<h4>コンスタントバッファとシェーダー作成</h4>
+　しれではCPP側を記述します。<b>Character.h/cpp</b>に<b>MoveBox</b>というオブジェクトを記述しますが、その前に、<b>シェーダークラスとコンスタントバッファクラス</b>を作成します。<br />
+　作成するといってもそれぞれマクロを実装するだけです。<br />
+　まず<b>コンスタントバッファクラス</b>ですが、<b>Character.h</b>に以下を記述します。
 <div class="box1">
 <pre>
-//--------------------------------------------------------------------------------------
-//  ファクトリー1
-//--------------------------------------------------------------------------------------
-class Factory1 : public AbstractFactory {
+    struct CB
+    {
+        // paramf[0] == Totaltime
+        float paramf[4];
+    };
+    //コンスタントバッファのヘッダ部
+    DECLARE_DX11_CONSTANT_BUFFER(ConstantBufferCalcbody, CB)
+</pre>
+</div>
+　マクロを追いかけていくとわかりますが、これで<b>ConstantBufferCalcbodyクラス</b>が宣言されます。<br />
+　つづいて実体です。<b>Character.cpp</b>に以下を記述します。
+<div class="box1">
+<pre>
+    //コンスタントバッファの実体部
+    IMPLEMENT_DX11_CONSTANT_BUFFER(ConstantBufferCalcbody)
+</pre>
+</div>
+　これで終わりです。<br />
+　続いて<b>コンピュートシェーダクラス</b>です。<b>Character.h</b>に以下を記述します。
+<div class="box1">
+<pre>
+    DECLARE_DX11_COMPUTE_SHADER(ComputeSaderCalcbody)
+</pre>
+</div>
+　続いて実体ですが、<b>Character.cpp</b>に以下を記述します。
+<div class="box1">
+<pre>
+    //CSの実体部
+    IMPLEMENT_DX11_COMPUTE_SHADER(ComputeSaderCalcbody, App::GetApp()->GetShadersPath() + L"CSCalcbody.cso")
+</pre>
+</div>
+　これでしまいです。シェーダーの実体では、コンパイルされたシェーダである<b>.csoファイル</b>が指定されているのがわかります。<br />
+　このように<b>BaseCross64</b>では、コンスタントバッファやシェーダー（頂点、ピクセル、ジオメトリ、コンピュートシェーダ）は同様のマクロで作成します。
+<h4>ゲームオブジェクト宣言</h4>
+　ゲームオブジェクトは<b>MoveBox</b>です。まずヘッダ部ですが
+<div class="box1">
+<pre>
+class MoveBox : public GameObject {
+    <span class="red">// エレメントデータの構造体
+    struct Element
+    {
+        XMFLOAT4 pos;
+    };
+    //エレメントバッファ
+    ComPtr&lt;ID3D11Buffer> m_Buffer;
+    //アクセスビュー
+    ComPtr &lt; ID3D11UnorderedAccessView>  m_UAV;
+    //リードバックバッファ
+    ComPtr&lt;ID3D11Buffer> m_ReadBackBuffer;</span>
+    //トータルアイム
+    float m_TotalTime;
+    Vec3 m_Scale;
+    Vec3 m_Rotation;
+    Vec3 m_Position;
+    Vec3 m_Velocity;
 public:
     //構築と破棄
-    Factory1(const shared_ptr&lt;Stage>& StagePtr) :
-        AbstractFactory(StagePtr)
-    {}
-    virtual ~Factory1() {}
+    MoveBox(const shared_ptr&lt;Stage>& StagePtr,
+        const Vec3& Scale,
+        const Vec3& Rotation,
+        const Vec3& Position
+    );
+    virtual ~MoveBox();
     //初期化
     virtual void OnCreate() override;
+    //操作
+    virtual void OnUpdate() override;
 };
 </pre>
 </div>
-　このように<b>OnCreate()関数</b>だけを持ってます。<b>Factory2</b>も同様です。<br />
-　以下は、<b>Factory1::OnCreate()</b>の実体ですが
+　赤くなっている部分が<b>コンピュートシェーダ</b>を実装するために最低限必要なオブジェクト（インターフェイス）です。<br/>
+　それぞれコメントにありますが
 <div class="box1">
 <pre>
-void Factory1::OnCreate() {
-    //ビューとライトの作成
-    CreateViewLight();
-    //配列の初期化
-    vector&lt; vector&lt;Vec3> > vecBox = {
-        {
-            Vec3(50.0f, 1.0f, 50.0f),
-            Vec3(0.0f, 0.0f, 0.0f),
-            Vec3(0.0f, -0.5f, 0.0f)
-        },
+    // エレメントデータの構造体
+    struct Element
+    {
+        XMFLOAT4 pos;
     };
-    //ボックスの作成
-    for (auto v : vecBox) {
-        GetStage()->AddGameObject&lt;FixedBox>(v[0], v[1], v[2]);
-    }
-    //配列の初期化
-    vector&lt; vector&lt;Vec3> > vecSp = {
-        {
-            Vec3(0.0f, 0.0f, 0.0f),
-            Vec3(5.0f, 0.0f, 10.0f)
-        },
-        {
-            Vec3(0.0f, 0.0f, 0.0f),
-            Vec3(-5.0f, 0.0f, 10.0f)
-        },
-        {
-            Vec3(0.0f, 0.0f, 0.0f),
-            Vec3(5.0f, 0.0f, -10.0f)
-        },
-        {
-            Vec3(0.0f, 0.0f, 0.0f),
-            Vec3(-.0f, 0.0f, -10.0f)
-        },
-    };
-    //障害物球の作成
-    for (auto v : vecSp) {
-        GetStage()->AddGameObject&lt;FixedSphere>(1.0f, v[0], v[1]);
-    }
-    //オブジェクトのグループを作成する
-    auto group = GetStage()->CreateSharedObjectGroup(L"ObjGroup");
-    //配列の初期化
-    vector&lt;Vec3> vecSeek = {
-        { 0, 0.125f, 10.0f },
-        { 10.0f, 0.125f, 0.0f },
-        { -10.0f, 0.125f, 0.0f },
-        { 0, 0.125f, -10.0f },
-    };
-    //追いかけるオブジェクトの作成
-    for (auto v : vecSeek) {
-        GetStage()->AddGameObject&lt;SeekObject>(v);
-    }
-    //配列の初期化
-    vector&lt;Vec3> vecPursuit = {
-        { 10.0f, 0.125f, 10.0f },
-    };
-    //追跡するオブジェクトの作成
-    for (auto v : vecPursuit) {
-        GetStage()->AddGameObject&lt;PursuitObject>(v);
-    }
-    //プレーヤーの作成
-    CreatePlayer();
-}
 </pre>
 </div>
-　<b>CreateViewLight()とCreatePlayer()</b>は親クラス側に実体があるので、その関数を呼び出します。あとは<b>Factory1</b>で実装すべきオブジェクトを追加しています。<br />
-　<b>Factory2</b>も似たような感じです。<b>Factory1</b>がイージーなステージだとすれば<b>Factory2</b>はハードなステージという想定です。
-<h4>どちらの工場を使うか</h4>
-　このサンプルでは<b>Factory1とFactory2</b>という2つのステージ設計がクラス化されているわあ家ですが、通常はイージーなステージを最初に作成して、たとえばそのステージをクリアした時に、よりハードなステージに行きます。<br />
-　とじゃいえサンプルなので、単に乱数で<b>偶数か奇数か</b>を取り出し、それにより<b>Factory1かFactory2</b>を選択します。その部分は以下です。<b>GameStage::OnCreate()</b>です。
+　はシェーダに渡すデータの構造体です。メンバは<b>pos</b>となってますように、<b>位置情報</b>です。<br />
+<div class="box1">
+<pre>
+    //エレメントバッファ
+    ComPtr&lt;ID3D11Buffer> m_Buffer;
+</pre>
+</div>
+　は構造体のデータそのものです。<b>ID3D11Buffer</b>タイプですが、ここに<b>Element</b>と同じサイズのバッファを構築します。
+<div class="box1">
+<pre>
+    //アクセスビュー
+    ComPtr &lt; ID3D11UnorderedAccessView>  m_UAV;
+</pre>
+</div>
+　は<b>m_Buffer</b>を読み書きする<b>ビュー</b>です。Dx11は<b>ビュー</b>を通して読み書きします。
+<div class="box1">
+<pre>
+    //リードバックバッファ
+    ComPtr&lt;ID3D11Buffer> m_ReadBackBuffer;</span>
+</pre>
+</div>
+　はアクセスビューから、計算結果を読みだすインターフェイスです。<br />
+<h4>ゲームオブジェクトの構築</h4>
+　では、これらのオブジェクトの構築を見てみましょう。<b>MoveBox::OnCreate()関数</b>です。
+<div class="box1">
+<pre>
+void MoveBox::OnCreate() {
 
+    //中略
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pDx11Device = Dev->GetD3DDevice();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    //エレメントバッファ
+    D3D11_BUFFER_DESC buffer_desc = {};
+    buffer_desc.ByteWidth = sizeof(Element);
+    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    buffer_desc.StructureByteStride = sizeof(Element);
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_Buffer),
+        L"エレメントバッファ作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"MoveBox::OnCreate()"
+    );
+    //アクセスビュー
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uavbuffer_desc = {};
+    uavbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+    uavbuffer_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    uavbuffer_desc.Buffer.NumElements = 1;
+    ThrowIfFailed(
+        pDx11Device->CreateUnorderedAccessView(m_Buffer.Get(), &uavbuffer_desc, &m_UAV),
+        L"アクセスビュー作成に失敗しました",
+        L"pDx11Device->CreateUnorderedAccessView()",
+        L"MoveBox::OnCreate()"
+    );
+    //リードバックバッファ
+    D3D11_BUFFER_DESC readback_buffer_desc = {};
+    readback_buffer_desc.ByteWidth = sizeof(Element);
+    readback_buffer_desc.Usage = D3D11_USAGE_STAGING;
+    readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    readback_buffer_desc.StructureByteStride = sizeof(Element);
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&readback_buffer_desc, nullptr, &m_ReadBackBuffer),
+        L"リードバックバッファ作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"MoveBox::OnCreate()"
+    );
+}
+</pre>
+</div>
+　シェーダに関係ない部分は省略してあります。<br />
+　<b>エレメントバッファ、アクセスビュー、リードバックバッファ</b>の3つのインターフェイスを構築します。<br />
+　Dx11では、インターフェイスは<b>COM</b>の形で提供されています。<br />
+　手順的には
 <div class="box1">
 <pre>
-//--------------------------------------------------------------------------------------
-//  ゲームステージクラス実体
-//--------------------------------------------------------------------------------------
-void GameStage::OnCreate() {
-    try {
-        //2分の1の確率の乱数を発生
-        if (rand() % 2) {
-            AddGameObject&lt;Factory2>();
-        }
-        else {
-            AddGameObject&lt;Factory1>();
-        }
+１、定義用の構造体（D3D11_BUFFER_DESCなど）を作成
+２、構築用の関数を呼び出す。その際戻り値をチェックする
+</pre>
+</div>
+　となります。<b>ThrowIfFailed()関数</b>は追いかけていくとわかりますが<b>BaseCross64</b>のユーティリティ的な関数です。失敗した時にエラーメッセージを設定することができます。<br />
+　もっと複雑な計算や計算結果を別のシェーダ（例えば頂点シェーダ）に渡す場合は、このほかに<b>シェーダーリソースビュー</b>も使います。<br />
+　今回のサンプルでは<b>シェーダーリソースビュー</b>は使っていません。
+<h4>ゲームオブジェクトの更新</h4>
+　更新処理は<b>MoveBox::OnUpdate()関数</b>です。以下に紹介します。
+<div class="box1">
+<pre>
+void MoveBox::OnUpdate() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += elapsedTime;
+    if (m_TotalTime >= XM_2PI) {
+        m_TotalTime = 0;
     }
-    catch (...) {
-        throw;
+    //デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    //コンスタントバッファの設定
+    CB cb = {};
+    cb.paramf[0] = m_TotalTime;
+    ID3D11Buffer* pConstantBuffer = ConstantBufferCalcbody::GetPtr()->GetBuffer();
+    pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb, 0, 0);
+    pID3D11DeviceContext->CSSetConstantBuffers(0, 1, &pConstantBuffer);
+    //現在の位置情報の取得
+    auto ptrTransform = GetComponent&lt;Transform>();
+    //エレメントの入力
+    Element elemData;
+    Vec4 pos4(ptrTransform->GetPosition(), 0);
+    elemData.pos = pos4;
+    pID3D11DeviceContext->UpdateSubresource(m_Buffer.Get(), 0, nullptr, &elemData, 0, 0);
+    //CSの設定
+    pID3D11DeviceContext->CSSetShader(ComputeSaderCalcbody::GetPtr()->GetShader(), nullptr, 0);
+    //アクセスビューの設定
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, m_UAV.GetAddressOf(), nullptr);
+    //CSの実行
+    pID3D11DeviceContext->Dispatch(1, 1, 1);
+    //結果の読み取り
+    D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_Buffer.Get());
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+    {
+        memcpy(&elemData, MappedResource.pData, sizeof(Element));
+        pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+        Vec3 resuPos;
+        resuPos.x = elemData.pos.x;
+        resuPos.y = elemData.pos.y;
+        resuPos.z = elemData.pos.z;
+        ptrTransform->SetPosition(resuPos);
     }
 }
 </pre>
 </div>
-　乱数により、どちらかのファクトリが選択されます。<br />
-　このように、例えば<b>難易度</b>によってクラスを変えるのが<b>AbstractFactory</b>の特徴です。<b>ステージナンバー</b>などによって<b>パラメータの違い</b>でステージを作成するのではなく、<b>Factoryクラスそのもの</b>を変えるので、整理しやすくなります。<br/>
-　その反面、たくさんステージがある場合（たとえば100とか）、100個のファクトリクラスを作成する形なので、これは現実的ではありません。このような場合は、ステージデータはCSVなどの形で外に出すべきでしょう。
+　まず
+<div class="box1">
+<pre>
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    m_TotalTime += elapsedTime;
+    if (m_TotalTime >= XM_2PI) {
+        m_TotalTime = 0;
+    }
+</pre>
+</div>
+　の部分で<b>elapsedTime</b>を取り出し<b>m_TotalTime</b>に加算します。これが<b>XM_2PI</b>を超えればsinカーブは一周しますので0に初期化します。<br />
+　続くコードがシェーダとのやり取りです
+<div class="box1">
+<pre>
+    //デバイスの取得
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+</pre>
+</div>
+　でDx11デバイスを取得します。ここで利用するのは<b>pID3D11DeviceContext</b>です。<br />
+　続く
+<div class="box1">
+<pre>
+    //コンスタントバッファの設定
+    CB cb = {};
+    cb.paramf[0] = m_TotalTime;
+    ID3D11Buffer* pConstantBuffer = ConstantBufferCalcbody::GetPtr()->GetBuffer();
+    pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb, 0, 0);
+    pID3D11DeviceContext->CSSetConstantBuffers(0, 1, &pConstantBuffer);
+</pre>
+</div>
+　でコンスタントバッファをシェーダに渡します
+<div class="box1">
+<pre>
+ConstantBufferCalcbody::GetPtr()->GetBuffer();
+</pre>
+</div>
+　で<b>コンスタントバッファ</b>のインターフェイスのポインタを取得できます。<br />
+　<b>BaseCross64</b>ではコンスタントバッファはシングルトンとして作成します。（ほかのインターフェイルのように直接構築することも可能です）<br />
+　続く
+<div class="box1">
+<pre>
+    //現在の位置情報の取得
+    auto ptrTransform = GetComponent&lt;Transform>();
+    //エレメントの入力
+    Element elemData;
+    Vec4 pos4(ptrTransform->GetPosition(), 0);
+    elemData.pos = pos4;
+    pID3D11DeviceContext->UpdateSubresource(m_Buffer.Get(), 0, nullptr, &elemData, 0, 0);
+</pre>
+</div>
+　で、位置情報をシェーダに渡します。<br />
+　続く
+<div class="box1">
+<pre>
+    //CSの設定
+    pID3D11DeviceContext->CSSetShader(ComputeSaderCalcbody::GetPtr()->GetShader(), nullptr, 0);
+</pre>
+</div>
+　でシェーダーを設定します。<b>BaseCross64</b>でシェーダーはシングルトンとして作成します。<br />
+　<b>ComputeSaderCalcbody::GetPtr()->GetShader()</b>で、コンピュートシェーダのポインタを取得できます。<br />
+　続く
+<div class="box1">
+<pre>
+    //アクセスビューの設定
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, m_UAV.GetAddressOf(), nullptr);
+</pre>
+</div>
+　で、入出力用の<b>ビュー</b>を渡します。<b> m_UAVインターフェイス</b>は構築時に<b>m_Buffer用のビュー</b>として作成しますので、<b>m_Bufferそのもの</b>はシェーダに渡す必要はありません（渡すことはできない）。<br />
+　続く
+<div class="box1">
+<pre>
+    //CSの実行
+    pID3D11DeviceContext->Dispatch(1, 1, 1);
+</pre>
+</div>
+　と<b>コンピュートシェーダ</b>を実行します。今回は計算する個数は、<b>1個</b>です。パラメータの<b>1, 1, 1</b>はそういう意味です。<br />
+　一度に複数の計算（複数のオブジェクトに対する同じ計算）を行う場合は、このパラパラメータを<b>10,1,1</b>のようにします。<br />
+　パラメータの詳しい意味は次項以降で説明します。<br />
+　計算しましたので、結果を読み出します。
+<div class="box1">
+<pre>
+    //結果の読み取り
+    D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_Buffer.Get());
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+    {
+        memcpy(&elemData, MappedResource.pData, sizeof(Element));
+        pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+        Vec3 resuPos;
+        resuPos.x = elemData.pos.x;
+        resuPos.y = elemData.pos.y;
+        resuPos.z = elemData.pos.z;
+        ptrTransform->SetPosition(resuPos);
+    }
+</pre>
+</div>
+　です。結果は<b>m_Buffer</b>に入っているのですが、直接は読めません。
+<div class="box1">
+<pre>
+１、読み出し用のインターフェイスにm_Bufferをコピーする
+２、読み出し用のインターフェイスをmapする
+３、マップされたリソースから、CPU側のデータにコピーする
+４、マップを開放する
+</pre>
+</div>
+　という手順を踏みます。<br />
+　<b>読み出し用のインターフェイス</b>は構築時に作成した<b>m_ReadBackBuffer</b>です。<br />
+　ここに
+<div class="box1">
+<pre>
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_Buffer.Get());
+</pre>
+</div>
+　という形でコピーします。コピーしたら
+<div class="box1">
+<pre>
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+</pre>
+</div>
+　とマップします。マップが成功したら
+<div class="box1">
+<pre>
+        memcpy(&elemData, MappedResource.pData, sizeof(Element));
+</pre>
+</div>
+　とCPU側変数<b>elemData</b>にコピーします。そして
+<div class="box1">
+<pre>
+        pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+</pre>
+</div>
+　とアンマップします。そのあとは<b>elemData</b>を操作できますので、
+<div class="box1">
+<pre>
+        Vec3 resuPos;
+        resuPos.x = elemData.pos.x;
+        resuPos.y = elemData.pos.y;
+        resuPos.z = elemData.pos.z;
+        ptrTransform->SetPosition(resuPos);
+</pre>
+</div>
+　と位置情報を書き換えます。
+<h4>まとめ</h4>
+　この項では<b>コンピュートシェーダー</b>の一番簡単な使い方を説明するために、通常はやらないであろうような簡単な計算を実装してみました。<br />
+　決して<b>簡単に記述できる</b>とは言いませんが、構築と更新を丁寧に読んでもらえると、決して難解な処理をしてるのではないと思います。準備すべきインターフェイスやオブジェクトが複数必要なので、そのために若干複雑になります。<br />
+　次項ではもう少し複雑な（コンピュートシェーダーらしい）計算を実装します。
 </div>
 <!-- /コンテンツ　-->
 <hr>
@@ -183,8 +469,6 @@ void GameStage::OnCreate() {
 <li><a href="15_02.html">次へ</a></li>
 </ul>
 <!-- /フッタ　-->
-
-
 </div>
 <!-- /全体コンテナ　-->
 </body>

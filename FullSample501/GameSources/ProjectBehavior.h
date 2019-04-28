@@ -31,6 +31,7 @@ namespace basecross {
 		}
 	};
 
+
 }
 
 //end basecross

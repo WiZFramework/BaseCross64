@@ -3330,6 +3330,8 @@ namespace basecross {
 
 #define DECLARE_DX11_GEOMETRY_SHADER(ShaderName) class ShaderName : public GeometryShader<ShaderName>{ public: ShaderName(); };
 
+#define DECLARE_DX11_COMPUTE_SHADER(ShaderName) class ShaderName : public ComputeShader<ShaderName>{ public: ShaderName(); };
+
 	//コンスタントバッファ実体用マク
 #define IMPLEMENT_DX11_CONSTANT_BUFFER(CBName) unique_ptr<CBName, CBName::Deleter> CBName::m_Ptr;
 
@@ -3339,6 +3341,8 @@ namespace basecross {
 #define IMPLEMENT_DX11_PIXEL_SHADER(ShaderName,CsoFilename) unique_ptr<ShaderName, ShaderName::Deleter> ShaderName::m_Ptr; ShaderName::ShaderName() : PixelShader(CsoFilename){}
 
 #define IMPLEMENT_DX11_GEOMETRY_SHADER(ShaderName,CsoFilename)	unique_ptr<ShaderName, ShaderName::Deleter> ShaderName::m_Ptr; ShaderName::ShaderName() : GeometryShader(CsoFilename){}
+
+#define IMPLEMENT_DX11_COMPUTE_SHADER(ShaderName,CsoFilename)	unique_ptr<ShaderName, ShaderName::Deleter> ShaderName::m_Ptr; ShaderName::ShaderName() : ComputeShader(CsoFilename){}
 
 
 

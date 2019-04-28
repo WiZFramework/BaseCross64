@@ -8,12 +8,17 @@
 
 namespace basecross{
 
+	//コンスタントバッファの実体部
+	IMPLEMENT_DX11_CONSTANT_BUFFER(ConstantBufferCalcbody)
+
+	//CSの実体部
+	IMPLEMENT_DX11_COMPUTE_SHADER(ComputeSaderCalcbody, App::GetApp()->GetShadersPath() + L"CSCalcbody.cso")
 
 	//--------------------------------------------------------------------------------------
-	//	class FixedBox : public GameObject;
+	//	class MoveBox : public GameObject;
 	//--------------------------------------------------------------------------------------
 	//構築と破棄
-	FixedBox::FixedBox(const shared_ptr<Stage>& StagePtr,
+	MoveBox::MoveBox(const shared_ptr<Stage>& StagePtr,
 		const Vec3& Scale,
 		const Vec3& Rotation,
 		const Vec3& Position
@@ -21,424 +26,175 @@ namespace basecross{
 		GameObject(StagePtr),
 		m_Scale(Scale),
 		m_Rotation(Rotation),
-		m_Position(Position)
-	{
-	}
-	FixedBox::~FixedBox() {}
-
-	//初期化
-	void FixedBox::OnCreate() {
-		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetScale(m_Scale);
-		ptrTrans->SetRotation(m_Rotation);
-		ptrTrans->SetPosition(m_Position);
-		//OBB衝突j判定を付ける
-		auto ptrColl = AddComponent<CollisionObb>();
-		ptrColl->SetFixed(true);
-		//タグをつける
-		AddTag(L"FixedBox");
-		//影をつける（シャドウマップを描画する）
-		auto ptrShadow = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
-		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
-		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		ptrDraw->SetTextureResource(L"SKY_TX");
-		ptrDraw->SetFogEnabled(true);
-		ptrDraw->SetOwnShadowActive(true);
-
-	}
-
-
-	//--------------------------------------------------------------------------------------
-	//	障害物球
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	FixedSphere::FixedSphere(const shared_ptr<Stage>& StagePtr,
-		const float Scale,
-		const Vec3& Rotation,
-		const Vec3& Position
-	) :
-		GameObject(StagePtr),
-		m_Scale(Scale),
-		m_Rotation(Rotation),
-		m_Position(Position)
-	{
-	}
-	FixedSphere::~FixedSphere() {}
-
-	//初期化
-	void FixedSphere::OnCreate() {
-		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetScale(Vec3(m_Scale));
-		ptrTrans->SetRotation(m_Rotation);
-		ptrTrans->SetPosition(m_Position);
-		//Capsule衝突j判定を付ける
-		auto ptrColl = AddComponent<CollisionSphere>();
-		ptrColl->SetFixed(true);
-		//タグをつける
-		AddTag(L"FixedSphere");
-		//影をつける（シャドウマップを描画する）
-		auto ptrShadow = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
-		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
-		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		ptrDraw->SetTextureResource(L"WALL_TX");
-		ptrDraw->SetFogEnabled(true);
-		ptrDraw->SetOwnShadowActive(true);
-
-	}
-
-
-	//--------------------------------------------------------------------------------------
-	//	配置されるオブジェクトの親
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	BaseChara::BaseChara(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
-		GameObject(StagePtr),
-		m_StartPos(StartPos),
-		m_StateChangeSize(5.0f),
-		m_Force(0),
+		m_Position(Position),
+		m_TotalTime(0),
 		m_Velocity(0)
 	{
 	}
-	BaseChara::~BaseChara() {}
-
-	void BaseChara::ApplyForce() {
-		float elapsedTime = App::GetApp()->GetElapsedTime();
-		m_Velocity += m_Force * elapsedTime;
-		auto ptrTrans = GetComponent<Transform>();
-		auto pos = ptrTrans->GetPosition();
-		pos += m_Velocity * elapsedTime;
-		ptrTrans->SetPosition(pos);
-	}
-
-	shared_ptr<GameObject>  BaseChara::GetTarget()const {
-		return GetStage()->GetSharedObject(L"Player");
-	}
+	MoveBox::~MoveBox() {}
 
 	//初期化
-	void BaseChara::OnCreate() {
-		//オブジェクトのグループを得る
-		auto group = GetStage()->GetSharedObjectGroup(L"ObjGroup");
-		//グループに自分自身を追加
-		group->IntoGroup(GetThis<BaseChara>());
-		//分離行動をつける
-		auto ptrSep = GetBehavior<SeparationSteering>();
-		ptrSep->SetGameObjectGroup(group);
-		//壁回避行動を付ける
-		auto ptrWall = GetBehavior<WallAvoidanceSteering>();
-		vector<PLANE> planeVec = {
-			{
-				Vec3(20,0,0),
-				Vec3(20,1.0,0),
-				Vec3(20,0,-1.0),
-			},
-			{
-				Vec3(0,0,-20),
-				Vec3(0,1.0,-20),
-				Vec3(-1.0,0,-20),
-			},
-			{
-				Vec3(-20,0,0),
-				Vec3(-20,1.0,0),
-				Vec3(-20,0,1.0),
-			},
-			{
-				Vec3(0,0,20),
-				Vec3(0,1.0,20),
-				Vec3(1.0,0,20),
-			},
-		};
-		ptrWall->SetPlaneVec(planeVec);
-		//障害物回避行動を付ける
-		vector<shared_ptr<GameObject>> spObjVec;
-		GetStage()->GetUsedTagObjectVec(L"FixedSphere", spObjVec);
-		vector<SPHERE> spVec;
-		for (auto& v : spObjVec) {
-			auto TransPtr = v->GetComponent<Transform>();
-			SPHERE sp;
-			sp.m_Center = TransPtr->GetPosition();
-			sp.m_Radius = TransPtr->GetScale().x * 0.5f;
-			spVec.push_back(sp);
-		}
-		auto ptrAvoidance = GetBehavior<ObstacleAvoidanceSteering>();
-		ptrAvoidance->SetObstacleSphereVec(spVec);
-		//ステートマシンの構築
-		m_StateMachine.reset(new StateMachine<BaseChara>(GetThis<BaseChara>()));
-		//最初のステートをSeekFarStateに設定
-		m_StateMachine->ChangeState(FarState::Instance());
-	}
-	//更新
-	void BaseChara::OnUpdate() {
-		m_Force = Vec3(0);
-		//共通のステアリング1
-		auto ptrWall = GetBehavior<WallAvoidanceSteering>();
-		m_Force += ptrWall->Execute(m_Force, GetVelocity());
-		//ステートマシンのUpdateを行う
-		//この中でステートの切り替えが行われる
-		m_StateMachine->Update();
-		//共通のステアリング2
-		auto ptrSep = GetBehavior<SeparationSteering>();
-		m_Force += ptrSep->Execute(m_Force);
-		auto ptrAvoidance = GetBehavior<ObstacleAvoidanceSteering>();
-		m_Force += ptrAvoidance->Execute(m_Force, GetVelocity());
-		ApplyForce();
-		auto ptrUtil = GetBehavior<UtilBehavior>();
-		ptrUtil->RotToHead(1.0f);
-	}
-
-
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	プレイヤーから遠いときの移動
-	//--------------------------------------------------------------------------------------
-	shared_ptr<FarState> FarState::Instance() {
-		static shared_ptr<FarState> instance(new FarState);
-		return instance;
-	}
-	void FarState::Enter(const shared_ptr<BaseChara>& Obj) {
-	}
-	void FarState::Execute(const shared_ptr<BaseChara>& Obj) {
-		Obj->FarBehavior();
-	}
-
-	void FarState::Exit(const shared_ptr<BaseChara>& Obj) {
-	}
-
-	//--------------------------------------------------------------------------------------
-	//	プレイヤーから近いときの移動
-	//--------------------------------------------------------------------------------------
-	shared_ptr<NearState> NearState::Instance() {
-		static shared_ptr<NearState> instance(new NearState);
-		return instance;
-	}
-	void NearState::Enter(const shared_ptr<BaseChara>& Obj) {
-	}
-	void NearState::Execute(const shared_ptr<BaseChara>& Obj) {
-		Obj->NearBehavior();
-	}
-	void NearState::Exit(const shared_ptr<BaseChara>& Obj) {
-	}
-
-
-
-
-
-	//--------------------------------------------------------------------------------------
-	//	追いかける配置オブジェクト
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	SeekObject::SeekObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
-		BaseChara(StagePtr,StartPos)
-	{
-	}
-	SeekObject::~SeekObject() {}
-
-	//初期化
-	void SeekObject::OnCreate() {
-		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetPosition(GetStartPos());
-		ptrTrans->SetScale(0.125f, 0.25f, 0.25f);
-		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
-
-		AddTag(L"ObjGroup");
-
-		//Obbの衝突判定をつける
+	void MoveBox::OnCreate() {
+		auto ptrTransform = GetComponent<Transform>();
+		ptrTransform->SetScale(m_Scale);
+		ptrTransform->SetRotation(m_Rotation);
+		ptrTransform->SetPosition(m_Position);
+		//OBB衝突j判定を付ける
 		auto ptrColl = AddComponent<CollisionObb>();
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
 		//影をつける
-		auto ptrShadow = AddComponent<Shadowmap>();
-		ptrShadow->SetMeshResource(L"DEFAULT_CUBE");
-
+		auto shadowPtr = AddComponent<Shadowmap>();
+		shadowPtr->SetMeshResource(L"DEFAULT_CUBE");
+		//描画処理
 		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
 		ptrDraw->SetFogEnabled(true);
 		ptrDraw->SetMeshResource(L"DEFAULT_CUBE");
-		ptrDraw->SetTextureResource(L"TRACE_TX");
-		//透明処理をする
-		SetAlphaActive(true);
-		//親クラスのOnCreateを呼ぶ
-		BaseChara::OnCreate();
+		ptrDraw->SetTextureResource(L"WALL_TX");
+		ptrDraw->SetOwnShadowActive(true);
+
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pDx11Device = Dev->GetD3DDevice();
+		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+		//エレメントバッファ
+		D3D11_BUFFER_DESC buffer_desc = {};
+		buffer_desc.ByteWidth = sizeof(Element);
+		buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+		buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+		buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		buffer_desc.StructureByteStride = sizeof(Element);
+		ThrowIfFailed(
+			pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_Buffer),
+			L"エレメントバッファ作成に失敗しました",
+			L"pDx11Device->CreateBuffer()",
+			L"MoveBox::OnCreate()"
+		);
+		//アクセスビュー
+		D3D11_UNORDERED_ACCESS_VIEW_DESC uavbuffer_desc = {};
+		uavbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+		uavbuffer_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavbuffer_desc.Buffer.NumElements = 1;
+		ThrowIfFailed(
+			pDx11Device->CreateUnorderedAccessView(m_Buffer.Get(), &uavbuffer_desc, &m_UAV),
+			L"アクセスビュー作成に失敗しました",
+			L"pDx11Device->CreateUnorderedAccessView()",
+			L"MoveBox::OnCreate()"
+		);
+		//リードバックバッファ
+		D3D11_BUFFER_DESC readback_buffer_desc = {};
+		readback_buffer_desc.ByteWidth = sizeof(Element);
+		readback_buffer_desc.Usage = D3D11_USAGE_STAGING;
+		readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		readback_buffer_desc.StructureByteStride = sizeof(Element);
+		ThrowIfFailed(
+			pDx11Device->CreateBuffer(&readback_buffer_desc, nullptr, &m_ReadBackBuffer),
+			L"リードバックバッファ作成に失敗しました",
+			L"pDx11Device->CreateBuffer()",
+			L"MoveBox::OnCreate()"
+		);
 	}
 
-
-	void SeekObject::NearBehavior() {
-		auto ptrArrive = GetBehavior<ArriveSteering>();
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrArrive->Execute(force, GetVelocity(), ptrPlayerTrans->GetPosition());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f > GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(FarState::Instance());
+	void MoveBox::OnUpdate() {
+		float elapsedTime = App::GetApp()->GetElapsedTime();
+		m_TotalTime += elapsedTime;
+		if (m_TotalTime >= XM_2PI) {
+			m_TotalTime = 0;
 		}
-
-	}
-	void SeekObject::FarBehavior() {
-		auto ptrSeek = GetBehavior<SeekSteering>();
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrSeek->Execute(force, GetVelocity(), ptrPlayerTrans->GetPosition());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f <= GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(NearState::Instance());
+		//デバイスの取得
+		auto Dev = App::GetApp()->GetDeviceResources();
+		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+		//コンスタントバッファの設定
+		CB cb = {};
+		cb.paramf[0] = m_TotalTime;
+		ID3D11Buffer* pConstantBuffer = ConstantBufferCalcbody::GetPtr()->GetBuffer();
+		pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb, 0, 0);
+		pID3D11DeviceContext->CSSetConstantBuffers(0, 1, &pConstantBuffer);
+		//現在の位置情報の取得
+		auto ptrTransform = GetComponent<Transform>();
+		//エレメントの入力
+		Element elemData;
+		Vec4 pos4(ptrTransform->GetPosition(), 0);
+		elemData.pos = pos4;
+		pID3D11DeviceContext->UpdateSubresource(m_Buffer.Get(), 0, nullptr, &elemData, 0, 0);
+		//CSの設定
+		pID3D11DeviceContext->CSSetShader(ComputeSaderCalcbody::GetPtr()->GetShader(), nullptr, 0);
+		//アクセスビューの設定
+		pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, m_UAV.GetAddressOf(), nullptr);
+		//CSの実行
+		pID3D11DeviceContext->Dispatch(1, 1, 1);
+		//結果の読み取り
+		D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
+		pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_Buffer.Get());
+		if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+		{
+			memcpy(&elemData, MappedResource.pData, sizeof(Element));
+			pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+			Vec3 resuPos;
+			resuPos.x = elemData.pos.x;
+			resuPos.y = elemData.pos.y;
+			resuPos.z = elemData.pos.z;
+			ptrTransform->SetPosition(resuPos);
 		}
 	}
 
 
 	//--------------------------------------------------------------------------------------
-	//	追跡する配置オブジェクト
+	//　タイリングする固定のボックス
 	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	PursuitObject::PursuitObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
-		BaseChara(StagePtr, StartPos)
-	{
-	}
-	PursuitObject::~PursuitObject() {}
+	TilingFixedBox::TilingFixedBox(const shared_ptr<Stage>& StagePtr,
+		const Vec3& Scale,
+		const Vec3& Rotation,
+		const Vec3& Position,
+		float UPic,
+		float VPic
+	) :
+		GameObject(StagePtr),
+		m_Scale(Scale),
+		m_Rotation(Rotation),
+		m_Position(Position),
+		m_UPic(UPic),
+		m_VPic(VPic)
+	{}
+	TilingFixedBox::~TilingFixedBox() {}
 	//初期化
-	void PursuitObject::OnCreate() {
-		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetPosition(GetStartPos());
-		ptrTrans->SetScale(0.25f, 0.25f, 0.25f);
-		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
-		AddTag(L"ObjGroup");
-		//CollisionSphere衝突判定を付ける
-		auto ptrColl = AddComponent<CollisionSphere>();
-		//重力をつける
-		auto ptrGra = AddComponent<Gravity>();
-		//影をつける（シャドウマップを描画する）
-		auto ptrShadow = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
-
-		//描画コンポーネントの設定
-		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
-		//描画するメッシュを設定
-		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		ptrDraw->SetFogEnabled(true);
-		//描画するテクスチャを設定
-		ptrDraw->SetTextureResource(L"TRACE2_TX");
-		SetAlphaActive(true);
-		//親クラスのOnCreateを呼ぶ
-		BaseChara::OnCreate();
-
-	}
-
-	//操作
-	void PursuitObject::NearBehavior() {
-		auto ptrArrive = GetBehavior<ArriveSteering>();
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrArrive->Execute(force, GetVelocity(), ptrPlayerTrans->GetPosition());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f > GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(FarState::Instance());
+	void TilingFixedBox::OnCreate() {
+		auto PtrTrans = GetComponent<Transform>();
+		PtrTrans->SetScale(m_Scale);
+		PtrTrans->SetRotation(m_Rotation);
+		PtrTrans->SetPosition(m_Position);
+		auto Coll = AddComponent<CollisionObb>();
+		Coll->SetFixed(true);
+		vector<VertexPositionNormalTexture> vertices;
+		vector<uint16_t> indices;
+		MeshUtill::CreateCube(1.0f, vertices, indices);
+		float UCount = m_Scale.x / m_UPic;
+		float VCount = m_Scale.z / m_VPic;
+		for (size_t i = 0; i < vertices.size(); i++) {
+			if (vertices[i].textureCoordinate.x >= 1.0f) {
+				vertices[i].textureCoordinate.x = UCount;
+			}
+			if (vertices[i].textureCoordinate.y >= 1.0f) {
+				float FrontBetween = bsm::angleBetweenNormals(vertices[i].normal, Vec3(0, 1, 0));
+				float BackBetween = bsm::angleBetweenNormals(vertices[i].normal, Vec3(0, -1, 0));
+				if (FrontBetween < 0.01f || BackBetween < 0.01f) {
+					vertices[i].textureCoordinate.y = VCount;
+				}
+			}
 		}
+		//描画コンポーネントの追加
+		auto PtrDraw = AddComponent<BcPNTStaticDraw>();
+		//描画コンポーネントに形状（メッシュ）を設定
+		PtrDraw->CreateOriginalMesh(vertices, indices);
+		PtrDraw->SetOriginalMeshUse(true);
+		PtrDraw->SetFogEnabled(true);
+		//自分に影が映りこむようにする
+		PtrDraw->SetOwnShadowActive(true);
+		//描画コンポーネントテクスチャの設定
+		PtrDraw->SetTextureResource(L"SKY_TX");
+		//タイリング設定
+		PtrDraw->SetSamplerState(SamplerState::LinearWrap);
 
 	}
-	void PursuitObject::FarBehavior() {
-		auto ptrPursuit = GetBehavior<PursuitSteering>();
-		ptrPursuit->SetWeight(1.5f);
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrPursuit->Execute(force, GetVelocity(), ptrPlayerTrans->GetPosition(),
-			ptrPlayerTrans->GetVelocity(), ptrPlayerTrans->GetRotation());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f <= GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(NearState::Instance());
-		}
-	}
-
-	//--------------------------------------------------------------------------------------
-	//	パスを巡回する配置オブジェクト
-	//--------------------------------------------------------------------------------------
-	//構築と破棄
-	FollowPathObject::FollowPathObject(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
-		BaseChara(StagePtr, StartPos)
-	{
-	}
-	FollowPathObject::~FollowPathObject() {}
-	//初期化
-	void FollowPathObject::OnCreate() {
-		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetPosition(GetStartPos());
-		ptrTrans->SetScale(0.25f, 0.25f, 0.25f);
-		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
-		AddTag(L"ObjGroup");
-		//オブジェクトのグループを得る
-		auto group = GetStage()->GetSharedObjectGroup(L"ObjGroup");
-		//グループに自分自身を追加
-		group->IntoGroup(GetThis<BaseChara>());
-		//CollisionSphere衝突判定を付ける
-		auto ptrColl = AddComponent<CollisionSphere>();
-		//重力をつける
-		auto ptrGra = AddComponent<Gravity>();
-		//経路巡回を付ける
-		auto ptrFollowPath = GetBehavior<FollowPathSteering>();
-		list<Vec3> pathList = {
-			Vec3(-10,0.125,10),
-			Vec3(10,0.125,10),
-			Vec3(-10,0.125,-10),
-			Vec3(10,0.125,-10),
-		};
-		ptrFollowPath->SetPathList(pathList);
-		ptrFollowPath->SetLooped(true);
-		//影をつける（シャドウマップを描画する）
-		auto ptrShadow = AddComponent<Shadowmap>();
-		//影の形（メッシュ）を設定
-		ptrShadow->SetMeshResource(L"DEFAULT_SPHERE");
-
-		//描画コンポーネントの設定
-		auto ptrDraw = AddComponent<BcPNTStaticDraw>();
-		//描画するメッシュを設定
-		ptrDraw->SetMeshResource(L"DEFAULT_SPHERE");
-		ptrDraw->SetFogEnabled(true);
-		//描画するテクスチャを設定
-		ptrDraw->SetTextureResource(L"CHECKER_TX");
-		//親クラスのOnCreateを呼ぶ
-		BaseChara::OnCreate();
-
-	}
-
-	//操作
-	void FollowPathObject::NearBehavior() {
-		auto ptrArrive = GetBehavior<ArriveSteering>();
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrArrive->Execute(force, GetVelocity(), ptrPlayerTrans->GetPosition());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f > GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(FarState::Instance());
-		}
-
-	}
-	void FollowPathObject::FarBehavior() {
-		auto ptrFollowPath = GetBehavior<FollowPathSteering>();
-		auto ptrTrans = GetComponent<Transform>();
-		auto ptrPlayerTrans = GetTarget()->GetComponent<Transform>();
-		auto force = GetForce();
-		force += ptrFollowPath->Execute(force, GetVelocity());
-		SetForce(force);
-		float f = bsm::length(ptrPlayerTrans->GetPosition() - ptrTrans->GetPosition());
-		if (f <= GetStateChangeSize()) {
-			GetStateMachine()->ChangeState(NearState::Instance());
-		}
-	}
-
-
 
 }
 //end basecross

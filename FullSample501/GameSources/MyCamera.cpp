@@ -8,7 +8,6 @@
 
 namespace basecross {
 
-
 	//--------------------------------------------------------------------------------------
 	//	MyCameraカメラ（コンポーネントではない）
 	//--------------------------------------------------------------------------------------
@@ -60,7 +59,7 @@ namespace basecross {
 		UpdateArmLengh();
 	}
 	void MyCamera::SetEye(float x, float y, float z) {
-		Camera::SetEye(x,y,z);
+		Camera::SetEye(x, y, z);
 		UpdateArmLengh();
 	}
 

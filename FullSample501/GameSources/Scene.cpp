@@ -17,23 +17,28 @@ namespace basecross{
 		//サンプルのためアセットディレクトリを取得
 		App::GetApp()->GetAssetsDirectory(dataDir);
 		//各ゲームは以下のようにデータディレクトリを取得すべき
-		//App::GetApp()->GetDataDirectory(dataDir);
-		wstring strTexture = dataDir + L"trace.png";
-		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
-		strTexture = dataDir + L"trace2.png";
-		App::GetApp()->RegisterTexture(L"TRACE2_TX", strTexture);
-		strTexture = dataDir + L"sky.jpg";
+		//App::GetApp()->GetDataDirectory(DataDir);
+		wstring strTexture = dataDir + L"sky.jpg";
 		App::GetApp()->RegisterTexture(L"SKY_TX", strTexture);
-		strTexture = dataDir + L"wall.jpg";
-		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		strTexture = dataDir + L"trace.png";
+		App::GetApp()->RegisterTexture(L"TRACE_TX", strTexture);
 		strTexture = dataDir + L"Checker.png";
 		App::GetApp()->RegisterTexture(L"CHECKER_TX", strTexture);
+		strTexture = dataDir + L"wall.jpg";
+		App::GetApp()->RegisterTexture(L"WALL_TX", strTexture);
+		strTexture = dataDir + L"Blue.png";
+		App::GetApp()->RegisterTexture(L"BLUE_TX", strTexture);
+		strTexture = dataDir + L"Red.png";
+		App::GetApp()->RegisterTexture(L"RED_TX", strTexture);
+		strTexture = dataDir + L"Brown.png";
+		App::GetApp()->RegisterTexture(L"BROWN_TX", strTexture);
+		strTexture = dataDir + L"spark.png";
+		App::GetApp()->RegisterTexture(L"SPARK_TX", strTexture);
 
-		
 
 	}
 
-	void Scene::OnCreate(){
+	void Scene::OnCreate() {
 		try {
 			//リソース作成
 			CreateResourses();
@@ -55,7 +60,6 @@ namespace basecross{
 			ResetActiveStage<GameStage>();
 		}
 	}
-
 
 
 }
