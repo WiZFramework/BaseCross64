@@ -158,7 +158,7 @@ int MainLoop(HINSTANCE hInstance, HWND hWnd, bool isFullScreen, int iClientWidth
 				}
 			}
 			//更新描画処理
-			App::GetApp()->UpdateDraw(0);
+			App::GetApp()->UpdateDraw(1);
 		}
 		//msg.wParamには終了コードが入っている
 		RetCode = (int)msg.wParam;
