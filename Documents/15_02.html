@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１５．シェーダーを自作する（Dx11版）</h2>
+<h3>１５０２．コンピュートシェーダーで計算する（２）</h3>
+<br />
+　このサンプルは<b>FullSample502</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11.sln</b>というソリューションを開くと<b>Dx11版</b>が起動します。<br />
+　このサンプルは現在Dx12版はありません。<br />
+<p>&nbsp;</p>
+<img src="img/1502a.png" width="80%"/>
+<p>図1502a</p>
+<p>&nbsp;</p>
+　このサンプルは<b>フルサンプル305</b>を<b>コンピュートシェーダー（CS）</b>を使う形に書き直したものです。<br />
+　プレイヤーが上記の回転する球に当たると、各点が飛び散ります。それらは床に到達するとそこから動かなくなります。
+<p>&nbsp;</p>
+<img src="img/1502b.png" width="80%"/>
+<p>図1501b</p>
+<p>&nbsp;</p>
+　この例のように、すでに記述した動きを<b>CS</b>を使って書き直すのも勉強になると思います。<br/>
+<h4>CSで使用するオブジェクトの準備</h4>
+　今回使用するバッファやリソースビューなどのオブジェクトは以下になります。
+<div class="box1">
+<pre>
+１、データ入力用の配列
+２、データ取得用の配列
+３．CS入力用のエレメントバッファ
+４、CS出力用のエレメントバッファ
+５、３のビュー（シェーダーリソースビュー）
+６、４のビュー（アクセスビュー）
+７、リードバックバッファ
+</pre>
+</div>
+　それぞれ<b>PointsBallクラス</b>のヘッダに宣言があります。<b>Character.h</b>にあります。以下、抜粋ですが
+<div class="box1">
+<pre>
+class PointsBall : public GameObject {
+    const UINT NUM_ELEMENTS = 64 * 32;
+    UINT m_NumVertices;
+    struct LocalData {
+        Vec4 m_LocalPosition;
+        Vec4 m_WorldPosition;
+        Vec4 m_Velocity;
+        UINT m_State[4];
+        LocalData() :
+            m_LocalPosition(0.0f),
+            m_WorldPosition(0.0f),
+            m_Velocity(0.0f)
+        {
+            for (auto& v : m_State) {
+                v = 0;
+            }
+        }
+    };
+    //エレメントバッファ
+    ComPtr&lt;ID3D11Buffer> m_InBuffer;
+    ComPtr&lt;ID3D11Buffer> m_OutBuffer;
+    //シェーダーリソースビュー
+    ComPtr&lt;ID3D11ShaderResourceView> m_SRV;
+    //アクセスビュー
+    ComPtr &lt; ID3D11UnorderedAccessView>  m_UAV;
+    //リードバックバッファ
+    ComPtr&lt;ID3D11Buffer> m_ReadBackBuffer;
+    vector&lt;LocalData> m_LocalDataVec;
+    vector&lt;LocalData> m_ResultDataVec;
+    vector&lt;Mat4x4> m_MatVec;
+//以下略
+};
+</pre>
+</div>
+　以下、それぞれの対応です。
+<div class="box1">
+<pre>
+１、データ入力用の配列: m_LocalDataVec
+２、データ取得用の配列: m_ResultDataVec
+３．CS入力用のエレメントバッファ: m_InBuffer
+４、CS出力用のエレメントバッファ: m_OutBuffer
+５、１のビュー（シェーダーリソースビュー）: m_SRV
+６、２のビュー（アクセスビュー）: m_UAV
+７、リードバックバッファ: m_ReadBackBuffer
+</pre>
+</div>
+　<b>m_MatVec</b>はインスタンス描画に使う配列です。（フルサンプル305を参照のこと）。<br />
+　つまり今回のサンプルでの<b>OnUpdate()関数</b>での目的は<b>m_MatVec</b>に配列をセットすることにあります。
+<h4>CSで使用するオブジェクトの構築</h4>
+　各オブジェクトは<b>PointsBall::OnCreate()関数</b>で構築します。<b>Character.cpp</b>にあります。以下、少々長いですが、すべて紹介します。
+
+<div class="box1">
+<pre>
+void PointsBall::OnCreate() {
+    vector&lt;VertexPositionNormalTexture> vertices;
+    vector&lt;uint16_t> indices;
+    <span class="red">m_LocalDataVec.resize(NUM_ELEMENTS);</span>
+    //球体を作成
+    <span class="red">MeshUtill::CreateSphere(1.0f, 28, vertices, indices);</span>
+    m_NumVertices = (UINT)vertices.size();
+    for (size_t i = 0; i &lt; m_NumVertices; i++) {
+        LocalData tempLocalData;
+        tempLocalData.m_LocalPosition = vertices[i].position;
+        <span class="red">m_LocalDataVec[i] = tempLocalData;</span>
+    }
+    <span class="red">m_ResultDataVec.resize(m_NumVertices);</span>
+    //描画用メッシュの作成
+    float helfSize = 0.04f;
+    Col4 col(1.0f, 1.0f, 0.0f, 1.0f);
+    //頂点配列
+    vector&lt;VertexPositionColorTexture> meshVertices = {
+        { VertexPositionColorTexture(Vec3(-helfSize, helfSize, 0),col, Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, helfSize, 0),col, Vec2(1.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-helfSize, -helfSize, 0),col, Vec2(0.0f, 1.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, -helfSize, 0),col, Vec2(1.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> meshIndex = { 0, 1, 2, 1, 3, 2 };
+    //2次元平面とする（頂点数が少ないため）
+    m_MeshRes = MeshResource::CreateMeshResource(meshVertices, meshIndex, true);
+    //全体の位置関連
+    auto ptrTransform = GetComponent&lt;Transform>();
+    ptrTransform->SetScale(Vec3(m_Scale));
+    ptrTransform->SetRotation(Vec3(0));
+    ptrTransform->SetPosition(m_Position);
+    //描画コンポーネントの追加（インスタンス描画）
+    auto PtrDraw = AddComponent&lt;PCTStaticInstanceDraw>();
+    PtrDraw->SetMeshResource(m_MeshRes);
+    PtrDraw->SetTextureResource(L"SPARK_TX");
+    PtrDraw->SetDepthStencilState(DepthStencilState::Read);
+    //各頂点ごとに行列を作成
+    for (size_t i = 0; i &lt; m_NumVertices; i++) {
+        Mat4x4 tempMat;
+        tempMat.affineTransformation(
+            Vec3(1.0f),
+            Vec3(0.0f),
+            Vec3(0.0f),
+            m_LocalDataVec[i].m_LocalPosition
+        );
+        //インスタンス描画の行列として設定
+        PtrDraw->AddMatrix(tempMat);
+    }
+    SetAlphaActive(true);
+
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pDx11Device = Dev->GetD3DDevice();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+
+    //エレメンツバッファ
+    D3D11_BUFFER_DESC buffer_desc = { 0 };
+    buffer_desc.ByteWidth = <span class="red">NUM_ELEMENTS * sizeof(LocalData);</span>
+    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    buffer_desc.StructureByteStride = sizeof(LocalData);
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_InBuffer),
+        L"m_InBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_OutBuffer),
+        L"m_OutBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+    //シェーダーリソースビュー
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvbuffer_desc = {};
+    srvbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+    srvbuffer_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvbuffer_desc.Buffer.FirstElement = 0;
+    srvbuffer_desc.Buffer.NumElements = buffer_desc.ByteWidth / buffer_desc.StructureByteStride;
+    srvbuffer_desc.Buffer.ElementWidth = NUM_ELEMENTS;
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateShaderResourceView(m_InBuffer.Get(), &srvbuffer_desc, &m_SRV)</span>,
+        L"m_SRV作成に失敗しました",
+        L"pDx11Device->CreateShaderResourceView()",
+        L"PointsBall::OnCreate()"
+    );
+    //アクセスビュー
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uavbuffer_desc = {};
+    uavbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+    uavbuffer_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    uavbuffer_desc.Buffer.NumElements = NUM_ELEMENTS;
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateUnorderedAccessView(m_OutBuffer.Get(), &uavbuffer_desc, &m_UAV)</span>,
+        L"m_UAV作成に失敗しました",
+        L"pDx11Device->CreateUnorderedAccessView()",
+        L"PointsBall::OnCreate()"
+    );
+    //リードバックバッファ
+    D3D11_BUFFER_DESC readback_buffer_desc = {};
+    readback_buffer_desc.ByteWidth = <span class="red">NUM_ELEMENTS * sizeof(LocalData);</span>
+    readback_buffer_desc.Usage = D3D11_USAGE_STAGING;
+    readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    readback_buffer_desc.StructureByteStride = sizeof(LocalData);
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateBuffer(&readback_buffer_desc, nullptr, &m_ReadBackBuffer)</span>,
+        L"m_ReadBackBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+}
+</pre>
+</div>
+　では、1つ1つ見ていきましょう。<br />
+　まず
+<div class="box1">
+<pre>
+    <span class="red">m_LocalDataVec.resize(NUM_ELEMENTS);</span>
+</pre>
+</div>
+　と入力用の配列を初期化します。NUM_ELEMENTSはconstになっていて、ヘッダ部で<b>64 * 32 == 2048</b>になっています。これは最大値です。インスタンス描画ではこのあたりが上限かと思います。ただ、実際に作成される頂点数はもう少し少ないです。
+<div class="box1">
+<pre>
+    //球体を作成
+    <span class="red">MeshUtill::CreateSphere(1.0f, 28, vertices, indices);</span>
+</pre>
+</div>
+　で球を作成します。分割数は28です。これで、1653個の頂点の球ができます。<br />
+　このサンプルではこの頂点情報だけを使用します。ここは<b>フル305</b>と同じです。
+<div class="box1">
+<pre>
+    m_NumVertices = (UINT)vertices.size();
+    for (size_t i = 0; i &lt; m_NumVertices; i++) {
+        LocalData tempLocalData;
+        tempLocalData.m_LocalPosition = vertices[i].position;
+        <span class="red">m_LocalDataVec[i] = tempLocalData;</span>
+    }
+</pre>
+</div>
+　このように<b>m_LocalDataVec</b>に頂点情報のみをセットします。
+<div class="box1">
+<pre>
+    <span class="red">m_ResultDataVec.resize(m_NumVertices);</span>
+</pre>
+</div>
+　で<b>m_ResultDataVec</b>を<b>m_NumVertices</b>の数にします。ここで<b>NUM_ELEMENTS</b>の数にしないのは、<b>m_ResultDataVec</b>は、インスタンス描画数に直結するからです。<b>m_LocalDataVecの数 > m_ResultDataVecの数</b>であれば問題ありません。<br />
+　続く描画用のメッシュの作成は<b>CS</b>には関係ありません。
+<div class="box1">
+<pre>
+    //描画用メッシュの作成
+    float helfSize = 0.04f;
+    Col4 col(1.0f, 1.0f, 0.0f, 1.0f);
+    //頂点配列
+    vector&lt;VertexPositionColorTexture> meshVertices = {
+        { VertexPositionColorTexture(Vec3(-helfSize, helfSize, 0),col, Vec2(0.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, helfSize, 0),col, Vec2(1.0f, 0.0f)) },
+        { VertexPositionColorTexture(Vec3(-helfSize, -helfSize, 0),col, Vec2(0.0f, 1.0f)) },
+        { VertexPositionColorTexture(Vec3(helfSize, -helfSize, 0),col, Vec2(1.0f, 1.0f)) },
+    };
+    //インデックス配列
+    vector&lt;uint16_t> meshIndex = { 0, 1, 2, 1, 3, 2 };
+    //2次元平面とする（頂点数が少ないため）
+    m_MeshRes = MeshResource::CreateMeshResource(meshVertices, meshIndex, true);
+</pre>
+</div>
+　そのあとの<b>Transformコンポーネント</b>の設定は、ワールド行列を取り出すためのみ使用します。<br />
+　また描画コンポーネントやインスタンス描画のための行列を初期値で作成します。
+<div class="box1">
+<pre>
+    //全体の位置関連
+    auto ptrTransform = GetComponent&lt;Transform>();
+    ptrTransform->SetScale(Vec3(m_Scale));
+    ptrTransform->SetRotation(Vec3(0));
+    ptrTransform->SetPosition(m_Position);
+    //描画コンポーネントの追加（インスタンス描画）
+    auto PtrDraw = AddComponent&lt;PCTStaticInstanceDraw>();
+    PtrDraw->SetMeshResource(m_MeshRes);
+    PtrDraw->SetTextureResource(L"SPARK_TX");
+    PtrDraw->SetDepthStencilState(DepthStencilState::Read);
+    //各頂点ごとに行列を作成
+    for (size_t i = 0; i &lt; m_NumVertices; i++) {
+        Mat4x4 tempMat;
+        tempMat.affineTransformation(
+            Vec3(1.0f),
+            Vec3(0.0f),
+            Vec3(0.0f),
+            m_LocalDataVec[i].m_LocalPosition
+        );
+        //インスタンス描画の行列として設定
+        PtrDraw->AddMatrix(tempMat);
+    }
+    SetAlphaActive(true);
+</pre>
+</div>
+　このあとから<b>CS用のオブジェクトの作成</b>が始まります。<br />
+　まず
+<div class="box1">
+<pre>
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pDx11Device = Dev->GetD3DDevice();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+</pre>
+</div>
+　で<b>Dx11デバイス</b>を取得します。<br />
+　続いて
+<div class="box1">
+<pre>
+    //エレメンツバッファ
+    D3D11_BUFFER_DESC buffer_desc = { 0 };
+    buffer_desc.ByteWidth = <span class="red">NUM_ELEMENTS * sizeof(LocalData);</span>
+    buffer_desc.Usage = D3D11_USAGE_DEFAULT;
+    buffer_desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    buffer_desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    buffer_desc.StructureByteStride = sizeof(LocalData);
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_InBuffer),
+        L"m_InBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+    ThrowIfFailed(
+        pDx11Device->CreateBuffer(&buffer_desc, nullptr, &m_OutBuffer),
+        L"m_OutBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+</pre>
+</div>
+　で入出力用のバッファを作成します。赤くなっているところはバッファサイズです。最大値で作成します。<br />
+　続いてそれぞれの<b>ビュー</b>を作成します。シェーダーを使用する場合は、バッファの<b>ビュー</b>が必要です。
+
+<div class="box1">
+<pre>
+    //シェーダーリソースビュー
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvbuffer_desc = {};
+    srvbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+    srvbuffer_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    srvbuffer_desc.Buffer.FirstElement = 0;
+    srvbuffer_desc.Buffer.NumElements = buffer_desc.ByteWidth / buffer_desc.StructureByteStride;
+    srvbuffer_desc.Buffer.ElementWidth = NUM_ELEMENTS;
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateShaderResourceView(m_InBuffer.Get(), &srvbuffer_desc, &m_SRV)</span>,
+        L"m_SRV作成に失敗しました",
+        L"pDx11Device->CreateShaderResourceView()",
+        L"PointsBall::OnCreate()"
+    );
+    //アクセスビュー
+    D3D11_UNORDERED_ACCESS_VIEW_DESC uavbuffer_desc = {};
+    uavbuffer_desc.Format = DXGI_FORMAT_UNKNOWN;
+    uavbuffer_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+    uavbuffer_desc.Buffer.NumElements = NUM_ELEMENTS;
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateUnorderedAccessView(m_OutBuffer.Get(), &uavbuffer_desc, &m_UAV)</span>,
+        L"m_UAV作成に失敗しました",
+        L"pDx11Device->CreateUnorderedAccessView()",
+        L"PointsBall::OnCreate()"
+    );
+</pre>
+</div>
+　赤くなっているところで<b>ビュー</b>を作成します。入力用は<b>シェーダーリソースビュー</b>、出力用は<b>アクセスビュー</b>です。<br />
+　前項では<b>アクセスビュー</b>のみ作成しました。しかし、大量の計算をする場合、入力は<b>シェーダーリソースビュー</b>を使用します。<br />
+　今回入力は一つですが、<b>シェーダーリソースビュー</b>は複数作成できるので、何かと便利です。<br />
+　シェーダー内では、これらの<b>ビュー</b>を介して、<b>エレメンツバッファ</b>へのアクセスを行います。<br />
+　続いて<b>リードバックバッファ</b>です。これは、<b>アクセスビュー</b>からデータを取り出すためのものです。最大値で作成します。
+<div class="box1">
+<pre>
+    //リードバックバッファ
+    D3D11_BUFFER_DESC readback_buffer_desc = {};
+    readback_buffer_desc.ByteWidth = <span class="red">NUM_ELEMENTS * sizeof(LocalData);</span>
+    readback_buffer_desc.Usage = D3D11_USAGE_STAGING;
+    readback_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    readback_buffer_desc.StructureByteStride = sizeof(LocalData);
+    ThrowIfFailed(
+        <span class="red">pDx11Device->CreateBuffer(&readback_buffer_desc, nullptr, &m_ReadBackBuffer)</span>,
+        L"m_ReadBackBuffer作成に失敗しました",
+        L"pDx11Device->CreateBuffer()",
+        L"PointsBall::OnCreate()"
+    );
+</pre>
+</div>
+<h4>更新処理</h4>
+　<b>更新処理</b>は前述したようにインスタンス描画に使う行列の配列<b>m_MatVec</b>を作成することにあります。<b>PointsBall::OnUpdate()</b>を以下の紹介します。
+<div class="box1">
+<pre>
+void PointsBall::OnUpdate() {
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    auto ptrDraw = GetComponent&lt;PCTStaticInstanceDraw>();
+    auto ptrTransform = GetComponent&lt;Transform>();
+    //全体を回転させる
+    auto worldQt = ptrTransform->GetQuaternion();
+    Quat spanQt(Vec3(0, 1, 0), elapsedTime);
+    worldQt *= spanQt;
+    ptrTransform->SetQuaternion(worldQt);
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+    <span class="red">CB cb = {};
+    auto playerSh = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    cb.m_PlayerPosition = playerSh->GetComponent&lt;Transform>()->GetWorldPosition();
+    cb.m_PlayerPosition.w = 1.0f;
+    cb.m_WorldMatrix = ptrTransform->GetWorldMatrix();
+    // paramf[0] == elapsedTime
+    // paramf[1] == velocityPower
+    // paramf[2] == gravity_y
+    // paramf[3] == baseY
+    cb.paramf[0] = elapsedTime;
+    cb.paramf[1] = 3.0f;
+    cb.paramf[2] = -9.8f;
+    cb.paramf[3] = m_Scale * 0.02f;
+    ID3D11Buffer* pConstantBuffer = ConstantBufferCalcbody::GetPtr()->GetBuffer();
+    pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb, 0, 0);
+    pID3D11DeviceContext->CSSetConstantBuffers(0, 1, &pConstantBuffer);</span>
+    pID3D11DeviceContext->CSSetShader(ComputeSaderCalcbody::GetPtr()->GetShader(), nullptr, 0);
+    <span class="red">pID3D11DeviceContext->UpdateSubresource(m_InBuffer.Get(), 0, nullptr, &m_LocalDataVec[0], 0, 0);</span>
+    pID3D11DeviceContext->CSSetShaderResources(0, 1, m_SRV.GetAddressOf());
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, m_UAV.GetAddressOf(), nullptr);
+    pID3D11DeviceContext->Dispatch(<span class="red">(UINT)m_NumVertices</span>, 1, 1);
+
+    //カメラのレイを作成しておく
+    auto camera = OnGetDrawCamera();
+    auto lay = camera->GetAt() - camera->GetEye();
+    lay.normalize();
+    Quat qtCamera;
+    //回転は常にカメラを向くようにする
+    qtCamera.facing(lay);
+    //結果の読み取り
+    D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_OutBuffer.Get());
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+    {
+        memcpy(&m_ResultDataVec[0], MappedResource.pData, m_NumVertices * sizeof(LocalData));
+        pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+        //行列の配列をクリア
+        m_MatVec.clear();
+        Mat4x4 worldMat;
+        for (auto& v : m_ResultDataVec) {
+            worldMat.affineTransformation(
+                Vec3(m_Scale),
+                Vec3(0.0f),
+                qtCamera,
+                v.m_WorldPosition
+            );
+            m_MatVec.push_back(worldMat);
+        }
+        //インスタンス行列の更新
+        ptrDraw->UpdateMultiMatrix(m_MatVec);
+        //結果を次の入力にコピー
+        for (size_t i = 0; i &lt; m_ResultDataVec.size(); i++) {
+            m_LocalDataVec[i] = m_ResultDataVec[i];
+        }
+    }
+    // CSの開放
+    ID3D11UnorderedAccessView* ppUAViewNULL[1] = { nullptr };
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, ppUAViewNULL, nullptr);
+    ID3D11ShaderResourceView* ppSRVNULL[1] = { nullptr };
+    pID3D11DeviceContext->CSSetShaderResources(0, 1, ppSRVNULL);
+}
+</pre>
+</div>
+　まず、以下は、Transformコンポーネント処理です。デバイスも取得します。
+<div class="box1">
+<pre>
+    float elapsedTime = App::GetApp()->GetElapsedTime();
+    auto ptrDraw = GetComponent&lt;PCTStaticInstanceDraw>();
+    auto ptrTransform = GetComponent&lt;Transform>();
+    //全体を回転させる
+    auto worldQt = ptrTransform->GetQuaternion();
+    Quat spanQt(Vec3(0, 1, 0), elapsedTime);
+    worldQt *= spanQt;
+    ptrTransform->SetQuaternion(worldQt);
+    auto Dev = App::GetApp()->GetDeviceResources();
+    auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
+</pre>
+</div>
+<h4>CSへの入力</h4>
+　<b>CS</b>への入力は、<b>コンスタントバッファ</b>と<b>各点の情報</b>があります。<br />
+　<b>コンスタントバッファ</b>は全体の情報を入れます。それは以下です。
+<div class="box1">
+<pre>
+１、プレイヤーのワールド位置
+２、球全体のワールド行列
+３、前ターンからの時間（elapsedTime）
+４、プレイヤーと当たったときのはじける強さ（velocityPower）
+５、重力係数（gravity_y）
+６、最終落下位置（baseY）
+</pre>
+</div>
+　です。それを
+<div class="box1">
+<pre>
+    <span class="red">CB cb = {};
+    auto playerSh = GetStage()->GetSharedGameObject&lt;Player>(L"Player");
+    cb.m_PlayerPosition = playerSh->GetComponent&lt;Transform>()->GetWorldPosition();
+    cb.m_PlayerPosition.w = 1.0f;
+    cb.m_WorldMatrix = ptrTransform->GetWorldMatrix();
+    // paramf[0] == elapsedTime
+    // paramf[1] == velocityPower
+    // paramf[2] == gravity_y
+    // paramf[3] == baseY
+    cb.paramf[0] = elapsedTime;
+    cb.paramf[1] = 3.0f;
+    cb.paramf[2] = -9.8f;
+    cb.paramf[3] = m_Scale * 0.02f;
+    ID3D11Buffer* pConstantBuffer = ConstantBufferCalcbody::GetPtr()->GetBuffer();
+    pID3D11DeviceContext->UpdateSubresource(pConstantBuffer, 0, nullptr, &cb, 0, 0);
+    pID3D11DeviceContext->CSSetConstantBuffers(0, 1, &pConstantBuffer);</span>
+</pre>
+</div>
+　のように設定します。<br />
+　その後、シェーダを設定します。
+<div class="box1">
+<pre>
+    pID3D11DeviceContext->CSSetShader(ComputeSaderCalcbody::GetPtr()->GetShader(), nullptr, 0);
+</pre>
+</div>
+　続いて<b>ビュー</b>を設定します。
+<div class="box1">
+<pre>
+    <span class="red">pID3D11DeviceContext->UpdateSubresource(m_InBuffer.Get(), 0, nullptr, &m_LocalDataVec[0], 0, 0);</span>
+    pID3D11DeviceContext->CSSetShaderResources(0, 1, m_SRV.GetAddressOf());
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, m_UAV.GetAddressOf(), nullptr);
+</pre>
+</div>
+　ここで<b>入力</b>は赤くなっているように、<b>m_InBuffer</b>から取得しますが、<b>m_UAV</b>は<b>シェーダから取得</b>用なので更新する必要はありません。<br />
+　最後に
+<div class="box1">
+<pre>
+    pID3D11DeviceContext->Dispatch(<span class="red">(UINT)m_NumVertices</span>, 1, 1);
+</pre>
+</div>
+　と<b>CS</b>を実行します。ここで第一引数の<b>(UINT)m_NumVertices</b>は重要です。<br />
+<h4>CSの実行</h4>
+　今回の<b>CS</b>は、以下の処理を行います。
+<div class="box1">
+<pre>
+１、各点のローカルデータをワールド位置に座標変換
+２、もしプレイヤーが当たったら飛び出す処理
+３、地面についてらもう動かなくなる処理
+３、最終的に各点のワールドポジションを出力する
+</pre>
+</div>
+　という処理です。<br />
+　以下にシェーダーを紹介します<b>CSCalcbody.hlsl</b>です。
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+// コンスタントバッファ
+//--------------------------------------------------------------------------------------
+cbuffer CB : register(b0)
+{
+    row_major float4x4 g_world;
+    float4 g_playerPosition;
+    float4  g_paramf;
+    // g_paramf[0] == elapsedTime
+    // g_paramf[1] == velocityPower
+    // g_paramf[2] == gravity_y
+    // g_paramf[3] == baseY
+};
+
+//--------------------------------------------------------------------------------------
+// 各点のデータ
+//--------------------------------------------------------------------------------------
+struct LocalData {
+    float4 m_LocalPosition;
+    float4 m_WorldPosition;
+    float4 m_Velocity;
+    uint4  m_State;
+};
+
+
+//シェーダリソースビュー
+<span class="red">StructuredBuffer&lt;LocalData> inPosVelo : register(t0);</span>
+//アクセスビュー
+<span class="red">RWStructuredBuffer&lt;LocalData> outPosVelo : register(u0);</span>
+
+
+[numthreads(<span class="red">64</span>, 1, 1)]
+void main( uint3 DTid : SV_DispatchThreadID )
+{
+    //入力からデータをして出力にコピー
+    outPosVelo[DTid.x].m_LocalPosition = inPosVelo[DTid.x].m_LocalPosition;
+    outPosVelo[DTid.x].m_LocalPosition.w = 1.0;
+    outPosVelo[DTid.x].m_State = inPosVelo[DTid.x].m_State;
+    uint state = outPosVelo[DTid.x].m_State.x;
+    if (state == 2) {
+        //落下した時以外はワールド位置を計算
+        outPosVelo[DTid.x].m_WorldPosition = inPosVelo[DTid.x].m_WorldPosition;
+    }
+    else {
+        //落下した時以外はワールド位置を計算
+        outPosVelo[DTid.x].m_WorldPosition = mul(outPosVelo[DTid.x].m_LocalPosition, g_world);
+    }
+    outPosVelo[DTid.x].m_Velocity = inPosVelo[DTid.x].m_Velocity;
+    //ステートをチェックして場合によってはワールドポジションを変更
+    float baseY = g_paramf[3];
+    float velocityPower = g_paramf[1];
+    float4 gravity = float4(0, g_paramf[2], 0,0);
+    float elapsedTime = g_paramf[0];
+    float3 playerPos = float3(g_playerPosition.xyz);
+    float3 targetPos = float3(outPosVelo[DTid.x].m_WorldPosition.xyz);
+    if (state == 0) {
+        float len = length(playerPos - targetPos);
+        if (len &lt; 0.4f) {
+            //lenが0.4未満なら衝突してると判断
+            //ステートを変更
+            //衝突していたら球から飛び出すように速度を設定
+            outPosVelo[DTid.x].m_State.x = 1;
+            float3 velo = playerPos - targetPos;
+            outPosVelo[DTid.x].m_Velocity.xyz = velo.xyz;
+            outPosVelo[DTid.x].m_Velocity.w = 0.0;
+            normalize(outPosVelo[DTid.x].m_Velocity);
+            outPosVelo[DTid.x].m_Velocity.y = 1.0f;
+            outPosVelo[DTid.x].m_Velocity *= velocityPower;
+        }
+    }
+    else if (state == 1) {
+        //飛び散る状態
+        if (targetPos.y &lt;= baseY) {
+            //落下終了
+            outPosVelo[DTid.x].m_State.x = 2;
+            outPosVelo[DTid.x].m_WorldPosition.y = baseY;
+        }
+        else {
+            //落下中
+            outPosVelo[DTid.x].m_Velocity += gravity * elapsedTime;
+            outPosVelo[DTid.x].m_LocalPosition += outPosVelo[DTid.x].m_Velocity * elapsedTime;
+            outPosVelo[DTid.x].m_LocalPosition.w = 1.0;
+            outPosVelo[DTid.x].m_WorldPosition = mul(outPosVelo[DTid.x].m_LocalPosition, g_world);
+        }
+    }
+}
+</pre>
+</div>
+　まず
+<div class="box1">
+<pre>
+cbuffer CB : register(b0)
+{
+    row_major float4x4 g_world;
+    float4 g_playerPosition;
+    float4  g_paramf;
+    // g_paramf[0] == elapsedTime
+    // g_paramf[1] == velocityPower
+    // g_paramf[2] == gravity_y
+    // g_paramf[3] == baseY
+};
+</pre>
+</div>
+　は<b>コンスタントバッファ</b>です。C++側とデータ構造を合わせます。また
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+// 各点のデータ
+//--------------------------------------------------------------------------------------
+struct LocalData {
+    float4 m_LocalPosition;
+    float4 m_WorldPosition;
+    float4 m_Velocity;
+    uint4  m_State;
+};
+</pre>
+</div>
+　は各点のデータ形式です。これもC++側と合わせます。続く
+<div class="box1">
+<pre>
+//シェーダリソースビュー
+<span class="red">StructuredBuffer&lt;LocalData> inPosVelo : register(t0);</span>
+</pre>
+</div>
+　は入力用の点のデータで
+<div class="box1">
+<pre>
+//アクセスビュー
+<span class="red">RWStructuredBuffer&lt;LocalData> outPosVelo : register(u0);</span>
+</pre>
+</div>
+　は出力用のものです。<br />
+　この<b>CS</b>には、<b>ステート</b>の概念があり、
+<div class="box1">
+<pre>
+0:　回転状態
+1:　プレイヤーと当たって落ちる状態
+2:　落下後の状態
+</pre>
+</div>
+　があります。<br />
+　実行コードは
+<div class="box1">
+<pre>
+[numthreads(<span class="red">64</span>, 1, 1)]
+void main( uint3 DTid : SV_DispatchThreadID )
+</pre>
+</div>
+　で始まります。ここで<b>64</b>というのは、<b>スレッド数</b>です。<br />
+　<b>CS</b>の原理は例えばテクスチャリソース（シェーダーリソース）の<b>X、Y、Z</b>の値を再利用しているよなものです。<br />
+　この部分を<b>64,1,1</b>とするのは<b>スレッドを64個利用する</b>の意味です。じつはこれを<b>1,1,1</b>としてもこのサンプルは動きます。
+<div class="box1">
+<pre>
+[numthreads(<span class="red">1</span>, 1, 1)]
+void main( uint3 DTid : SV_DispatchThreadID )
+</pre>
+</div>
+　としても、OKなわけです。<br />
+　<b>スレッド</b>というのは<b>並行して動作する単位</b>なので、この数が多い方が効率が良いはずなのですが、GPUの能力に左右されます。<br />
+　実行関数本体では
+<div class="box1">
+<pre>
+    //入力からデータをして出力にコピー
+    outPosVelo[DTid.x].m_LocalPosition = inPosVelo[DTid.x].m_LocalPosition;
+    outPosVelo[DTid.x].m_LocalPosition.w = 1.0;
+    outPosVelo[DTid.x].m_State = inPosVelo[DTid.x].m_State;
+</pre>
+</div>
+　といった感じで<b>入力</b>を<b>出力</b>にコピーします。<br />
+　その後、<b>ステート</b>に合わせ、<b>outPosVelo[DTid.x].m_WorldPosition</b>を計算します。<br />
+　計算内容は基本的に<b>フルサンプル305</b>と一緒です。
+<h4>CSから情報の取得</h4>
+　再び<b>PointsBall::OnUpdate()</b>です。<br />
+　<b>CS</b>を実行後は
+<div class="box1">
+<pre>
+    //カメラのレイを作成しておく
+    auto camera = OnGetDrawCamera();
+    auto lay = camera->GetAt() - camera->GetEye();
+    lay.normalize();
+    Quat qtCamera;
+    //回転は常にカメラを向くようにする
+    qtCamera.facing(lay);
+    //結果の読み取り
+    D3D11_MAPPED_SUBRESOURCE MappedResource = { 0 };
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_OutBuffer.Get());
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+    {
+        memcpy(&m_ResultDataVec[0], MappedResource.pData, m_NumVertices * sizeof(LocalData));
+        pID3D11DeviceContext->Unmap(m_ReadBackBuffer.Get(), 0);
+        //行列の配列をクリア
+        m_MatVec.clear();
+        Mat4x4 worldMat;
+        for (auto& v : m_ResultDataVec) {
+            worldMat.affineTransformation(
+                Vec3(m_Scale),
+                Vec3(0.0f),
+                qtCamera,
+                v.m_WorldPosition
+            );
+            m_MatVec.push_back(worldMat);
+        }
+        //インスタンス行列の更新
+        ptrDraw->UpdateMultiMatrix(m_MatVec);
+        //結果を次の入力にコピー
+        for (size_t i = 0; i &lt; m_ResultDataVec.size(); i++) {
+            m_LocalDataVec[i] = m_ResultDataVec[i];
+        }
+    }
+    // CSの開放
+    ID3D11UnorderedAccessView* ppUAViewNULL[1] = { nullptr };
+    pID3D11DeviceContext->CSSetUnorderedAccessViews(0, 1, ppUAViewNULL, nullptr);
+    ID3D11ShaderResourceView* ppSRVNULL[1] = { nullptr };
+    pID3D11DeviceContext->CSSetShaderResources(0, 1, ppSRVNULL);
+</pre>
+</div>
+　となります。
+<div class="box1">
+<pre>
+    pID3D11DeviceContext->CopyResource(m_ReadBackBuffer.Get(), m_OutBuffer.Get());
+</pre>
+</div>
+　でバッファ間をコピーして
+<div class="box1">
+<pre>
+    if (SUCCEEDED(pID3D11DeviceContext->Map(m_ReadBackBuffer.Get(), 0, D3D11_MAP_READ, 0, &MappedResource)))
+    {
+</pre>
+</div>
+　とマップに成功したら
+<div class="box1">
+<pre>
+        memcpy(&m_ResultDataVec[0], MappedResource.pData, m_NumVertices * sizeof(LocalData));
+</pre>
+</div>
+　と<b>m_ResultDataVec</b>にコピーします。<br />
+　あとは、
+<div class="box1">
+<pre>
+        //行列の配列をクリア
+        m_MatVec.clear();
+        Mat4x4 worldMat;
+        for (auto& v : m_ResultDataVec) {
+            worldMat.affineTransformation(
+                Vec3(m_Scale),
+                Vec3(0.0f),
+                qtCamera,
+                v.m_WorldPosition
+            );
+            m_MatVec.push_back(worldMat);
+        }
+        //インスタンス行列の更新
+        ptrDraw->UpdateMultiMatrix(m_MatVec);
+</pre>
+</div>
+　と<b>m_MatVec</b>を再設定します。この際、描画用メッシュをカメラのほうを向かせます。<br />
+　最終的には
+<div class="box1">
+<pre>
+        //インスタンス行列の更新
+        ptrDraw->UpdateMultiMatrix(m_MatVec);
+</pre>
+</div>
+　が更新処理の完成です。<br />
+　そして
+<div class="box1">
+<pre>
+        //結果を次の入力にコピー
+        for (size_t i = 0; i &lt; m_ResultDataVec.size(); i++) {
+            m_LocalDataVec[i] = m_ResultDataVec[i];
+        }
+</pre>
+</div>
+　と、次のCSへの入力に、結果をコピーします。<br />
+　<b>m_LocalDataVecの数</b>より<b>m_ResultDataVecの数</b>は小さいので安全に実行されます。
+<h4>まとめ</h4>
+　今回は、<b>CS</b>を使ったちょっと複雑な処理を紹介しました。<br />
+　実際に、<b>ちょっと重いかな</b>と感じた処理を<b>CS</b>を使って高速化することに利用できると思います。<br />
+　すでに記述された処理を、部分的にでも<b>CS</b>に書き直すことで、高速化をはかれると思います。<br />
+　次項尾では、<b>描画の高速化</b>の手法で<b>ジオメトリシェーダ</b>を紹介します。
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="15_01.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+<li><a href="15_03.html">次へ</a></li>
+</ul>
+<!-- /フッタ　-->
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
