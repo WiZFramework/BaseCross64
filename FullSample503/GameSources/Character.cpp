@@ -126,16 +126,11 @@ namespace basecross{
 		//描画用メッシュの作成
 		//位置情報と色
 		vector<VertexPositionColor> meshVertices;
-		float colG = 1.0f;
 		for (auto& v : vertices) {
 			VertexPositionColor temp;
 			temp.position = v.position;
-			temp.color = Col4(1, colG, 0, 1);
+			temp.color = Col4(1, 1, 0, 1);
 			meshVertices.push_back(temp);
-			colG -= 0.00002f;
-			if (colG < 0) {
-				colG = 0;
-			}
 		}
 		m_MeshRes = MeshResource::CreateMeshResource(meshVertices,false);
 
