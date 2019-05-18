@@ -13,6 +13,9 @@ namespace basecross {
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct CollisionManager::Impl {
+#if (BASECROSS_DXVERSION == 11)
+		shared_ptr<CSCollisionManager> m_CSCollisionManager;
+#endif
 		Impl()
 		{}
 		~Impl() {}
@@ -176,9 +179,25 @@ namespace basecross {
 
 
 	void CollisionManager::OnCreate() {
+#if (BASECROSS_DXVERSION == 11)
+		pImpl->m_CSCollisionManager = ObjectFactory::Create<CSCollisionManager>();
+#endif
 	}
 
 	void CollisionManager::OnUpdate() {
+#if (BASECROSS_DXVERSION == 11)
+		UpdateDefault();
+#else
+		UpdateDefault();
+#endif
+	}
+
+#if (BASECROSS_DXVERSION == 11)
+	void CollisionManager::UpdateWithCS() {
+	}
+#endif
+
+	void CollisionManager::UpdateDefault() {
 		//keepのチェック
 		m_TempKeepVec.clear();
 		m_TempExitVec.clear();

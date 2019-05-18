@@ -1427,6 +1427,127 @@ namespace basecross{
 
 
 	//--------------------------------------------------------------------------------------
+	///	パフォーマンスカウンター
+	//--------------------------------------------------------------------------------------
+	class PerformanceCounter{
+		bool m_IsActive;
+		bool m_IsStarted;
+		float m_PerformanceTime;
+		LARGE_INTEGER m_Freq;
+		LARGE_INTEGER m_Before;
+		LARGE_INTEGER m_After;
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief コンストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		PerformanceCounter() :
+			m_IsActive(false),
+			m_PerformanceTime(0.0f),
+			m_IsStarted(false)
+		{
+			m_Freq = {};
+			m_Before = {};
+			m_After = {};
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief デストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		~PerformanceCounter() {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	アクティブかどうか
+		@return	アクティブならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsAvtive() const {
+			return m_IsActive;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	アクティブかどうか設定
+		@param[in]	b	アクティブかどうか
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetActive(bool b) {
+			m_IsActive = b;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	検証の開始
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void Start() {
+			if (IsAvtive() && !m_IsStarted) {
+				// m_PerformanceTimeはStart時は初期化しない
+				// m_PerformanceTime = 0.0f;
+				m_Freq = {};
+				m_Before = {};
+				m_After = {};
+				m_IsStarted = true;
+				if (!QueryPerformanceFrequency(&m_Freq))
+				{
+					throw BaseException(
+						L"システム周波数を取得できません。",
+						L"if (!QueryPerformanceFrequency(&m_Freq))",
+						L"PerformanceCounter::Start()"
+					);
+				}
+				if (!QueryPerformanceCounter(&m_Before))
+				{
+					throw BaseException(
+						L"パフォーマンスカウンタ（処理前）を取得できません。",
+						L"if (!QueryPerformanceCounter(&m_Before))",
+						L"PerformanceCounter::Start()"
+					);
+				}
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	検証の終了
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void End() {
+			if (IsAvtive() && m_IsStarted) {
+				if (!QueryPerformanceCounter(&m_After))
+				{
+					throw BaseException(
+						L"パフォーマンスカウンタ（処理後）を取得できません。",
+						L"if (!QueryPerformanceCounter(&m_After))",
+						L"PerformanceCounter::Start()"
+					);
+				}
+				if (m_Freq.QuadPart != 0) {
+					m_PerformanceTime = ((float)((m_After.QuadPart - m_Before.QuadPart) * 1000.0f) / (float)m_Freq.QuadPart);
+				}
+				m_IsStarted = false;
+			}
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	かかったパフォーマンス時間（ミリ秒）を返す
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetPerformanceTime() const {
+			if (IsAvtive()) {
+				return m_PerformanceTime;
+			}
+			else {
+				return 0.0f;
+			}
+		}
+	};
+
+
+	//--------------------------------------------------------------------------------------
 	///	2次元ポイント
 	/*!
 	@tparam	T	ポイントを実装する型

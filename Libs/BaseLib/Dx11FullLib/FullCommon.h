@@ -32,4 +32,8 @@
 #include "../SharedLib/CollisionManager.h"
 //スプライトスタジオ５
 #include "../SharedLib/SpriteStudio5.h"
+//CSによる計算処理
+#include "CSUpdate.h"
+
+
 

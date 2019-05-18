@@ -699,6 +699,12 @@ namespace basecross {
 		bool m_IsShadowmapDraw;
 		//物理計算を使うかどうか
 		bool m_IsPhysicsActive;
+		//衝突判定マネージャのパフォーマンスカウンタ
+		PerformanceCounter m_CollisionPerformance;
+		//Updateのパフォーマンスカウンタ
+		PerformanceCounter m_UpdatePerformance;
+		//Drawのパフォーマンスカウンタ
+		PerformanceCounter m_DrawPerformance;
 		Impl() :
 			m_UpdateActive(true),
 			m_DrawViewIndex(0),
@@ -1025,6 +1031,9 @@ namespace basecross {
 
 	//ステージ内の更新（シーンからよばれる）
 	void Stage::UpdateStage() {
+		if (IsUpdatePerformanceActive()) {
+			pImpl->m_UpdatePerformance.Start();
+		}
 		//追加・削除まちオブジェクトの追加と削除
 		SetWaitToObjectVec();
 		//Transformコンポーネントの値をバックアップにコピー
@@ -1080,6 +1089,9 @@ namespace basecross {
 		for (auto& PtrChileStage : GetChileStageVec()) {
 			PtrChileStage->UpdateStage();
 		}
+		if (IsUpdatePerformanceActive()) {
+			pImpl->m_UpdatePerformance.End();
+		}
 	}
 
 
@@ -1087,8 +1099,16 @@ namespace basecross {
 	//衝突判定をカスタマイズするためには
 	//この関数を多重定義する
 	void Stage::UpdateCollision() {
-		//衝突判定管理者のUpdate(判定)
-		pImpl->m_CollisionManager->OnUpdate();
+		if (pImpl->m_CollisionPerformance.IsAvtive()) {
+			pImpl->m_CollisionPerformance.Start();
+			//衝突判定管理者のUpdate(判定)
+			pImpl->m_CollisionManager->OnUpdate();
+			pImpl->m_CollisionPerformance.End();
+		}
+		else {
+			//衝突判定管理者のUpdate(判定)
+			pImpl->m_CollisionManager->OnUpdate();
+		}
 	}
 
 
@@ -1098,6 +1118,48 @@ namespace basecross {
 	}
 	void Stage::SetShadowmapDraw(bool b) {
 		pImpl->m_IsShadowmapDraw = b;
+	}
+
+	void Stage::SetCollisionPerformanceActive(bool b) {
+		pImpl->m_CollisionPerformance.SetActive(b);
+	}
+
+	bool Stage::IsCollisionPerformanceActive() const {
+		return pImpl->m_CollisionPerformance.IsAvtive();
+	}
+
+	float Stage::GetCollisionPerformanceTime() const {
+		return pImpl->m_CollisionPerformance.GetPerformanceTime();
+	}
+
+	void Stage::SetUpdatePerformanceActive(bool b) {
+		pImpl->m_UpdatePerformance.SetActive(b);
+	}
+	bool Stage::IsUpdatePerformanceActive() const {
+		return pImpl->m_UpdatePerformance.IsAvtive();
+
+	}
+	float Stage::GetUpdatePerformanceTime() const {
+		return pImpl->m_UpdatePerformance.GetPerformanceTime();
+
+	}
+
+	void Stage::SetDrawPerformanceActive(bool b) {
+		pImpl->m_DrawPerformance.SetActive(b);
+	}
+	bool Stage::IsDrawPerformanceActive() const {
+		return pImpl->m_DrawPerformance.IsAvtive();
+
+	}
+	float Stage::GetDrawPerformanceTime() const {
+		return pImpl->m_DrawPerformance.GetPerformanceTime();
+	}
+
+	bool Stage::IsCSCollision() const {
+		return pImpl->m_CollisionManager->IsCSCollision();
+	}
+	void Stage::SetCSCollision(bool b) {
+		pImpl->m_CollisionManager->SetCSCollision(b);
 	}
 
 	//ステージ内のシャドウマップ描画（ステージからよばれる）
@@ -1235,6 +1297,9 @@ namespace basecross {
 
 	//ステージ内のすべての描画（シーンからよばれる）
 	void Stage::RenderStage() {
+		if (IsDrawPerformanceActive()) {
+			pImpl->m_DrawPerformance.Start();
+		}
 		//描画デバイスの取得
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto MultiPtr = dynamic_pointer_cast<MultiView>(GetView());
@@ -1278,6 +1343,9 @@ namespace basecross {
 		//子供ステージの描画
 		for (auto PtrChileStage : GetChileStageVec()) {
 			PtrChileStage->RenderStage();
+		}
+		if (IsDrawPerformanceActive()) {
+			pImpl->m_DrawPerformance.End();
 		}
 	}
 

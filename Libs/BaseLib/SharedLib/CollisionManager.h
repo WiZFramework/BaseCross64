@@ -37,10 +37,16 @@ namespace basecross {
 		bool m_PriorityUnderEscapeY;
 		//拘束解消パラメータ
 		int m_EscapeFloor;
+		//CSによる判定
+		bool m_IsCSCollision;
 		bool SimpleCollisionPair(CollisionPair& Pair);
 		void SetNewCollision();
 		void SetNewCollisionSub(const shared_ptr<GameObject>& Src);
 		bool EnableedCollisionPair(const shared_ptr<GameObject>& Src, const shared_ptr<GameObject>& Dest);
+		void UpdateDefault();
+#if (BASECROSS_DXVERSION == 11)
+		void UpdateWithCS();
+#endif
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -198,6 +204,24 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		void SleepCheckSet();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CSによる判定は有効かどうか
+		@return	有効ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool IsCSCollision() const {
+			return m_IsCSCollision;
+		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	CSによる判定は有効かどうか設定
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetCSCollision(bool b) {
+			m_IsCSCollision = b;
+		}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

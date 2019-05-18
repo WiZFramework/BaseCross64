@@ -108,6 +108,11 @@ namespace basecross{
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
 
+		GetStage()->SetCollisionPerformanceActive(true);
+		GetStage()->SetUpdatePerformanceActive(true);
+		GetStage()->SetDrawPerformanceActive(true);
+
+
 
 		//文字列をつける
 		auto ptrString = AddComponent<StringSprite>();
@@ -192,7 +197,20 @@ namespace basecross{
 		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
 
-		wstring str = fpsStr + positionStr + gravStr;
+		wstring updatePerStr(L"UpdatePerformance:\t");
+		updatePerStr += Util::FloatToWStr(GetStage()->GetUpdatePerformanceTime());
+		updatePerStr += L"\tmillisecond\n";
+
+		wstring drawPerStr(L"DrawPerformance:\t");
+		drawPerStr += Util::FloatToWStr(GetStage()->GetDrawPerformanceTime());
+		drawPerStr += L"\tmillisecond\n";
+
+		wstring collPerStr(L"CollisionPerformance:\t");
+		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime());
+		collPerStr += L"\tmillisecond\n";
+
+
+		wstring str = fpsStr + positionStr + gravStr + updatePerStr + drawPerStr + collPerStr;
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();
 		ptrString->SetText(str);
