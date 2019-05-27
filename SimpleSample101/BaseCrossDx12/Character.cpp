@@ -176,7 +176,7 @@ namespace basecross {
 		);
 		//ルートシグネチャの作成
 		ThrowIfFailed(
-			Dev->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
+			Dev->GetD3DDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
 				signature->GetBufferSize(), IID_PPV_ARGS(&m_RootSignature)),
 			L"ルートシグネチャの作成に失敗しました",
 			L"Dev->GetDevice()->CreateRootSignature()",
@@ -189,13 +189,13 @@ namespace basecross {
 	void CubeObject::CreateDescriptorHeap() {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		m_CbvSrvDescriptorHandleIncrementSize =
-			Dev->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			Dev->GetD3DDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		//コンスタントバッファとシェーダーリソース用デスクプリタヒープ（合計2個）
 		D3D12_DESCRIPTOR_HEAP_DESC CbvSrvHeapDesc = {};
 		CbvSrvHeapDesc.NumDescriptors = 2;
 		CbvSrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		CbvSrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&CbvSrvHeapDesc, IID_PPV_ARGS(&m_CbvSrvUavDescriptorHeap)),
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateDescriptorHeap(&CbvSrvHeapDesc, IID_PPV_ARGS(&m_CbvSrvUavDescriptorHeap)),
 			L"CbvSrvUav用のデスクプリタヒープの作成に失敗しました",
 			L"Dev->GetDevice()->CreateDescriptorHeap()",
 			L"CubeObject::CreateDescriptorHeap()"
@@ -205,7 +205,7 @@ namespace basecross {
 		SamplerHeapDesc.NumDescriptors = 1;
 		SamplerHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
 		SamplerHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&SamplerHeapDesc, IID_PPV_ARGS(&m_SamplerDescriptorHeap)),
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateDescriptorHeap(&SamplerHeapDesc, IID_PPV_ARGS(&m_SamplerDescriptorHeap)),
 			L"サンプラー用のデスクプリタヒープの作成に失敗しました",
 			L"Dev->GetDevice()->CreateDescriptorHeap()",
 			L"CubeObject::CreateDescriptorHeap()"
@@ -249,7 +249,7 @@ namespace basecross {
 		samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//ハンドルとサンプラー定義を結びつける
-		Dev->GetDevice()->CreateSampler(&samplerDesc, SamplerDescriptorHandle);
+		Dev->GetD3DDevice()->CreateSampler(&samplerDesc, SamplerDescriptorHandle);
 	}
 	///コンスタントバッファ作成
 	void CubeObject::CreateConstantBuffer() {
@@ -257,7 +257,7 @@ namespace basecross {
 		//コンスタントバッファは256バイトにアラインメント
 		UINT ConstBuffSize = (sizeof(StaticConstantBuffer) + 255) & ~255;
 		//コンスタントバッファリソース（アップロードヒープ）の作成
-		ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
@@ -281,7 +281,7 @@ namespace basecross {
 			1,
 			m_CbvSrvDescriptorHandleIncrementSize
 		);
-		Dev->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvHandle);
+		Dev->GetD3DDevice()->CreateConstantBufferView(&cbvDesc, cbvHandle);
 		//コンスタントバッファのアップロードヒープのマップ
 		CD3DX12_RANGE readRange(0, 0);
 		ThrowIfFailed(m_ConstantBufferUploadHeap->Map(0, &readRange, reinterpret_cast<void**>(&m_pConstantBuffer)),
@@ -307,7 +307,7 @@ namespace basecross {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = m_TextureResource->GetTextureResDesc().MipLevels;
 		//シェーダリソースビューの作成
-		Dev->GetDevice()->CreateShaderResourceView(
+		Dev->GetD3DDevice()->CreateShaderResourceView(
 			m_TextureResource->GetTexture().Get(),
 			&srvDesc,
 			srvHandle);
@@ -365,14 +365,14 @@ namespace basecross {
 		}
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//まずCullBackのパイプラインステートを作成
-		ThrowIfFailed(Dev->GetDevice()->CreateGraphicsPipelineState(&PineLineDesc, IID_PPV_ARGS(&m_CullBackPipelineState)),
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateGraphicsPipelineState(&PineLineDesc, IID_PPV_ARGS(&m_CullBackPipelineState)),
 			L"CullBackパイプラインステートの作成に失敗しました",
 			L"Dev->GetDevice()->CreateGraphicsPipelineState()",
 			L"CubeObject::CreatePipelineState()"
 		);
 		PineLineDesc.RasterizerState.CullMode = D3D12_CULL_MODE::D3D12_CULL_MODE_FRONT;
 		//続いてCullFrontのパイプラインステートを作成
-		ThrowIfFailed(Dev->GetDevice()->CreateGraphicsPipelineState(&PineLineDesc, IID_PPV_ARGS(&m_CullFrontPipelineState)),
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateGraphicsPipelineState(&PineLineDesc, IID_PPV_ARGS(&m_CullFrontPipelineState)),
 			L"CullFrontパイプラインステートの作成に失敗しました",
 			L"Dev->GetDevice()->CreateGraphicsPipelineState()",
 			L"CubeObject::CreatePipelineState()"
@@ -382,7 +382,7 @@ namespace basecross {
 	void CubeObject::CreateCommandList() {
 		auto Dev = App::GetApp()->GetDeviceResources();
 		//コマンドリストは裏面カリングに初期化
-		ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+		ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 			0,
 			D3D12_COMMAND_LIST_TYPE_DIRECT,
 			Dev->GetCommandAllocator().Get(),

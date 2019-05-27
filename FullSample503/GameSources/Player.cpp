@@ -103,7 +103,7 @@ namespace basecross{
 		ptr->SetPosition(0, 0.125f, 0);
 		//CollisionSphere衝突判定を付ける
 		auto ptrColl = AddComponent<CollisionSphere>();
-
+		//各パフォーマンスを得る
 		GetStage()->SetCollisionPerformanceActive(true);
 		GetStage()->SetUpdatePerformanceActive(true);
 		GetStage()->SetDrawPerformanceActive(true);
@@ -191,11 +191,19 @@ namespace basecross{
 		drawPerStr += L"\tmillisecond\n";
 
 		wstring collPerStr(L"CollisionPerform:\t");
-		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime(),5);
+		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime(), 5);
 		collPerStr += L"\tmillisecond\n";
 
+		wstring collMiscStr(L"ColMiscPerform:\t");
+		collMiscStr += Util::FloatToWStr(GetStage()->GetCollisionManager()->GetMiscPerformanceTime(), 5);
+		collMiscStr += L"\tmillisecond\n";
 
-		wstring str = objCountStr + fpsStr + positionStr + gravStr + updatePerStr + drawPerStr + collPerStr;
+		wstring collTernCountStr(L"CollisionCountOfTern:\t");
+		collTernCountStr += Util::UintToWStr(GetStage()->GetCollisionManager()->GetCollisionCountOfTern());
+		collTernCountStr += L"\n";
+		wstring str = objCountStr + fpsStr + positionStr + gravStr + updatePerStr + drawPerStr + collPerStr + collMiscStr
+			+ collTernCountStr;
+
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();
 		ptrString->SetText(str);

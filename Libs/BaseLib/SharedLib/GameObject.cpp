@@ -1155,13 +1155,6 @@ namespace basecross {
 		return pImpl->m_DrawPerformance.GetPerformanceTime();
 	}
 
-	bool Stage::IsCSCollision() const {
-		return pImpl->m_CollisionManager->IsCSCollision();
-	}
-	void Stage::SetCSCollision(bool b) {
-		pImpl->m_CollisionManager->SetCSCollision(b);
-	}
-
 	//ステージ内のシャドウマップ描画（ステージからよばれる）
 	void Stage::DrawShadowmapStage() {
 		for (auto ptr : pImpl->m_GameObjectVec) {

@@ -8,14 +8,195 @@
 
 namespace basecross {
 
+	struct CollisionPiece {
+		CollisionPiece* m_Children[4];
+		AABB m_AABB;
+		vector<shared_ptr<GameObject>> m_ObjVec;
+		CollisionPiece():
+			m_AABB()
+		{
+			for (int i = 0; i < 4; i++) {
+				m_Children[i] = nullptr;
+			}
+			m_ObjVec.clear();
+		}
+		void SetAABB(const AABB& aabb) {
+			m_AABB = aabb;
+		}
+		void Clear() {
+			for (int i = 0; i < 4; i++) {
+				if (m_Children[i]) {
+					m_Children[i]->Clear();
+				}
+				m_Children[i] = nullptr;
+			}
+			m_ObjVec.clear();
+			m_AABB = AABB();
+		}
+	};
+
+#define MAX_PIECE_COUNT 8192
+	CollisionPiece g_PiecePool[MAX_PIECE_COUNT];
+	UINT g_NextPoolIndex = 0;
+
+	struct CollisionBlocks {
+		UINT m_CollisionCountOfTern;
+		CollisionPiece m_RootPiece;
+		CollisionBlocks():
+			m_CollisionCountOfTern(0)
+		{
+			AABB aabb(Vec3(-100.0f, -1000, -25.0f), Vec3(100.0f, 1000, 25.0f));
+			m_RootPiece.SetAABB(aabb);
+		}
+		void AllClear() {
+			m_RootPiece.Clear();
+			AABB aabb(Vec3(-100.0f, -1000, -25.0f), Vec3(100.0f, 1000, 25.0f));
+			m_RootPiece.SetAABB(aabb);
+			g_NextPoolIndex = 0;
+		}
+
+		void SetCollisionBlockSub(CollisionPiece& tgt,const shared_ptr<GameObject>& Obj) {
+			auto Col = Obj->GetComponent<Collision>();
+			auto colAABB = Col->GetWrappedAABB();
+			if (HitTest::AABB_AABB(tgt.m_AABB, colAABB)) {
+				if (tgt.m_Children[0]) {
+					//子供ピースがあったら
+					for (int i = 0; i < 4; i++) {
+						SetCollisionBlockSub(*tgt.m_Children[i], Obj);
+					}
+				}
+				else {
+					//子供ピースがなかった
+					//AABBが小さい場合はこれ以上増やさない
+					if (tgt.m_AABB.GetWidth() < 0.125f) {
+						tgt.m_ObjVec.push_back(Obj);
+					}
+					else {
+						if (tgt.m_ObjVec.size() < 5) {
+							//AABBの幅が定数未満か
+							//あるいはまだ余裕がある
+							tgt.m_ObjVec.push_back(Obj);
+						}
+						else {
+							//余裕がない子供ブロックの作成
+							for (int i = 0; i < 4; i++) {
+								tgt.m_Children[i] = &g_PiecePool[g_NextPoolIndex];
+								tgt.m_Children[i]->Clear();
+								g_NextPoolIndex++;
+								if (g_NextPoolIndex >= MAX_PIECE_COUNT) {
+									throw BaseException(
+										L"これ以上衝突判定は行えません。",
+										L"if (g_NextPoolIndex >= MAX_PIECE_COUNT)",
+										L"CollisionBlocks::SetCollisionBlock2Sub()"
+									);
+								}
+								AABB childAABB = tgt.m_AABB;
+								switch (i) {
+								case 0:
+									childAABB.m_Min.z = tgt.m_AABB.GetCenter().z;
+									childAABB.m_Max.x = tgt.m_AABB.GetCenter().x;
+									break;
+								case 1:
+									childAABB.m_Min.x = tgt.m_AABB.GetCenter().x;
+									childAABB.m_Min.z = tgt.m_AABB.GetCenter().z;
+									break;
+								case 2:
+									childAABB.m_Max.x = tgt.m_AABB.GetCenter().x;
+									childAABB.m_Max.z = tgt.m_AABB.GetCenter().z;
+									break;
+								case 3:
+									childAABB.m_Min.x = tgt.m_AABB.GetCenter().x;
+									childAABB.m_Max.z = tgt.m_AABB.GetCenter().z;
+									break;
+								}
+								tgt.m_Children[i]->SetAABB(childAABB);
+							}
+							//子供作成終了
+							//オブジェクトを子供に振り分ける
+							for (auto& v : tgt.m_ObjVec) {
+								auto objCol = v->GetComponent<Collision>();
+								auto objColAABB = objCol->GetWrappedAABB();
+								for (int i = 0; i < 4; i++) {
+									if (HitTest::AABB_AABB(tgt.m_Children[i]->m_AABB, objColAABB)) {
+										tgt.m_Children[i]->m_ObjVec.push_back(v);
+									}
+								}
+							}
+							//振り分けが終わったので配列はクリア
+							tgt.m_ObjVec.clear();
+							//子供ピースができたので、そこに調査
+							for (int i = 0; i < 4; i++) {
+								SetCollisionBlockSub(*tgt.m_Children[i], Obj);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		void SetCollisionBlock(const shared_ptr<GameObject>& Obj) {
+			if (Obj->IsUpdateActive()) {
+				auto Col = Obj->GetComponent<Collision>(false);
+				if (Col) {
+					if (!Col->IsUpdateActive()) {
+						return;
+					}
+					//if (Col->IsSleep()) {
+					//	return;
+					//}
+					SetCollisionBlockSub(m_RootPiece, Obj);
+				}
+			}
+		}
+
+		void SetNewCollisionSubSub(const shared_ptr<GameObject>& Src, CollisionPiece& piece, const shared_ptr<CollisionManager>& manager) {
+			for (auto& v : piece.m_ObjVec) {
+				if (manager->EnableedCollisionPair(Src, v)) {
+					auto SrcColl = Src->GetComponent<Collision>();
+					auto DestColl = v->GetComponent<Collision>();
+					if (!manager->IsInPair(SrcColl, DestColl, true) && !manager->IsInPair(SrcColl, DestColl, false)) {
+						//キープされている中になかったら
+						//Collisionによる衝突判定
+						m_CollisionCountOfTern++;
+						DestColl->CollisionCall(SrcColl);
+					}
+				}
+			}
+		}
+
+
+		void SetNewCollisionSub(CollisionPiece& tgt, const shared_ptr<CollisionManager>& manager) {
+			if (tgt.m_ObjVec.size() > 1) {
+				for (auto& v : tgt.m_ObjVec) {
+					SetNewCollisionSubSub(v, tgt, manager);
+				}
+			}
+			else {
+				if (tgt.m_Children[0]) {
+					for (int i = 0; i < 4; i++) {
+						SetNewCollisionSub(*tgt.m_Children[i], manager);
+					}
+				}
+			}
+		}
+
+
+		void SetNewCollision(const shared_ptr<CollisionManager>& manager) {
+			m_CollisionCountOfTern = 0;
+			SetNewCollisionSub(m_RootPiece, manager);
+		}
+
+	};
+
 	//--------------------------------------------------------------------------------------
 	//	struct CollisionManager::Impl;
 	//	用途: Implイディオム
 	//--------------------------------------------------------------------------------------
 	struct CollisionManager::Impl {
-#if (BASECROSS_DXVERSION == 11)
-		shared_ptr<CSCollisionManager> m_CSCollisionManager;
-#endif
+		//衝突判定マネージャの内部処理用パフォーマンス
+		PerformanceCounter m_MiscPerformance;
+		//衝突判定分割用のブロック
+		CollisionBlocks m_CollisionBlocks;
 		Impl()
 		{}
 		~Impl() {}
@@ -103,27 +284,17 @@ namespace basecross {
 		return true;
 	}
 
-
 	void CollisionManager::SetNewCollision() {
+		pImpl->m_MiscPerformance.Start();
 		auto& ObjVec = GetStage()->GetGameObjectVec();
+		//コリジョンブロックのクリア
+		pImpl->m_CollisionBlocks.AllClear();
 		for (auto& v : ObjVec) {
-			SetNewCollisionSub(v);
+			pImpl->m_CollisionBlocks.SetCollisionBlock(v);
 		}
-	}
-
-	void CollisionManager::SetNewCollisionSub(const shared_ptr<GameObject>& Src) {
-		auto& ObjVec = GetStage()->GetGameObjectVec();
-		for (auto& v : ObjVec) {
-			if (EnableedCollisionPair(Src,v)) {
-				auto SrcColl = Src->GetComponent<Collision>();
-				auto DestColl = v->GetComponent<Collision>();
-				if (!IsInPair(SrcColl, DestColl, true)) {
-					//キープされている中になかったら
-					//Collisionによる衝突判定
-					DestColl->CollisionCall(SrcColl);
-				}
-			}
-		}
+		//各ブロックごとに判定を行う
+		pImpl->m_CollisionBlocks.SetNewCollision(GetThis<CollisionManager>());
+		pImpl->m_MiscPerformance.End();
 	}
 
 	void CollisionManager::InsertNewPair(const CollisionPair& NewPair) {
@@ -177,27 +348,11 @@ namespace basecross {
 		}
 	}
 
-
 	void CollisionManager::OnCreate() {
-#if (BASECROSS_DXVERSION == 11)
-		pImpl->m_CSCollisionManager = ObjectFactory::Create<CSCollisionManager>();
-#endif
+		pImpl->m_MiscPerformance.SetActive(true);
 	}
 
 	void CollisionManager::OnUpdate() {
-#if (BASECROSS_DXVERSION == 11)
-		UpdateDefault();
-#else
-		UpdateDefault();
-#endif
-	}
-
-#if (BASECROSS_DXVERSION == 11)
-	void CollisionManager::UpdateWithCS() {
-	}
-#endif
-
-	void CollisionManager::UpdateDefault() {
 		//keepのチェック
 		m_TempKeepVec.clear();
 		m_TempExitVec.clear();
@@ -317,6 +472,15 @@ namespace basecross {
 			}
 		}
 		SleepCheckSet();
+	}
+
+	float CollisionManager::GetMiscPerformanceTime() const {
+		return pImpl->m_MiscPerformance.GetPerformanceTime();
+
+	}
+
+	UINT CollisionManager::GetCollisionCountOfTern() const {
+		return pImpl->m_CollisionBlocks.m_CollisionCountOfTern;
 	}
 
 }

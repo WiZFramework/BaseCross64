@@ -105,6 +105,13 @@ namespace basecross{
 		ptrTrans->SetPosition(0, 0.125f, 0);
 		//CollisionSphere衝突判定を付ける
 		auto PtrCol = AddComponent<CollisionSphere>();
+
+		//各パフォーマンスを得る
+		GetStage()->SetCollisionPerformanceActive(true);
+		GetStage()->SetUpdatePerformanceActive(true);
+		GetStage()->SetDrawPerformanceActive(true);
+
+
 		//判定するだけなのでアクションはNone
 		PtrCol->SetAfterCollision(AfterCollision::None);
 
@@ -274,9 +281,31 @@ namespace basecross{
 		MouseRayFarStr += L"Y=" + Util::FloatToWStr(Far.y, 6, Util::FloatModify::Fixed) + L",\t";
 		MouseRayFarStr += L"Z=" + Util::FloatToWStr(Far.z, 6, Util::FloatModify::Fixed) + L"\n";
 
+		wstring updatePerStr(L"UpdatePerformance:\t");
+		updatePerStr += Util::FloatToWStr(GetStage()->GetUpdatePerformanceTime());
+		updatePerStr += L"\tmillisecond\n";
+
+		wstring drawPerStr(L"DrawPerformance:\t");
+		drawPerStr += Util::FloatToWStr(GetStage()->GetDrawPerformanceTime());
+		drawPerStr += L"\tmillisecond\n";
+
+		wstring collPerStr(L"CollisionPerform:\t");
+		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime(), 5);
+		collPerStr += L"\tmillisecond\n";
+
+		wstring collMiscStr(L"ColMiscPerform:\t");
+		collMiscStr += Util::FloatToWStr(GetStage()->GetCollisionManager()->GetMiscPerformanceTime(), 5);
+		collMiscStr += L"\tmillisecond\n";
+
+		wstring collTernCountStr(L"CollisionCountOfTern:\t");
+		collTernCountStr += Util::UintToWStr(GetStage()->GetCollisionManager()->GetCollisionCountOfTern());
+		collTernCountStr += L"\n";
 
 
-		wstring str = Mess + OBJ_COUNT + PS_OBJ_COUNT + FPS + PositionStr + MousePosStr + ScreenStr + ViewStr + MouseRayNearStr + MouseRayFarStr;
+		wstring str = Mess + OBJ_COUNT + PS_OBJ_COUNT + FPS + PositionStr + MousePosStr + ScreenStr + ViewStr 
+			+ MouseRayNearStr + MouseRayFarStr
+			+ updatePerStr + drawPerStr + collPerStr + collMiscStr
+			+ collTernCountStr;
 		//文字列をつける
 		auto PtrString = GetComponent<StringSprite>();
 		PtrString->SetText(str);

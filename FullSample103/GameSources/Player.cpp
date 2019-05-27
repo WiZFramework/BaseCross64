@@ -79,45 +79,6 @@ namespace basecross{
 		return angle;
 	}
 
-/*
-	Vec3 Player::GetMoveVector() const {
-		Vec3 angle(0, 0, 0);
-		//コントローラの取得
-		auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		if (cntlVec[0].bConnected) {
-			if (cntlVec[0].fThumbLX != 0 || cntlVec[0].fThumbLY != 0) {
-				float moveLength = 0;	//動いた時のスピード
-				auto ptrTransform = GetComponent<Transform>();
-				auto ptrCamera = OnGetDrawCamera();
-				//進行方向の向きを計算
-				auto front = ptrTransform->GetPosition() - ptrCamera->GetEye();
-				front.y = 0;
-				front.normalize();
-				//進行方向向きからの角度を算出
-				float frontAngle = atan2(front.z, front.x);
-				//コントローラの向き計算
-				float moveX = cntlVec[0].fThumbLX;
-				float moveZ = cntlVec[0].fThumbLY;
-				Vec2 moveVec(moveX, moveZ);
-				float moveSize = moveVec.length();
-				//コントローラの向きから角度を計算
-				float cntlAngle = atan2(-moveX, moveZ);
-				//トータルの角度を算出
-				float totalAngle = frontAngle + cntlAngle;
-				//角度からベクトルを作成
-				angle = Vec3(cos(totalAngle), 0, sin(totalAngle));
-				//正規化する
-				angle.normalize();
-				//移動サイズを設定。
-				angle *= moveSize;
-				//Y軸は変化させない
-				angle.y = 0;
-			}
-		}
-		return angle;
-	}
-*/
-
 	void Player::MovePlayer() {
 		float elapsedTime = App::GetApp()->GetElapsedTime();
 		auto angle = GetMoveVector();
@@ -144,6 +105,12 @@ namespace basecross{
 
 		//CollisionSphere衝突判定を付ける
 		auto ptrColl = AddComponent<CollisionSphere>();
+
+		//各パフォーマンスを得る
+		GetStage()->SetCollisionPerformanceActive(true);
+		GetStage()->SetUpdatePerformanceActive(true);
+		GetStage()->SetDrawPerformanceActive(true);
+
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
 
@@ -218,7 +185,29 @@ namespace basecross{
 		gravStr += L"X=" + Util::FloatToWStr(gravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-		wstring str = fpsStr + positionStr + gravStr;
+
+		wstring updatePerStr(L"UpdatePerformance:\t");
+		updatePerStr += Util::FloatToWStr(GetStage()->GetUpdatePerformanceTime());
+		updatePerStr += L"\tmillisecond\n";
+
+		wstring drawPerStr(L"DrawPerformance:\t");
+		drawPerStr += Util::FloatToWStr(GetStage()->GetDrawPerformanceTime());
+		drawPerStr += L"\tmillisecond\n";
+
+		wstring collPerStr(L"CollisionPerform:\t");
+		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime(), 5);
+		collPerStr += L"\tmillisecond\n";
+
+		wstring collMiscStr(L"ColMiscPerform:\t");
+		collMiscStr += Util::FloatToWStr(GetStage()->GetCollisionManager()->GetMiscPerformanceTime(), 5);
+		collMiscStr += L"\tmillisecond\n";
+
+		wstring collTernCountStr(L"CollisionCountOfTern:\t");
+		collTernCountStr += Util::UintToWStr(GetStage()->GetCollisionManager()->GetCollisionCountOfTern());
+		collTernCountStr += L"\n";
+		wstring str = fpsStr + positionStr + gravStr + updatePerStr + drawPerStr + collPerStr + collMiscStr
+			+ collTernCountStr;
+
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();
 		ptrString->SetText(str);

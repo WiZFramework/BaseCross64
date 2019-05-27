@@ -54,14 +54,14 @@ using namespace std;
 
 
 #include <d3d12.h>
+#include <d3d11on12.h>
 #include <dxgi1_4.h>
 #include <D3Dcompiler.h>
 
-#include <d2d1_2.h>
+#include <d2d1_3.h>
 #include <d2d1effects_1.h>
-#include <dwrite_2.h>
+#include <dwrite.h>
 #include <wincodec.h>
-
 
 #include <xaudio2.h>	//ƒTƒEƒ“ƒh
 #include <xaudio2fx.h>
@@ -85,6 +85,7 @@ using namespace std;
 
 
 #pragma comment( lib, "d3d12.lib" )
+#pragma comment( lib, "d3d11.lib" )
 #pragma comment( lib, "dxgi.lib" )
 #pragma comment( lib, "d2d1.lib" )
 #pragma comment( lib, "d3dcompiler.lib" )

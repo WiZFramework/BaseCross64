@@ -94,7 +94,7 @@ namespace basecross {
 		auto Device = App::GetApp()->GetDeviceResources();
 
 		m_CbvSrvDescriptorHandleIncrementSize
-			= Device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			= Device->GetD3DDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		//CbvSrvデスクリプタヒープ(コンスタントバッファのみ)
 		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1);
@@ -114,7 +114,7 @@ namespace basecross {
 	{
 		auto Device = App::GetApp()->GetDeviceResources();
 
-		ThrowIfFailed(Device->GetDevice()->CreateCommittedResource(
+		ThrowIfFailed(Device->GetD3DDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer((sizeof(SpriteConstantBuffer) + 255) & ~255),
@@ -140,7 +140,7 @@ namespace basecross {
 			0,
 			0
 		);
-		Device->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		Device->GetD3DDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
 
 		//コンスタントバッファのアップロードヒープのマップ
 		CD3DX12_RANGE readRange(0, 0);

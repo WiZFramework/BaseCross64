@@ -46,7 +46,7 @@ namespace basecross {
 			m_TextureResDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ThrowIfFailed(
-				Dev->GetDevice()->CreateCommittedResource(
+				Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 					D3D12_HEAP_FLAG_NONE, &m_TextureResDesc,
 					D3D12_RESOURCE_STATE_COPY_DEST,
@@ -181,7 +181,7 @@ namespace basecross {
 			m_TexturePixelSize = initData[0].SysMemPitch / (UINT)m_TextureResDesc.Width;
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ThrowIfFailed(
-				Dev->GetDevice()->CreateCommittedResource(
+				Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 					D3D12_HEAP_FLAG_NONE, &m_TextureResDesc,
 					D3D12_RESOURCE_STATE_COPY_DEST,
@@ -228,7 +228,7 @@ namespace basecross {
 			const UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_Texture.Get(), 0, 1);
 
 			ThrowIfFailed(
-				Dev->GetDevice()->CreateCommittedResource(
+				Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize),
@@ -1186,7 +1186,7 @@ namespace basecross {
 		return pImpl->m_SwapChain;
 
 	}
-	ComPtr<ID3D12Device> DeviceResources::GetDevice() const {
+	ComPtr<ID3D12Device> DeviceResources::GetD3DDevice() const {
 		return pImpl->m_Device;
 	}
 
@@ -1376,7 +1376,7 @@ namespace basecross {
 			dsvHeapDesc.NumDescriptors = 1;
 			dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
 			dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&pImpl->m_ShadowmapDsvHeap)),
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&pImpl->m_ShadowmapDsvHeap)),
 				L"シャドウマップデプスステンシルビューのデスクプリタヒープ作成に失敗しました",
 				L"Dev->GetDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_ShadowmapDsvHeap)",
 				L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
@@ -1402,7 +1402,7 @@ namespace basecross {
 				D3D12_TEXTURE_LAYOUT_UNKNOWN,
 				D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
 
-			ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 				&heapProperties,
 				D3D12_HEAP_FLAG_NONE,
 				&shadowTextureDesc,
@@ -1423,7 +1423,7 @@ namespace basecross {
 
 
 			//デプスステンシルビューの作成
-			Dev->GetDevice()->CreateDepthStencilView(pImpl->m_ShadowmapDepthStencil.Get(), &depthStencilViewDesc,
+			Dev->GetD3DDevice()->CreateDepthStencilView(pImpl->m_ShadowmapDepthStencil.Get(), &depthStencilViewDesc,
 				pImpl->m_ShadowmapDsvHeap->GetCPUDescriptorHandleForHeapStart());
 
 			//ルートシグネチャ
@@ -1439,7 +1439,7 @@ namespace basecross {
 					L"D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error)",
 					L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
 				);
-				ThrowIfFailed(Dev->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&pImpl->m_RootSignature)),
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&pImpl->m_RootSignature)),
 					L"ルートシグネチャの作成に失敗しました",
 					L"Dev->GetDevice()->CreateRootSignature)",
 					L"ShadowMapRenderTarget::ShadowMapRenderTarget()"
@@ -1448,7 +1448,7 @@ namespace basecross {
 
 			ComPtr<ID3D12PipelineState> PipelineState;
 			//クリア用コマンドリスト
-			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
 				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
@@ -1461,7 +1461,7 @@ namespace basecross {
 			CommandList::Close(pImpl->m_CommandList);
 
 			//End用コマンドリスト
-			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
 				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),

@@ -14,14 +14,12 @@
     <ProjectCapability Include="SourceItemsFromImports" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)CSUpdate.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DrawComponents.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)DrawComponentsEx.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)FullCommon.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)StringComponents.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(MSBuildThisFileDirectory)CSUpdate.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponents.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)DrawComponentsEx.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)StringComponents.cpp" />

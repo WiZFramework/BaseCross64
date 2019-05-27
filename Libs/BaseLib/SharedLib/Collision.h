@@ -11,6 +11,7 @@ namespace basecross {
 	class CollisionSphere;
 	class CollisionCapsule;
 	class CollisionObb;
+	class CollisionRect;
 	struct CollisionPair;
 	class CollisionManager;
 
@@ -215,7 +216,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool SimpleCollision(const shared_ptr<CollisionSphere>& DestColl) = 0;
+		virtual bool SimpleCollision(const shared_ptr<CollisionSphere>& DestColl) { return false; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionCapsuleとのシンプルな衝突テスト
@@ -223,7 +224,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool SimpleCollision(const shared_ptr<CollisionCapsule>& DestColl) = 0;
+		virtual bool SimpleCollision(const shared_ptr<CollisionCapsule>& DestColl) { return false; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとのシンプルな衝突テスト
@@ -231,7 +232,15 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual bool SimpleCollision(const shared_ptr<CollisionObb>& DestColl) = 0;
+		virtual bool SimpleCollision(const shared_ptr<CollisionObb>& DestColl) { return false; }
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとのシンプルな衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool SimpleCollision(const shared_ptr<CollisionRect>& DestColl) { return false; }
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
@@ -246,7 +255,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void CollisionTest(const shared_ptr<CollisionSphere>& DestColl) = 0;
+		virtual void CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionCapsuleとの衝突テスト
@@ -254,7 +263,7 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) = 0;
+		virtual void CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief CollisionObbとの衝突テスト
@@ -262,7 +271,15 @@ namespace basecross {
 		@return	なし
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl) = 0;
+		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl) {}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl) {}
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 更新処理
@@ -284,6 +301,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetEnclosingAABB()const = 0;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	最新を囲むAABBを返す。仮想関数
+		@return	最新を囲むAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetWrappedAABB()const = 0;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	衝突判定マネージャを返す
@@ -440,6 +464,14 @@ namespace basecross {
 		virtual bool SimpleCollision(const shared_ptr<CollisionObb>& DestColl) override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとのシンプルな衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool SimpleCollision(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
 		@return	なし
 		*/
@@ -471,6 +503,14 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -483,6 +523,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetEnclosingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	最新を囲むAABBを返す。仮想関数
+		@return	最新を囲むAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetWrappedAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -615,6 +662,14 @@ namespace basecross {
 		virtual bool SimpleCollision(const shared_ptr<CollisionObb>& DestColl) override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとのシンプルな衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool SimpleCollision(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
 		@return	なし
 		*/
@@ -646,6 +701,14 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -658,6 +721,13 @@ namespace basecross {
 		*/
 		//--------------------------------------------------------------------------------------
 		virtual AABB GetEnclosingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	最新を囲むAABBを返す。仮想関数
+		@return	最新を囲むAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetWrappedAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
@@ -760,6 +830,14 @@ namespace basecross {
 		virtual bool SimpleCollision(const shared_ptr<CollisionObb>& DestColl) override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとのシンプルな衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool SimpleCollision(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief コリジョンコール。ダブルデスパッチ関数
 		@return	なし
 		*/
@@ -791,6 +869,14 @@ namespace basecross {
 		virtual void CollisionTest(const shared_ptr<CollisionObb>& DestColl)override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief CollisionRectとの衝突テスト
+		@param[in]	DestColl	相手のコリジョン
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionTest(const shared_ptr<CollisionRect>& DestColl) override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief	中心位置を返す。仮想関数
 		@return	中心位置
 		*/
@@ -805,6 +891,13 @@ namespace basecross {
 		virtual AABB GetEnclosingAABB()const override;
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief	最新を囲むAABBを返す。仮想関数
+		@return	最新を囲むAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetWrappedAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief 描画処理。DrawActiveがtrue時に呼ばれる
 		@return	なし
 		*/
@@ -815,6 +908,120 @@ namespace basecross {
 		struct Impl;
 		unique_ptr<Impl> pImpl;
 	};
+
+	//--------------------------------------------------------------------------------------
+	//	class CollisionRect : public Collision ;
+	//	用途: Rect(矩形)衝突判定コンポーネント
+	//--------------------------------------------------------------------------------------
+	class CollisionRect : public Collision {
+	protected:
+	public:
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	コンストラクタ
+		@param[in]	GameObjectPtr	ゲームオブジェクト
+		*/
+		//--------------------------------------------------------------------------------------
+		explicit CollisionRect(const shared_ptr<GameObject>& GameObjectPtr);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	ストラクタ
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual ~CollisionRect();
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 初期化処理
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnCreate() override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	固定衝突オブジェクトかどうかを設定する
+		@param[in]	b	固定衝突オブジェクトならtrue
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void SetFixed(bool b)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	作成時の1辺の長さを得る
+		@return	作成時の1辺の長さ
+		*/
+		//--------------------------------------------------------------------------------------
+		float GetMakedSize() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	作成時の1辺の長さを設定する
+		@param[in]	f	作成時の1辺の長さ
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		void SetMakedSize(float f);
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在のCOLRECT境界ボリュームを得る
+		@return	現在のCOLRECT境界ボリューム
+		*/
+		//--------------------------------------------------------------------------------------
+		COLRECT GetColRect() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	1ターン前のCOLRECT境界ボリュームを得る
+		@return	1ターン前のCOLRECT境界ボリューム
+		*/
+		//--------------------------------------------------------------------------------------
+		COLRECT GetBeforeColRect() const;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief シンプルなコリジョンコール。ダブルデスパッチ関数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bool SimpleCollisionCall(const shared_ptr<Collision>& Src) override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief コリジョンコール。ダブルデスパッチ関数
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void CollisionCall(const shared_ptr<Collision>& Src)override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	1つ前と最新を囲むAABBを返す。仮想関数
+		@return	1つ前と最新を囲むAABB
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetEnclosingAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	現在の包み込むAABBを返す。仮想関数
+		@return	包み込むAABB(1つ前のターン時の内容は見ない)
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual AABB GetWrappedAABB()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	中心位置を返す。仮想関数
+		@return	中心位置
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual bsm::Vec3 GetCenterPosition()const override;
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief 描画処理。DrawActiveがtrue時に呼ばれる
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
+		virtual void OnDraw()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
+
+
 
 
 

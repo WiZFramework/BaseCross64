@@ -37,16 +37,8 @@ namespace basecross {
 		bool m_PriorityUnderEscapeY;
 		//拘束解消パラメータ
 		int m_EscapeFloor;
-		//CSによる判定
-		bool m_IsCSCollision;
 		bool SimpleCollisionPair(CollisionPair& Pair);
 		void SetNewCollision();
-		void SetNewCollisionSub(const shared_ptr<GameObject>& Src);
-		bool EnableedCollisionPair(const shared_ptr<GameObject>& Src, const shared_ptr<GameObject>& Dest);
-		void UpdateDefault();
-#if (BASECROSS_DXVERSION == 11)
-		void UpdateWithCS();
-#endif
 	public:
 		//--------------------------------------------------------------------------------------
 		/*!
@@ -145,6 +137,15 @@ namespace basecross {
 		}
 		//--------------------------------------------------------------------------------------
 		/*!
+		@brief その組み合わせのコリジョンが有効かどうか
+		@param[in]	Src	ソース
+		@param[in]	Dest	デストネーション
+		@return	有効ならtrue
+		*/
+		//--------------------------------------------------------------------------------------
+		bool EnableedCollisionPair(const shared_ptr<GameObject>& Src, const shared_ptr<GameObject>& Dest);
+		//--------------------------------------------------------------------------------------
+		/*!
 		@brief 新規の衝突ペアの設定
 		@param[in]	NewPair	新しいペア
 		@return	なし
@@ -206,22 +207,18 @@ namespace basecross {
 		void SleepCheckSet();
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	CSによる判定は有効かどうか
-		@return	有効ならtrue
+		@brief	内部処理のパフォーマンスを得る
+		@return	内部処理のパフォーマンス（ミリ秒）
 		*/
 		//--------------------------------------------------------------------------------------
-		bool IsCSCollision() const {
-			return m_IsCSCollision;
-		}
+		float GetMiscPerformanceTime() const;
 		//--------------------------------------------------------------------------------------
 		/*!
-		@brief	CSによる判定は有効かどうか設定
-		@return	なし
+		@brief 一回のターンにおけるコリジョン判定数を得る
+		@return	ピースサイズ
 		*/
 		//--------------------------------------------------------------------------------------
-		void SetCSCollision(bool b) {
-			m_IsCSCollision = b;
-		}
+		UINT GetCollisionCountOfTern() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief 初期化

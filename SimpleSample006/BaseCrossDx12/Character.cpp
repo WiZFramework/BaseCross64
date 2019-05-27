@@ -33,7 +33,7 @@ namespace basecross {
 		auto Device = App::GetApp()->GetDeviceResources();
 
 		m_CbvSrvDescriptorHandleIncrementSize
-			= Device->GetDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			= Device->GetD3DDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 		//CbvSrvデスクプリタヒープ(コンスタントバッファのみ)
 		m_CbvSrvUavDescriptorHeap = DescriptorHeap::CreateCbvSrvUavHeap(1 + 1);
@@ -94,7 +94,7 @@ namespace basecross {
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = m_TextureResource->GetTextureResDesc().MipLevels;
 		//シェーダリソースビュー
-		Dev->GetDevice()->CreateShaderResourceView(
+		Dev->GetD3DDevice()->CreateShaderResourceView(
 			m_TextureResource->GetTexture().Get(),
 			&srvDesc,
 			Handle);
@@ -106,7 +106,7 @@ namespace basecross {
 
 		//コンスタントバッファは256バイトにアラインメント
 		UINT ConstBuffSize = (sizeof(DiffuseSpriteConstantBuffer) + 255) & ~255;
-		ThrowIfFailed(Device->GetDevice()->CreateCommittedResource(
+		ThrowIfFailed(Device->GetD3DDevice()->CreateCommittedResource(
 			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 			D3D12_HEAP_FLAG_NONE,
 			&CD3DX12_RESOURCE_DESC::Buffer(ConstBuffSize),
@@ -130,7 +130,7 @@ namespace basecross {
 			1,
 			m_CbvSrvDescriptorHandleIncrementSize
 		);
-		Device->GetDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
+		Device->GetD3DDevice()->CreateConstantBufferView(&cbvDesc, cbvSrvHandle);
 
 		//コンスタントバッファのアップロードヒープのマップ
 		CD3DX12_RANGE readRange(0, 0);

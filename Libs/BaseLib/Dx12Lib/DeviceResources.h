@@ -248,7 +248,7 @@ namespace basecross {
 			UINT vertexBufferSize = (UINT)(sizeof(T) * vertices.size());
 			//頂点バッファの作成
 			{
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
@@ -260,7 +260,7 @@ namespace basecross {
 					L"MeshResource::CreateMeshResource()"
 				);
 
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
@@ -281,7 +281,7 @@ namespace basecross {
 			//インデックスバッファの作成
 			UINT indexBufferSize = static_cast<UINT>(sizeof(uint16_t) * indices.size());
 			{
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
@@ -293,7 +293,7 @@ namespace basecross {
 					L"MeshResource::CreateMeshResource()"
 				);
 
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(indexBufferSize),
@@ -344,7 +344,7 @@ namespace basecross {
 			UINT vertexBufferSize = (UINT)(sizeof(T) * vertices.size());
 			// Create the vertex buffer.
 			{
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
@@ -356,7 +356,7 @@ namespace basecross {
 					L"MeshResource::CreateMeshResource()"
 				);
 
-				ThrowIfFailed(Dev->GetDevice()->CreateCommittedResource(
+				ThrowIfFailed(Dev->GetD3DDevice()->CreateCommittedResource(
 					&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
 					D3D12_HEAP_FLAG_NONE,
 					&CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
@@ -823,7 +823,7 @@ namespace basecross {
 		@return	デバイス
 		*/
 		//--------------------------------------------------------------------------------------
-		ComPtr<ID3D12Device> GetDevice() const;
+		ComPtr<ID3D12Device> GetD3DDevice() const;
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief  D3D11On12デバイスを得る
@@ -1240,7 +1240,7 @@ namespace basecross {
 		static inline ComPtr<ID3D12DescriptorHeap> CreateDirect(const D3D12_DESCRIPTOR_HEAP_DESC& desc) {
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12DescriptorHeap> Ret;
-			ThrowIfFailed(Dev->GetDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&Ret)),
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&Ret)),
 				L"デスクプリタヒープの作成に失敗しました",
 				L"Dev->GetDevice()->CreateDescriptorHeap()",
 				L"DescriptorHeap::CreateDirect()"
@@ -1281,7 +1281,7 @@ namespace basecross {
 				L"RootSignature::Create()"
 			);
 			ThrowIfFailed(
-				Dev->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
+				Dev->GetD3DDevice()->CreateRootSignature(0, signature->GetBufferPointer(),
 					signature->GetBufferSize(), IID_PPV_ARGS(&Ret)),
 				L"ルートシグネチャの作成に失敗しました",
 				L"Dev->GetDevice()->CreateRootSignature()",
@@ -1484,7 +1484,7 @@ namespace basecross {
 
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
-			Dev->GetDevice()->CreateSampler(&samplerDesc, Handle);
+			Dev->GetD3DDevice()->CreateSampler(&samplerDesc, Handle);
 		}
 	}
 
@@ -1497,7 +1497,7 @@ namespace basecross {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12PipelineState> Ret;
-			ThrowIfFailed(Dev->GetDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&Ret)),
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateGraphicsPipelineState(&desc, IID_PPV_ARGS(&Ret)),
 				L"パイプラインステートの作成に失敗しました",
 				L"Dev->GetDevice()->CreateGraphicsPipelineState()",
 				L"PipelineState::CreateDirect()"
@@ -1605,7 +1605,7 @@ namespace basecross {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12GraphicsCommandList> Ret;
-			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
 				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
@@ -1622,7 +1622,7 @@ namespace basecross {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12GraphicsCommandList> Ret;
-			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_DIRECT,
 				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),
@@ -1638,7 +1638,7 @@ namespace basecross {
 			//デバイスの取得
 			auto Dev = App::GetApp()->GetDeviceResources();
 			ComPtr<ID3D12GraphicsCommandList> Ret;
-			ThrowIfFailed(Dev->GetDevice()->CreateCommandList(
+			ThrowIfFailed(Dev->GetD3DDevice()->CreateCommandList(
 				0,
 				D3D12_COMMAND_LIST_TYPE_COPY,
 				Dev->GetCommandAllocator(Dev->GetFrameIndex()).Get(),

@@ -179,8 +179,10 @@ namespace basecross {
 		return pImpl->m_Pivot;
 	}
 	void Transform::SetPivot(const bsm::Vec3& Pivot) {
-		pImpl->m_Pivot = Pivot;
-		pImpl->m_DirtyFlg = true;
+		if (!XMVector3IsNaN(Pivot)) {
+			pImpl->m_Pivot = Pivot;
+			pImpl->m_DirtyFlg = true;
+		}
 	}
 	void Transform::SetPivot(float x, float y, float z) {
 		SetPivot(bsm::Vec3(x, y, z));
@@ -190,9 +192,11 @@ namespace basecross {
 		return pImpl->m_Quaternion;
 	}
 	void Transform::SetQuaternion(const bsm::Quat& quaternion) {
-		pImpl->m_Quaternion = quaternion;
-		pImpl->m_Quaternion.normalize();
-		pImpl->m_DirtyFlg = true;
+		if (!XMQuaternionIsNaN(quaternion)) {
+			pImpl->m_Quaternion = quaternion;
+			pImpl->m_Quaternion.normalize();
+			pImpl->m_DirtyFlg = true;
+		}
 	}
 	bsm::Vec3 Transform::GetRotation() const {
 		bsm::Vec3 r = pImpl->m_Quaternion.toRotVec();
@@ -201,9 +205,11 @@ namespace basecross {
 	}
 
 	void Transform::SetRotation(const bsm::Vec3& Rot) {
-		bsm::Quat Qt;
-		Qt.rotationRollPitchYawFromVector(Rot);
-		SetQuaternion(Qt);
+		if (!XMVector3IsNaN(Rot)) {
+			bsm::Quat Qt;
+			Qt.rotationRollPitchYawFromVector(Rot);
+			SetQuaternion(Qt);
+		}
 	}
 	void Transform::SetRotation(float x, float y, float z) {
 		SetRotation(bsm::Vec3(x, y, z));
@@ -214,17 +220,21 @@ namespace basecross {
 	}
 
 	void Transform::SetPosition(const bsm::Vec3& Position) {
-		pImpl->m_Position = Position;
-		pImpl->m_DirtyFlg = true;
+		if (!XMVector3IsNaN(Position)) {
+			pImpl->m_Position = Position;
+			pImpl->m_DirtyFlg = true;
+		}
 	}
 	void Transform::SetPosition(float x, float y, float z) {
 		SetPosition(bsm::Vec3(x, y, z));
 	}
 
 	void Transform::ResetPosition(const bsm::Vec3& Position) {
-		pImpl->m_BeforePosition = Position;
-		pImpl->m_Position = Position;
-		pImpl->m_DirtyFlg = true;
+		if (!XMVector3IsNaN(Position)) {
+			pImpl->m_BeforePosition = Position;
+			pImpl->m_Position = Position;
+			pImpl->m_DirtyFlg = true;
+		}
 	}
 
 	bsm::Vec3 Transform::GetWorldPosition() const {

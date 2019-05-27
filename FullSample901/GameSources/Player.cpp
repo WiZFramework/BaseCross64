@@ -105,6 +105,10 @@ namespace basecross{
 
 		//CollisionSphere衝突判定を付ける
 		auto ptrColl = AddComponent<CollisionSphere>();
+		//各パフォーマンスを得る
+		GetStage()->SetCollisionPerformanceActive(true);
+		GetStage()->SetUpdatePerformanceActive(true);
+		GetStage()->SetDrawPerformanceActive(true);
 		//重力をつける
 		auto ptrGra = AddComponent<Gravity>();
 
@@ -179,7 +183,28 @@ namespace basecross{
 		gravStr += L"X=" + Util::FloatToWStr(gravVelocity.x, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Y=" + Util::FloatToWStr(gravVelocity.y, 6, Util::FloatModify::Fixed) + L",\t";
 		gravStr += L"Z=" + Util::FloatToWStr(gravVelocity.z, 6, Util::FloatModify::Fixed) + L"\n";
-		wstring str = fpsStr + positionStr + gravStr;
+
+		wstring updatePerStr(L"UpdatePerformance:\t");
+		updatePerStr += Util::FloatToWStr(GetStage()->GetUpdatePerformanceTime());
+		updatePerStr += L"\tmillisecond\n";
+
+		wstring drawPerStr(L"DrawPerformance:\t");
+		drawPerStr += Util::FloatToWStr(GetStage()->GetDrawPerformanceTime());
+		drawPerStr += L"\tmillisecond\n";
+
+		wstring collPerStr(L"CollisionPerform:\t");
+		collPerStr += Util::FloatToWStr(GetStage()->GetCollisionPerformanceTime(), 5);
+		collPerStr += L"\tmillisecond\n";
+
+		wstring collMiscStr(L"ColMiscPerform:\t");
+		collMiscStr += Util::FloatToWStr(GetStage()->GetCollisionManager()->GetMiscPerformanceTime(), 5);
+		collMiscStr += L"\tmillisecond\n";
+
+		wstring collTernCountStr(L"CollisionCountOfTern:\t");
+		collTernCountStr += Util::UintToWStr(GetStage()->GetCollisionManager()->GetCollisionCountOfTern());
+		collTernCountStr += L"\n";
+		wstring str = fpsStr + positionStr + gravStr + updatePerStr + drawPerStr + collPerStr + collMiscStr
+			+ collTernCountStr;
 		//文字列コンポーネントの取得
 		auto ptrString = GetComponent<StringSprite>();
 		ptrString->SetText(str);

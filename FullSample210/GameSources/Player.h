@@ -1,41 +1,54 @@
 /*!
-@file CSUpdate.h
-@brief CSによる更新処理
-@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@file Player.h
+@brief プレイヤーなど
 */
+
 #pragma once
 #include "stdafx.h"
 
-namespace basecross {
+namespace basecross{
+
+
 
 	//--------------------------------------------------------------------------------------
-	///	CSによる衝突判定
+	///	プレイヤー
 	//--------------------------------------------------------------------------------------
-	class CSCollisionManager : public ObjectInterface {
+	class Player : public GameObject {
+		// コントローラから方向ベクトルを得る
+		Vec3 GetMoveVector() const;
+		//文字列の表示
+		void DrawStrings();
+		//入力ハンドラー
+		InputHandler<Player> m_InputHandler;
+		void MovePlayer();
 	public:
+		//構築と破棄
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	コンストラクタ
+		@param[in]	StagePtr	ステージ
 		*/
 		//--------------------------------------------------------------------------------------
-		CSCollisionManager();
+		Player(const shared_ptr<Stage>& StagePtr);
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	デストラクタ
 		*/
 		//--------------------------------------------------------------------------------------
-		virtual ~CSCollisionManager();
-		//--------------------------------------------------------------------------------------
-		/*!
-		@brief	OnCreate処理
-		@return	なし
-		*/
-		//--------------------------------------------------------------------------------------
-		virtual void OnCreate()override;
-	private:
-		// pImplイディオム
-		struct Impl;
-		unique_ptr<Impl> pImpl;
+		virtual ~Player() {}
+		//アクセサ
+		//初期化
+		virtual void OnCreate() override;
+		//更新
+		virtual void OnUpdate() override;
+		virtual void OnUpdate2() override;
+		//Aボタン
+		void OnPushA();
+
 	};
+
+
+
 }
 //end basecross
+

@@ -348,15 +348,31 @@ namespace basecross {
 		return false;
 	}
 
+	bool CollisionSphere::SimpleCollision(const shared_ptr<CollisionRect>& DestColl) {
+		auto SrcSp = GetSphere();
+		auto DestCol = DestColl->GetColRect();
+		if (!HitTest::AABB_AABB(SrcSp.GetWrappedAABB(), DestCol.GetWrappedAABB())) {
+			return false;
+		}
+		bsm::Vec3 d;
+		if (HitTest::SPHERE_COLRECT(SrcSp, DestCol, d)) {
+			return true;
+		}
+		return false;
+	}
+
+
 	void CollisionSphere::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionSphere>());
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
-		if (!HitTest::AABB_AABB(GetSphere().GetWrappedAABB(), DestColl->GetSphere().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -393,10 +409,12 @@ namespace basecross {
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-		if (!HitTest::AABB_AABB(GetSphere().GetWrappedAABB(), DestColl->GetCapsule().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -438,10 +456,12 @@ namespace basecross {
 
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
-		if (!HitTest::AABB_AABB(GetSphere().GetWrappedAABB(), DestColl->GetObb().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -481,6 +501,53 @@ namespace basecross {
 		}
 	}
 
+	void CollisionSphere::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
+			return;
+		}
+
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//移動以外変化なし
+		SPHERE SrcSphere = GetSphere();
+		SPHERE SrcBeforSphere = GetBeforeSphere();
+		//相手
+		COLRECT DestRect = DestColl->GetColRect();
+		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::SPHERE_COLRECT(SrcSphere, DestRect, ret)) {
+			return;
+		}
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
+		float HitTime = 0;
+		if (HitTest::CollisionTestSphereRect(SrcBeforSphere, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
+			CollisionPair pair;
+			pair.m_Src = GetThis<Collision>();
+			pair.m_Dest = DestColl;
+			SPHERE SrcChkSphere = SrcBeforSphere;
+			SrcChkSphere.m_Center += SrcVelocity * HitTime;
+			pair.m_SrcCalcHitCenter = SrcChkSphere.m_Center;
+			COLRECT DestChkRect = DestBeforeRect;
+			DestBeforeRect.m_Center += DestVelocity * HitTime;
+			pair.m_DestCalcHitCenter = DestChkRect.m_Center;
+			bsm::Vec3 ret;
+			HitTest::SPHERE_COLRECT(SrcChkSphere, DestChkRect, ret);
+			//衝突した瞬間で法線を計算
+			pair.m_SrcHitNormal = SrcChkSphere.m_Center - ret;
+			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret;
+			GetCollisionManager()->InsertNewPair(pair);
+		}
+	}
+
+
 	bsm::Vec3 CollisionSphere::GetCenterPosition()const {
 		SPHERE SrcSphere = GetSphere();
 		return SrcSphere.m_Center;
@@ -491,6 +558,12 @@ namespace basecross {
 		enc.UnionAABB(GetSphere().GetWrappedAABB());
 		return enc;
 	}
+
+	AABB CollisionSphere::GetWrappedAABB()const {
+		return GetSphere().GetWrappedAABB();
+	}
+
+
 
 	void CollisionSphere::OnDraw() {
 		GenericDraw Draw;
@@ -656,6 +729,20 @@ namespace basecross {
 		return false;
 	}
 
+	bool CollisionCapsule::SimpleCollision(const shared_ptr<CollisionRect>& DestColl) {
+		auto SrcCap = GetCapsule();
+		auto DestRect = DestColl->GetColRect();
+		if (!HitTest::AABB_AABB(SrcCap.GetWrappedAABB(), DestRect.GetWrappedAABB())) {
+			return false;
+		}
+		bsm::Vec3 d;
+		if (HitTest::CAPSULE_COLRECT(SrcCap, DestRect, d)) {
+			return true;
+		}
+		return false;
+	}
+
+
 
 	void CollisionCapsule::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionCapsule>());
@@ -663,10 +750,12 @@ namespace basecross {
 
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
-		if (!HitTest::AABB_AABB(GetCapsule().GetWrappedAABB(), DestColl->GetSphere().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -708,10 +797,12 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-		if (!HitTest::AABB_AABB(GetCapsule().GetWrappedAABB(), DestColl->GetCapsule().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -758,10 +849,12 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
-		if (!HitTest::AABB_AABB(GetCapsule().GetWrappedAABB(), DestColl->GetObb().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -804,6 +897,51 @@ namespace basecross {
 		}
 	}
 
+	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
+			return;
+		}
+
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//移動以外変化なし
+		CAPSULE SrcCapsule = GetCapsule();
+		CAPSULE SrcBeforCapsule = GetBeforeCapsule();
+		//相手
+		COLRECT DestRect = DestColl->GetColRect();
+		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
+		//簡易的な判定
+		bsm::Vec3 ret;
+		if (!HitTest::CAPSULE_COLRECT(SrcCapsule, DestRect, ret)) {
+			return;
+		}
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
+		float HitTime = 0;
+		if (HitTest::CollisionTestCapsuleRect(SrcBeforCapsule, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
+			CollisionPair pair;
+			pair.m_Src = GetThis<Collision>();
+			pair.m_Dest = DestColl;
+			CAPSULE SrcChkCapsule = SrcBeforCapsule;
+			pair.m_SrcCalcHitCenter = SrcChkCapsule.GetCenter() + SrcVelocity * HitTime;
+			SrcChkCapsule.SetCenter(pair.m_SrcCalcHitCenter);
+			COLRECT DestChkRect = DestBeforeRect;
+			DestChkRect.m_Center += DestVelocity * HitTime;
+			pair.m_DestCalcHitCenter = DestChkRect.m_Center;
+			HitTest::CAPSULE_COLRECT(SrcChkCapsule, DestChkRect, ret);
+			//衝突した瞬間で法線を計算
+			pair.m_SrcHitNormal = SrcChkCapsule.GetCenter() - ret;
+			pair.m_SrcHitNormal.normalize();
+			pair.m_CalcHitPoint = ret;
+			GetCollisionManager()->InsertNewPair(pair);
+		}
+	}
+
 
 	bsm::Vec3 CollisionCapsule::GetCenterPosition()const {
 		CAPSULE SrcCapsule = GetCapsule();
@@ -816,6 +954,9 @@ namespace basecross {
 		return enc;
 	}
 
+	AABB CollisionCapsule::GetWrappedAABB()const {
+		return GetCapsule().GetWrappedAABB();
+	}
 
 	void CollisionCapsule::OnDraw() {
 		GenericDraw Draw;
@@ -943,15 +1084,30 @@ namespace basecross {
 		return false;
 	}
 
+	bool CollisionObb::SimpleCollision(const shared_ptr<CollisionRect>& DestColl) {
+		auto SrcObb = GetObb();
+		auto DestRect = DestColl->GetColRect();
+		if (!HitTest::AABB_AABB(SrcObb.GetWrappedAABB(), DestRect.GetWrappedAABB())) {
+			return false;
+		}
+		if (HitTest::OBB_COLRECT(SrcObb, DestRect)) {
+			return true;
+		}
+		return false;
+	}
+
+
 	void CollisionObb::CollisionCall(const shared_ptr<Collision>& Src) {
 		Src->CollisionTest(GetThis<CollisionObb>());
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
-		if (!HitTest::AABB_AABB(GetObb().GetWrappedAABB(), DestColl->GetSphere().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -993,10 +1149,12 @@ namespace basecross {
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-		if (!HitTest::AABB_AABB(GetObb().GetWrappedAABB(), DestColl->GetCapsule().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1042,10 +1200,12 @@ namespace basecross {
 
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
-		if (!HitTest::AABB_AABB(GetObb().GetWrappedAABB(), DestColl->GetObb().GetWrappedAABB())) {
-			//現在のAABB同士が衝突してないなら、1つ前に衝突していても衝突無し
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
 			return;
 		}
+
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1086,6 +1246,54 @@ namespace basecross {
 		}
 	}
 
+	void CollisionObb::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
+
+		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+			//ラッピングされたAABB同士が衝突してないなら、衝突無し
+			return;
+		}
+
+		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
+		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
+		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
+		bsm::Vec3 DestVelocity = PtrDestTransform->GetVelocity();
+		//前回のターンからの時間
+		float ElapsedTime = App::GetApp()->GetElapsedTime();
+		//移動以外変化なし
+		OBB SrcObb = GetObb();
+		OBB SrcBeforeObb = GetBeforeObb();
+		//相手
+		COLRECT DestRect = DestColl->GetColRect();
+		COLRECT DestBeforeRect = DestColl->GetBeforeColRect();
+		//簡易的な判定
+		if (!HitTest::OBB_COLRECT(SrcObb, DestRect)) {
+			return;
+		}
+		bsm::Vec3 SpanVelocity = SrcVelocity - DestVelocity;
+		float HitTime = 0;
+		if (HitTest::CollisionTestObbRect(SrcBeforeObb, SpanVelocity, DestBeforeRect, 0, ElapsedTime, HitTime)) {
+			CollisionPair pair;
+			pair.m_Src = GetThis<Collision>();
+			pair.m_Dest = DestColl;
+			OBB SrcChkObb = SrcBeforeObb;
+			SrcChkObb.m_Center += SrcVelocity * HitTime;
+			pair.m_SrcCalcHitCenter = SrcChkObb.m_Center;
+			COLRECT DestChkRect = DestBeforeRect;
+			DestChkRect.m_Center += DestVelocity * HitTime;
+			pair.m_DestCalcHitCenter = DestChkRect.m_Center;
+			bsm::Vec3 RetVec;
+			//SrcのOBBとDestの最近接点を得る
+			HitTest::ClosetPtPointPlane(SrcChkObb.m_Center, DestChkRect.GetPLANE(), RetVec);
+			//接点へのベクトル
+			//衝突した瞬間で法線を計算
+			pair.m_SrcHitNormal = SrcChkObb.m_Center - RetVec;
+			pair.m_CalcHitPoint = RetVec;
+			pair.m_SrcHitNormal.normalize();
+			GetCollisionManager()->InsertNewPair(pair);
+		}
+	}
+
+
 	bsm::Vec3 CollisionObb::GetCenterPosition()const {
 		OBB SrcObb = GetObb();
 		return SrcObb.m_Center;
@@ -1097,11 +1305,117 @@ namespace basecross {
 		return enc;
 	}
 
+	AABB CollisionObb::GetWrappedAABB()const {
+		return GetObb().GetWrappedAABB();
+	}
+
+
 
 	void CollisionObb::OnDraw() {
 		GenericDraw Draw;
 		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_CUBE"));
 	}
+
+
+	//--------------------------------------------------------------------------------------
+	//	struct CollisionRect::Impl;
+	//	用途: コンポーネントImplクラス
+	//--------------------------------------------------------------------------------------
+	struct CollisionRect::Impl {
+		float m_Size;					//作成時のサイズ
+		Impl() :
+			m_Size(1.0f)
+		{}
+		~Impl() {}
+	};
+
+	//--------------------------------------------------------------------------------------
+	//	class CollisionRect : public Collision ;
+	//	用途: Rect(矩形)衝突判定コンポーネント
+	//--------------------------------------------------------------------------------------
+	//構築と破棄
+	CollisionRect::CollisionRect(const shared_ptr<GameObject>& GameObjectPtr) :
+		Collision(GameObjectPtr),
+		pImpl(new Impl())
+	{}
+	CollisionRect::~CollisionRect() {}
+
+	//初期化
+	void CollisionRect::OnCreate() {
+		SetFixed(true),
+			SetDrawActive(false);
+	}
+
+	//アクセサ
+	void CollisionRect::SetFixed(bool b) {
+		if (!b) {
+			throw BaseException(
+				L"CollisionRectはFixed以外は選択できません",
+				L"if (!b)",
+				L"CollisionRect::SetFixed()"
+			);
+		}
+		else {
+			Collision::SetFixed(true);
+		}
+	}
+
+
+
+	float CollisionRect::GetMakedSize() const {
+		return pImpl->m_Size;
+	}
+	void CollisionRect::SetMakedSize(float f) {
+		pImpl->m_Size = f;
+	}
+
+	COLRECT CollisionRect::GetColRect() const {
+		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
+		COLRECT rect(GetMakedSize(), GetMakedSize(), TrasnsPtr->GetWorldMatrix());
+		return rect;
+	}
+
+	COLRECT CollisionRect::GetBeforeColRect() const {
+		auto TrasnsPtr = GetGameObject()->GetComponent<Transform>();
+		COLRECT rect(GetMakedSize(), GetMakedSize(), TrasnsPtr->GetBeforeWorldMatrix());
+		return rect;
+	}
+
+	bool CollisionRect::SimpleCollisionCall(const shared_ptr<Collision>& Src) {
+		return Src->SimpleCollision(GetThis<CollisionRect>());
+	}
+
+	void CollisionRect::CollisionCall(const shared_ptr<Collision>& Src) {
+		Src->CollisionTest(GetThis<CollisionRect>());
+	}
+
+	AABB CollisionRect::GetEnclosingAABB()const {
+		AABB enc = GetBeforeColRect().GetWrappedAABB();
+		enc.UnionAABB(GetColRect().GetWrappedAABB());
+		return enc;
+	}
+
+	AABB CollisionRect::GetWrappedAABB()const {
+		COLRECT SrcColRect = GetColRect();
+		return SrcColRect.GetWrappedAABB();
+	}
+
+	bsm::Vec3 CollisionRect::GetCenterPosition()const {
+		COLRECT SrcColRect = GetColRect();
+		return SrcColRect.m_Center;
+	}
+
+
+
+	void CollisionRect::OnDraw() {
+		GenericDraw Draw;
+		Draw.DrawWireFrame(GetGameObject(), App::GetApp()->GetResource<MeshResource>(L"DEFAULT_PC_SQUARE"));
+
+	}
+
+
+
+
 
 
 }
