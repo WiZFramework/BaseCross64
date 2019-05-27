@@ -368,11 +368,6 @@ namespace basecross {
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -409,11 +404,6 @@ namespace basecross {
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
@@ -457,11 +447,6 @@ namespace basecross {
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -502,11 +487,6 @@ namespace basecross {
 	}
 
 	void CollisionSphere::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
@@ -751,11 +731,6 @@ namespace basecross {
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -797,11 +772,6 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
@@ -850,11 +820,6 @@ namespace basecross {
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -898,11 +863,6 @@ namespace basecross {
 	}
 
 	void CollisionCapsule::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
@@ -1103,11 +1063,6 @@ namespace basecross {
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionSphere>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1149,11 +1104,6 @@ namespace basecross {
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionCapsule>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
@@ -1201,11 +1151,6 @@ namespace basecross {
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionObb>& DestColl) {
 
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
-
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();
 		bsm::Vec3 SrcVelocity = PtrTransform->GetVelocity();
@@ -1247,11 +1192,6 @@ namespace basecross {
 	}
 
 	void CollisionObb::CollisionTest(const shared_ptr<CollisionRect>& DestColl) {
-
-		if (!HitTest::AABB_AABB(GetWrappedAABB(), DestColl->GetWrappedAABB())) {
-			//ラッピングされたAABB同士が衝突してないなら、衝突無し
-			return;
-		}
 
 		auto PtrTransform = GetGameObject()->GetComponent<Transform>();
 		auto PtrDestTransform = DestColl->GetGameObject()->GetComponent<Transform>();

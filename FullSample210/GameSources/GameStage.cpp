@@ -111,7 +111,7 @@ namespace basecross {
 		vector<Vec3> vec;
 		float span = XM_2PI / 6;
 
-		for (int i = 2; i < 18; i++) {
+		for (int i = 2; i < 20; i++) {
 			for (int j = 0; j < 6; j++) {
 				float x = sin(j * span) * i * 0.6f;
 				float z = cos(j * span) * i * 0.6f;

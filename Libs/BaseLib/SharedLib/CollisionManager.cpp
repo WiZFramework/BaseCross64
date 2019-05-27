@@ -141,9 +141,6 @@ namespace basecross {
 					if (!Col->IsUpdateActive()) {
 						return;
 					}
-					//if (Col->IsSleep()) {
-					//	return;
-					//}
 					SetCollisionBlockSub(m_RootPiece, Obj);
 				}
 			}
@@ -279,6 +276,9 @@ namespace basecross {
 			return false;
 		}
 		if (SrcColl->IsExcludeCollisionObject(Dest) || DestColl->IsExcludeCollisionObject(Src)) {
+			return false;
+		}
+		if (!HitTest::AABB_AABB(SrcColl->GetWrappedAABB(), DestColl->GetWrappedAABB())) {
 			return false;
 		}
 		return true;

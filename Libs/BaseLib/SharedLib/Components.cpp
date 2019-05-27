@@ -168,8 +168,10 @@ namespace basecross {
 	}
 
 	void Transform::SetScale(const bsm::Vec3& Scale) {
-		pImpl->m_Scale = Scale;
-		pImpl->m_DirtyFlg = true;
+		if (!Scale.isNaN() && !Scale.isInfinite()) {
+			pImpl->m_Scale = Scale;
+			pImpl->m_DirtyFlg = true;
+		}
 	}
 	void Transform::SetScale(float x, float y, float z) {
 		SetScale(bsm::Vec3(x, y, z));
@@ -179,7 +181,7 @@ namespace basecross {
 		return pImpl->m_Pivot;
 	}
 	void Transform::SetPivot(const bsm::Vec3& Pivot) {
-		if (!XMVector3IsNaN(Pivot)) {
+		if (!Pivot.isNaN() && !Pivot.isInfinite()) {
 			pImpl->m_Pivot = Pivot;
 			pImpl->m_DirtyFlg = true;
 		}
@@ -192,7 +194,7 @@ namespace basecross {
 		return pImpl->m_Quaternion;
 	}
 	void Transform::SetQuaternion(const bsm::Quat& quaternion) {
-		if (!XMQuaternionIsNaN(quaternion)) {
+		if (!quaternion.isNaN() && !quaternion.isInfinite()) {
 			pImpl->m_Quaternion = quaternion;
 			pImpl->m_Quaternion.normalize();
 			pImpl->m_DirtyFlg = true;
@@ -205,7 +207,7 @@ namespace basecross {
 	}
 
 	void Transform::SetRotation(const bsm::Vec3& Rot) {
-		if (!XMVector3IsNaN(Rot)) {
+		if (!Rot.isNaN() && !Rot.isInfinite()) {
 			bsm::Quat Qt;
 			Qt.rotationRollPitchYawFromVector(Rot);
 			SetQuaternion(Qt);
@@ -220,7 +222,7 @@ namespace basecross {
 	}
 
 	void Transform::SetPosition(const bsm::Vec3& Position) {
-		if (!XMVector3IsNaN(Position)) {
+		if (!Position.isNaN() && !Position.isInfinite()) {
 			pImpl->m_Position = Position;
 			pImpl->m_DirtyFlg = true;
 		}
@@ -230,7 +232,7 @@ namespace basecross {
 	}
 
 	void Transform::ResetPosition(const bsm::Vec3& Position) {
-		if (!XMVector3IsNaN(Position)) {
+		if (!Position.isNaN() && !Position.isInfinite()) {
 			pImpl->m_BeforePosition = Position;
 			pImpl->m_Position = Position;
 			pImpl->m_DirtyFlg = true;
@@ -399,7 +401,6 @@ namespace basecross {
 		ret.normalize();
 		return ret;
 	}
-
 
 
 	//‘€ì

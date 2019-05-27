@@ -282,6 +282,14 @@ namespace bsm {
 
 	}
 
+	inline bool Flt2::isNaN() const {
+		return XMVector2IsNaN(*this);
+	}
+	inline bool Flt2::isInfinite() const {
+		return XMVector2IsInfinite(*this);
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	Flt3インライン実装
@@ -610,6 +618,14 @@ namespace bsm {
 		*this -= Contact;
 		return *this;
 	}
+
+	inline bool Flt3::isNaN() const {
+		return XMVector3IsNaN(*this);
+	}
+	inline bool Flt3::isInfinite() const {
+		return XMVector3IsInfinite(*this);
+	}
+
 
 
 	//--------------------------------------------------------------------------------------
@@ -940,6 +956,14 @@ namespace bsm {
 
 	}
 
+	inline bool Flt4::isNaN() const {
+		return XMVector4IsNaN(*this);
+	}
+	inline bool Flt4::isInfinite() const {
+		return XMVector4IsInfinite(*this);
+	}
+
+
 
 	//--------------------------------------------------------------------------------------
 	///	Quatインライン関数
@@ -1239,6 +1263,12 @@ namespace bsm {
 		return *this;
 	}
 
+	inline bool Quat::isNaN() const {
+		return XMQuaternionIsNaN(*this);
+	}
+	inline bool Quat::isInfinite() const {
+		return XMQuaternionIsInfinite(*this);
+	}
 
 
 

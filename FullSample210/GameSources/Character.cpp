@@ -186,6 +186,10 @@ namespace basecross{
 	void SeekObject::ApplyForce() {
 		float elapsedTime = App::GetApp()->GetElapsedTime();
 		m_Velocity += m_Force * elapsedTime;
+		Vec2 velo2(m_Velocity.x, m_Velocity.z);
+		if (m_Velocity.isNaN() || m_Velocity.isInfinite()) {
+			m_Velocity = Vec3(0);
+		}
 		auto ptrTrans = GetComponent<Transform>();
 		auto pos = ptrTrans->GetPosition();
 		pos += m_Velocity * elapsedTime;
