@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27703.2000
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseCrossDx11", "BaseCrossDx11\BaseCrossDx11.vcxproj", "{5184B598-9842-4856-85C8-5C2BBD8E5035}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseCrossDx11VS2017", "BaseCrossDx11VS2017\BaseCrossDx11VS2017.vcxproj", "{5184B598-9842-4856-85C8-5C2BBD8E5035}"
 	ProjectSection(ProjectDependencies) = postProject
 		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
 	EndProjectSection
