@@ -9,9 +9,9 @@
 // http://go.microsoft.com/fwlink/?LinkId=248926
 //-------------------------------------------------------------------------------------
 
-#include "directxtexp.h"
+#include "DirectXTexP.h"
 
-#include "dds.h"
+#include "DDS.h"
 
 using namespace DirectX;
 
@@ -166,14 +166,15 @@ namespace
         {
             const LegacyDDS* entry = &g_LegacyDDSMap[index];
 
-            if (ddpfFlags == entry->ddpf.flags)
+            if ((ddpfFlags & DDS_FOURCC) && (entry->ddpf.flags & DDS_FOURCC))
             {
-                if (entry->ddpf.flags & DDS_FOURCC)
-                {
-                    if (ddpf.fourCC == entry->ddpf.fourCC)
-                        break;
-                }
-                else if (entry->ddpf.flags & DDS_PAL8)
+                // In case of FourCC codes, ignore any other bits in ddpf.flags
+                if (ddpf.fourCC == entry->ddpf.fourCC)
+                    break;
+            }
+            else if (ddpfFlags == entry->ddpf.flags)
+            {
+                if (entry->ddpf.flags & DDS_PAL8)
                 {
                     if (ddpf.RGBBitCount == entry->ddpf.RGBBitCount)
                         break;
@@ -287,7 +288,7 @@ namespace
             return E_FAIL;
         }
 
-        auto pHeader = reinterpret_cast<const DDS_HEADER*>((const uint8_t*)pSource + sizeof(uint32_t));
+        auto pHeader = reinterpret_cast<const DDS_HEADER*>(static_cast<const uint8_t*>(pSource) + sizeof(uint32_t));
 
         // Verify header to validate DDS file
         if (pHeader->size != sizeof(DDS_HEADER)
@@ -310,7 +311,7 @@ namespace
                 return E_FAIL;
             }
 
-            auto d3d10ext = reinterpret_cast<const DDS_HEADER_DXT10*>((const uint8_t*)pSource + sizeof(uint32_t) + sizeof(DDS_HEADER));
+            auto d3d10ext = reinterpret_cast<const DDS_HEADER_DXT10*>(static_cast<const uint8_t*>(pSource) + sizeof(uint32_t) + sizeof(DDS_HEADER));
             convFlags |= CONV_FLAGS_DX10;
 
             metadata.arraySize = d3d10ext->arraySize;
@@ -327,7 +328,7 @@ namespace
 
             static_assert(static_cast<int>(TEX_MISC_TEXTURECUBE) == static_cast<int>(DDS_RESOURCE_MISC_TEXTURECUBE), "DDS header mismatch");
 
-            metadata.miscFlags = d3d10ext->miscFlag & ~TEX_MISC_TEXTURECUBE;
+            metadata.miscFlags = d3d10ext->miscFlag & ~static_cast<uint32_t>(TEX_MISC_TEXTURECUBE);
 
             switch (d3d10ext->resourceDimension)
             {
@@ -504,6 +505,7 @@ namespace
                 convFlags |= CONV_FLAGS_EXPAND;
                 if (metadata.format == DXGI_FORMAT_B5G6R5_UNORM)
                     convFlags |= CONV_FLAGS_NOALPHA;
+                break;
 
             default:
                 break;
@@ -685,7 +687,9 @@ HRESULT DirectX::_EncodeDDSHeader(
     }
 
     size_t rowPitch, slicePitch;
-    ComputePitch(metadata.format, metadata.width, metadata.height, rowPitch, slicePitch, CP_FLAGS_NONE);
+    HRESULT hr = ComputePitch(metadata.format, metadata.width, metadata.height, rowPitch, slicePitch, CP_FLAGS_NONE);
+    if (FAILED(hr))
+        return hr;
 
     if (slicePitch > UINT32_MAX
         || rowPitch > UINT32_MAX)
@@ -718,7 +722,7 @@ HRESULT DirectX::_EncodeDDSHeader(
 
         static_assert(static_cast<int>(TEX_MISC_TEXTURECUBE) == static_cast<int>(DDS_RESOURCE_MISC_TEXTURECUBE), "DDS header mismatch");
 
-        ext->miscFlag = metadata.miscFlags & ~TEX_MISC_TEXTURECUBE;
+        ext->miscFlag = metadata.miscFlags & ~static_cast<uint32_t>(TEX_MISC_TEXTURECUBE);
 
         if (metadata.miscFlags & TEX_MISC_TEXTURECUBE)
         {
@@ -833,9 +837,9 @@ namespace
                 for (size_t ocount = 0, icount = 0; ((icount < (inSize - 2)) && (ocount < (outSize - 3))); icount += 3, ocount += 4)
                 {
                     // 24bpp Direct3D 9 files are actually BGR, so need to swizzle as well
-                    uint32_t t1 = (*(sPtr) << 16);
-                    uint32_t t2 = (*(sPtr + 1) << 8);
-                    uint32_t t3 = *(sPtr + 2);
+                    uint32_t t1 = uint32_t(*(sPtr) << 16);
+                    uint32_t t2 = uint32_t(*(sPtr + 1) << 8);
+                    uint32_t t3 = uint32_t(*(sPtr + 2));
 
                     *(dPtr++) = t1 | t2 | t3 | 0xff000000;
                     sPtr += 3;
@@ -858,9 +862,9 @@ namespace
                     {
                         uint8_t t = *(sPtr++);
 
-                        uint32_t t1 = (t & 0xe0) | ((t & 0xe0) >> 3) | ((t & 0xc0) >> 6);
-                        uint32_t t2 = ((t & 0x1c) << 11) | ((t & 0x1c) << 8) | ((t & 0x18) << 5);
-                        uint32_t t3 = ((t & 0x03) << 22) | ((t & 0x03) << 20) | ((t & 0x03) << 18) | ((t & 0x03) << 16);
+                        uint32_t t1 = uint32_t((t & 0xe0) | ((t & 0xe0) >> 3) | ((t & 0xc0) >> 6));
+                        uint32_t t2 = uint32_t(((t & 0x1c) << 11) | ((t & 0x1c) << 8) | ((t & 0x18) << 5));
+                        uint32_t t3 = uint32_t(((t & 0x03) << 22) | ((t & 0x03) << 20) | ((t & 0x03) << 18) | ((t & 0x03) << 16));
 
                         *(dPtr++) = t1 | t2 | t3 | 0xff000000;
                     }
@@ -877,13 +881,13 @@ namespace
 
                     for (size_t ocount = 0, icount = 0; ((icount < inSize) && (ocount < (outSize - 1))); ++icount, ocount += 2)
                     {
-                        uint8_t t = *(sPtr++);
+                        unsigned t = *(sPtr++);
 
-                        uint16_t t1 = ((t & 0xe0) << 8) | ((t & 0xc0) << 5);
-                        uint16_t t2 = ((t & 0x1c) << 6) | ((t & 0x1c) << 3);
-                        uint16_t t3 = ((t & 0x03) << 3) | ((t & 0x03) << 1) | ((t & 0x02) >> 1);
+                        unsigned t1 = ((t & 0xe0u) << 8) | ((t & 0xc0u) << 5);
+                        unsigned t2 = ((t & 0x1cu) << 6) | ((t & 0x1cu) << 3);
+                        unsigned t3 = ((t & 0x03u) << 3) | ((t & 0x03u) << 1) | ((t & 0x02) >> 1);
 
-                        *(dPtr++) = t1 | t2 | t3;
+                        *(dPtr++) = static_cast<uint16_t>(t1 | t2 | t3);
                     }
                     return true;
                 }
@@ -892,7 +896,6 @@ namespace
             default:
                 return false;
             }
-            break;
 
         case TEXP_LEGACY_A8R3G3B2:
             if (outFormat != DXGI_FORMAT_R8G8B8A8_UNORM)
@@ -908,10 +911,10 @@ namespace
                 {
                     uint16_t t = *(sPtr++);
 
-                    uint32_t t1 = (t & 0x00e0) | ((t & 0x00e0) >> 3) | ((t & 0x00c0) >> 6);
-                    uint32_t t2 = ((t & 0x001c) << 11) | ((t & 0x001c) << 8) | ((t & 0x0018) << 5);
-                    uint32_t t3 = ((t & 0x0003) << 22) | ((t & 0x0003) << 20) | ((t & 0x0003) << 18) | ((t & 0x0003) << 16);
-                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : ((t & 0xff00) << 16);
+                    uint32_t t1 = uint32_t((t & 0x00e0) | ((t & 0x00e0) >> 3) | ((t & 0x00c0) >> 6));
+                    uint32_t t2 = uint32_t(((t & 0x001c) << 11) | ((t & 0x001c) << 8) | ((t & 0x0018) << 5));
+                    uint32_t t3 = uint32_t(((t & 0x0003) << 22) | ((t & 0x0003) << 20) | ((t & 0x0003) << 18) | ((t & 0x0003) << 16));
+                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : uint32_t((t & 0xff00) << 16);
 
                     *(dPtr++) = t1 | t2 | t3 | ta;
                 }
@@ -954,7 +957,7 @@ namespace
                     uint16_t t = *(sPtr++);
 
                     uint32_t t1 = pal8[t & 0xff];
-                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : ((t & 0xff00) << 16);
+                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : uint32_t((t & 0xff00) << 16);
 
                     *(dPtr++) = t1 | ta;
                 }
@@ -974,12 +977,12 @@ namespace
 
                     for (size_t ocount = 0, icount = 0; ((icount < inSize) && (ocount < (outSize - 1))); ++icount, ocount += 2)
                     {
-                        uint8_t t = *(sPtr++);
+                        unsigned t = *(sPtr++);
 
-                        uint16_t t1 = (t & 0x0f);
-                        uint16_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xf000 : ((t & 0xf0) << 8);
+                        unsigned t1 = (t & 0x0fu);
+                        unsigned ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xf000u : ((t & 0xf0u) << 8);
 
-                        *(dPtr++) = t1 | (t1 << 4) | (t1 << 8) | ta;
+                        *(dPtr++) = static_cast<uint16_t>(t1 | (t1 << 4) | (t1 << 8) | ta);
                     }
                     return true;
                 }
@@ -996,8 +999,8 @@ namespace
                     {
                         uint8_t t = *(sPtr++);
 
-                        uint32_t t1 = ((t & 0x0f) << 4) | (t & 0x0f);
-                        uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : (((t & 0xf0) << 24) | ((t & 0xf0) << 20));
+                        uint32_t t1 = uint32_t(((t & 0x0f) << 4) | (t & 0x0f));
+                        uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : uint32_t(((t & 0xf0) << 24) | ((t & 0xf0) << 20));
 
                         *(dPtr++) = t1 | (t1 << 8) | (t1 << 16) | ta;
                     }
@@ -1008,7 +1011,6 @@ namespace
             default:
                 return false;
             }
-            break;
 
         case TEXP_LEGACY_B4G4R4A4:
             if (outFormat != DXGI_FORMAT_R8G8B8A8_UNORM)
@@ -1022,12 +1024,12 @@ namespace
 
                 for (size_t ocount = 0, icount = 0; ((icount < (inSize - 1)) && (ocount < (outSize - 3))); icount += 2, ocount += 4)
                 {
-                    uint16_t t = *(sPtr++);
+                    uint32_t t = *(sPtr++);
 
-                    uint32_t t1 = ((t & 0x0f00) >> 4) | ((t & 0x0f00) >> 8);
-                    uint32_t t2 = ((t & 0x00f0) << 8) | ((t & 0x00f0) << 4);
-                    uint32_t t3 = ((t & 0x000f) << 20) | ((t & 0x000f) << 16);
-                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : (((t & 0xf000) << 16) | ((t & 0xf000) << 12));
+                    uint32_t t1 = uint32_t((t & 0x0f00) >> 4) | ((t & 0x0f00) >> 8);
+                    uint32_t t2 = uint32_t((t & 0x00f0) << 8) | ((t & 0x00f0) << 4);
+                    uint32_t t3 = uint32_t((t & 0x000f) << 20) | ((t & 0x000f) << 16);
+                    uint32_t ta = uint32_t((flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : (((t & 0xf000) << 16) | ((t & 0xf000) << 12)));
 
                     *(dPtr++) = t1 | t2 | t3 | ta;
                 }
@@ -1095,10 +1097,10 @@ namespace
                 {
                     uint16_t t = *(sPtr++);
 
-                    uint32_t t1 = (t & 0xff);
-                    uint32_t t2 = (t1 << 8);
-                    uint32_t t3 = (t1 << 16);
-                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : ((t & 0xff00) << 16);
+                    uint32_t t1 = uint32_t(t & 0xff);
+                    uint32_t t2 = uint32_t(t1 << 8);
+                    uint32_t t3 = uint32_t(t1 << 16);
+                    uint32_t ta = (flags & TEXP_SCANLINE_SETALPHA) ? 0xff000000 : uint32_t((t & 0xff00) << 16);
 
                     *(dPtr++) = t1 | t2 | t3 | ta;
                 }
@@ -1141,7 +1143,9 @@ namespace
         }
 
         size_t pixelSize, nimages;
-        _DetermineImageArray(metadata, cpFlags, nimages, pixelSize);
+        if (!_DetermineImageArray(metadata, cpFlags, nimages, pixelSize))
+            return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
+
         if ((nimages == 0) || (nimages != image.GetImageCount()))
         {
             return E_FAIL;
@@ -1158,7 +1162,13 @@ namespace
             return E_OUTOFMEMORY;
         }
 
-        if (!_SetupImageArray((uint8_t*)pPixels, pixelSize, metadata, cpFlags, timages.get(), nimages))
+        if (!_SetupImageArray(
+            const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(pPixels)),
+            pixelSize,
+            metadata,
+            cpFlags,
+            timages.get(),
+            nimages))
         {
             return E_FAIL;
         }
@@ -1174,7 +1184,7 @@ namespace
             return E_FAIL;
         }
 
-        DWORD tflags = (convFlags & CONV_FLAGS_NOALPHA) ? TEXP_SCANLINE_SETALPHA : 0;
+        DWORD tflags = (convFlags & CONV_FLAGS_NOALPHA) ? TEXP_SCANLINE_SETALPHA : 0u;
         if (convFlags & CONV_FLAGS_SWIZZLE)
             tflags |= TEXP_SCANLINE_LEGACY;
 
@@ -1396,7 +1406,7 @@ namespace
         if (IsPlanar(metadata.format))
             return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
 
-        DWORD tflags = (convFlags & CONV_FLAGS_NOALPHA) ? TEXP_SCANLINE_SETALPHA : 0;
+        DWORD tflags = (convFlags & CONV_FLAGS_NOALPHA) ? TEXP_SCANLINE_SETALPHA : 0u;
         if (convFlags & CONV_FLAGS_SWIZZLE)
             tflags |= TEXP_SCANLINE_LEGACY;
 
@@ -1646,7 +1656,7 @@ HRESULT DirectX::LoadFromDDSFile(
     {
         // Must reset file position since we read more than the standard header above
         LARGE_INTEGER filePos = { { sizeof(uint32_t) + sizeof(DDS_HEADER), 0 } };
-        if (!SetFilePointerEx(hFile.get(), filePos, 0, FILE_BEGIN))
+        if (!SetFilePointerEx(hFile.get(), filePos, nullptr, FILE_BEGIN))
         {
             return HRESULT_FROM_WIN32(GetLastError());
         }
@@ -1736,6 +1746,12 @@ HRESULT DirectX::LoadFromDDSFile(
             return HRESULT_FROM_WIN32(ERROR_HANDLE_EOF);
         }
 
+        if (image.GetPixelsSize() > UINT32_MAX)
+        {
+            image.Release();
+            return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
+        }
+
         if (!ReadFile(hFile.get(), image.GetPixels(), static_cast<DWORD>(image.GetPixelsSize()), &bytesRead, nullptr))
         {
             image.Release();
@@ -1777,7 +1793,7 @@ HRESULT DirectX::SaveToDDSMemory(
 
     // Determine memory required
     size_t required = 0;
-    HRESULT hr = _EncodeDDSHeader(metadata, flags, 0, 0, required);
+    HRESULT hr = _EncodeDDSHeader(metadata, flags, nullptr, 0, required);
     if (FAILED(hr))
         return hr;
 
@@ -1792,7 +1808,9 @@ HRESULT DirectX::SaveToDDSMemory(
             return E_FAIL;
 
         size_t ddsRowPitch, ddsSlicePitch;
-        ComputePitch(metadata.format, images[i].width, images[i].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+        hr = ComputePitch(metadata.format, images[i].width, images[i].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+        if (FAILED(hr))
+            return hr;
 
         assert(images[i].rowPitch > 0);
         assert(images[i].slicePitch > 0);
@@ -1832,7 +1850,7 @@ HRESULT DirectX::SaveToDDSMemory(
         return E_FAIL;
     }
 
-    switch (metadata.dimension)
+    switch (static_cast<DDS_RESOURCE_DIMENSION>(metadata.dimension))
     {
     case DDS_DIMENSION_TEXTURE1D:
     case DDS_DIMENSION_TEXTURE2D:
@@ -1863,7 +1881,12 @@ HRESULT DirectX::SaveToDDSMemory(
                 else
                 {
                     size_t ddsRowPitch, ddsSlicePitch;
-                    ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                    hr = ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                    if (FAILED(hr))
+                    {
+                        blob.Release();
+                        return hr;
+                    }
 
                     size_t rowPitch = images[index].rowPitch;
 
@@ -1932,7 +1955,12 @@ HRESULT DirectX::SaveToDDSMemory(
                 else
                 {
                     size_t ddsRowPitch, ddsSlicePitch;
-                    ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                    hr = ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                    if (FAILED(hr))
+                    {
+                        blob.Release();
+                        return hr;
+                    }
 
                     size_t rowPitch = images[index].rowPitch;
 
@@ -2024,7 +2052,7 @@ HRESULT DirectX::SaveToDDSFile(
     }
 
     // Write images
-    switch (metadata.dimension)
+    switch (static_cast<DDS_RESOURCE_DIMENSION>(metadata.dimension))
     {
     case DDS_DIMENSION_TEXTURE1D:
     case DDS_DIMENSION_TEXTURE2D:
@@ -2044,9 +2072,11 @@ HRESULT DirectX::SaveToDDSFile(
                 assert(images[index].slicePitch > 0);
 
                 size_t ddsRowPitch, ddsSlicePitch;
-                ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                hr = ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                if (FAILED(hr))
+                    return hr;
 
-                if (images[index].slicePitch == ddsSlicePitch)
+                if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                 {
                     if (!WriteFile(hFile.get(), images[index].pixels, static_cast<DWORD>(ddsSlicePitch), &bytesWritten, nullptr))
                     {
@@ -2066,6 +2096,9 @@ HRESULT DirectX::SaveToDDSFile(
                         // DDS uses 1-byte alignment, so if this is happening then the input pitch isn't actually a full line of data
                         return E_FAIL;
                     }
+
+                    if (ddsRowPitch > UINT32_MAX)
+                        return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
 
                     const uint8_t * __restrict sPtr = images[index].pixels;
 
@@ -2112,9 +2145,11 @@ HRESULT DirectX::SaveToDDSFile(
                 assert(images[index].slicePitch > 0);
 
                 size_t ddsRowPitch, ddsSlicePitch;
-                ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                hr = ComputePitch(metadata.format, images[index].width, images[index].height, ddsRowPitch, ddsSlicePitch, CP_FLAGS_NONE);
+                if (FAILED(hr))
+                    return hr;
 
-                if (images[index].slicePitch == ddsSlicePitch)
+                if ((images[index].slicePitch == ddsSlicePitch) && (ddsSlicePitch <= UINT32_MAX))
                 {
                     if (!WriteFile(hFile.get(), images[index].pixels, static_cast<DWORD>(ddsSlicePitch), &bytesWritten, nullptr))
                     {
@@ -2134,6 +2169,9 @@ HRESULT DirectX::SaveToDDSFile(
                         // DDS uses 1-byte alignment, so if this is happening then the input pitch isn't actually a full line of data
                         return E_FAIL;
                     }
+
+                    if (ddsRowPitch > UINT32_MAX)
+                        return HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW);
 
                     const uint8_t * __restrict sPtr = images[index].pixels;
 

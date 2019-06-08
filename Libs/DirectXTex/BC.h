@@ -12,8 +12,8 @@
 #pragma once
 
 #include <assert.h>
-#include <directxmath.h>
-#include <directxpackedvector.h>
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
 
 namespace DirectX
 {
@@ -216,7 +216,7 @@ template <bool bRange> void OptimizeAlpha(float *pX, float *pY, const float *pPo
     }
 
     // Use Newton's Method to find local minima of sum-of-squares error.
-    float fSteps = (float)(cSteps - 1);
+    auto fSteps = static_cast<float>(cSteps - 1);
 
     for (size_t iIteration = 0; iIteration < 8; iIteration++)
     {
@@ -249,9 +249,9 @@ template <bool bRange> void OptimizeAlpha(float *pX, float *pY, const float *pPo
 
             uint32_t iStep;
             if (fDot <= 0.0f)
-                iStep = ((6 == cSteps) && (pPoints[iPoint] <= fX * 0.5f)) ? 6 : 0;
+                iStep = ((6 == cSteps) && (pPoints[iPoint] <= fX * 0.5f)) ? 6u : 0u;
             else if (fDot >= fSteps)
-                iStep = ((6 == cSteps) && (pPoints[iPoint] >= (fY + 1.0f) * 0.5f)) ? 7 : (cSteps - 1);
+                iStep = ((6 == cSteps) && (pPoints[iPoint] >= (fY + 1.0f) * 0.5f)) ? 7u : (cSteps - 1);
             else
                 iStep = uint32_t(fDot + 0.5f);
 

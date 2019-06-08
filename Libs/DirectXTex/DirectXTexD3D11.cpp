@@ -9,7 +9,7 @@
 // http://go.microsoft.com/fwlink/?LinkId=248926
 //-------------------------------------------------------------------------------------
 
-#include "directxtexp.h"
+#include "DirectXTexP.h"
 
 #if !defined(_XBOX_ONE) || !defined(_TITLE)
 #include <d3d10.h>
@@ -553,7 +553,7 @@ HRESULT DirectX::CreateTextureEx(
         desc.Usage = usage;
         desc.BindFlags = bindFlags;
         desc.CPUAccessFlags = cpuAccessFlags;
-        desc.MiscFlags = miscFlags & ~D3D11_RESOURCE_MISC_TEXTURECUBE;
+        desc.MiscFlags = miscFlags & ~static_cast<uint32_t>(D3D11_RESOURCE_MISC_TEXTURECUBE);
 
         hr = pDevice->CreateTexture1D(&desc, initData.get(), reinterpret_cast<ID3D11Texture1D**>(ppResource));
     }
@@ -575,7 +575,7 @@ HRESULT DirectX::CreateTextureEx(
         if (metadata.IsCubemap())
             desc.MiscFlags = miscFlags | D3D11_RESOURCE_MISC_TEXTURECUBE;
         else
-            desc.MiscFlags = miscFlags & ~D3D11_RESOURCE_MISC_TEXTURECUBE;
+            desc.MiscFlags = miscFlags & ~static_cast<uint32_t>(D3D11_RESOURCE_MISC_TEXTURECUBE);
 
         hr = pDevice->CreateTexture2D(&desc, initData.get(), reinterpret_cast<ID3D11Texture2D**>(ppResource));
     }
@@ -592,7 +592,7 @@ HRESULT DirectX::CreateTextureEx(
         desc.Usage = usage;
         desc.BindFlags = bindFlags;
         desc.CPUAccessFlags = cpuAccessFlags;
-        desc.MiscFlags = miscFlags & ~D3D11_RESOURCE_MISC_TEXTURECUBE;
+        desc.MiscFlags = miscFlags & ~static_cast<uint32_t>(D3D11_RESOURCE_MISC_TEXTURECUBE);
 
         hr = pDevice->CreateTexture3D(&desc, initData.get(), reinterpret_cast<ID3D11Texture3D**>(ppResource));
     }
@@ -763,7 +763,7 @@ HRESULT DirectX::CaptureTexture(
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.Usage = D3D11_USAGE_STAGING;
 
-            hr = pDevice->CreateTexture1D(&desc, 0, pStaging.GetAddressOf());
+            hr = pDevice->CreateTexture1D(&desc, nullptr, pStaging.GetAddressOf());
             if (FAILED(hr))
                 break;
 
@@ -809,7 +809,7 @@ HRESULT DirectX::CaptureTexture(
             desc.SampleDesc.Quality = 0;
 
             ComPtr<ID3D11Texture2D> pTemp;
-            hr = pDevice->CreateTexture2D(&desc, 0, pTemp.GetAddressOf());
+            hr = pDevice->CreateTexture2D(&desc, nullptr, pTemp.GetAddressOf());
             if (FAILED(hr))
                 break;
 
@@ -848,7 +848,7 @@ HRESULT DirectX::CaptureTexture(
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.Usage = D3D11_USAGE_STAGING;
 
-            hr = pDevice->CreateTexture2D(&desc, 0, pStaging.GetAddressOf());
+            hr = pDevice->CreateTexture2D(&desc, nullptr, pStaging.GetAddressOf());
             if (FAILED(hr))
                 break;
 
@@ -868,7 +868,7 @@ HRESULT DirectX::CaptureTexture(
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.Usage = D3D11_USAGE_STAGING;
 
-            hr = pDevice->CreateTexture2D(&desc, 0, &pStaging);
+            hr = pDevice->CreateTexture2D(&desc, nullptr, &pStaging);
             if (FAILED(hr))
                 break;
 
@@ -883,7 +883,7 @@ HRESULT DirectX::CaptureTexture(
         mdata.depth = 1;
         mdata.arraySize = desc.ArraySize;
         mdata.mipLevels = desc.MipLevels;
-        mdata.miscFlags = (desc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? TEX_MISC_TEXTURECUBE : 0;
+        mdata.miscFlags = (desc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? TEX_MISC_TEXTURECUBE : 0u;
         mdata.miscFlags2 = 0;
         mdata.format = desc.Format;
         mdata.dimension = TEX_DIMENSION_TEXTURE2D;
@@ -921,7 +921,7 @@ HRESULT DirectX::CaptureTexture(
             desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
             desc.Usage = D3D11_USAGE_STAGING;
 
-            hr = pDevice->CreateTexture3D(&desc, 0, pStaging.GetAddressOf());
+            hr = pDevice->CreateTexture3D(&desc, nullptr, pStaging.GetAddressOf());
             if (FAILED(hr))
                 break;
 

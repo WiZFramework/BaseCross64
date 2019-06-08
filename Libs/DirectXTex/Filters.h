@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <directxmath.h>
-#include <directxpackedvector.h>
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
 
 #include <memory>
 
@@ -63,7 +63,7 @@ inline void _CreateLinearFilter(_In_ size_t source, _In_ size_t dest, _In_ bool 
 {
     assert(source > 0);
     assert(dest > 0);
-    assert(lf != 0);
+    assert(lf != nullptr);
 
     float scale = float(source) / float(dest);
 
@@ -78,12 +78,12 @@ inline void _CreateLinearFilter(_In_ size_t source, _In_ size_t dest, _In_ bool 
 
         if (isrcA < 0)
         {
-            isrcA = (wrap) ? (source - 1) : 0;
+            isrcA = (wrap) ? (ptrdiff_t(source) - 1) : 0;
         }
 
         if (size_t(isrcB) >= source)
         {
-            isrcB = (wrap) ? 0 : (source - 1);
+            isrcB = (wrap) ? 0 : (ptrdiff_t(source) - 1);
         }
 
         float weight = 1.0f + float(isrcB) - srcB;
@@ -163,7 +163,7 @@ inline void _CreateCubicFilter(_In_ size_t source, _In_ size_t dest, _In_ bool w
 {
     assert(source > 0);
     assert(dest > 0);
-    assert(cf != 0);
+    assert(cf != nullptr);
 
     float scale = float(source) / float(dest);
 
@@ -171,10 +171,10 @@ inline void _CreateCubicFilter(_In_ size_t source, _In_ size_t dest, _In_ bool w
     {
         float srcB = (float(u) + 0.5f) * scale - 0.5f;
 
-        ptrdiff_t isrcB = bounduvw(ptrdiff_t(srcB), source - 1, wrap, mirror);
-        ptrdiff_t isrcA = bounduvw(isrcB - 1, source - 1, wrap, mirror);
-        ptrdiff_t isrcC = bounduvw(isrcB + 1, source - 1, wrap, mirror);
-        ptrdiff_t isrcD = bounduvw(isrcB + 2, source - 1, wrap, mirror);
+        ptrdiff_t isrcB = bounduvw(ptrdiff_t(srcB), ptrdiff_t(source) - 1, wrap, mirror);
+        ptrdiff_t isrcA = bounduvw(isrcB - 1, ptrdiff_t(source) - 1, wrap, mirror);
+        ptrdiff_t isrcC = bounduvw(isrcB + 1, ptrdiff_t(source) - 1, wrap, mirror);
+        ptrdiff_t isrcD = bounduvw(isrcB + 2, ptrdiff_t(source) - 1, wrap, mirror);
 
         auto& entry = cf[u];
         entry.u0 = size_t(isrcA);
@@ -294,7 +294,7 @@ namespace TriangleFilter
             tf->totalSize = totalSize;
         }
 
-        assert(pFilter != 0);
+        assert(pFilter != nullptr);
         _Analysis_assume_(pFilter != 0);
 
         // Filter setup
