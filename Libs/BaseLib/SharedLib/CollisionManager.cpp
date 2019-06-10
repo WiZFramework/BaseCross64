@@ -278,7 +278,7 @@ namespace basecross {
 		if (SrcColl->IsExcludeCollisionObject(Dest) || DestColl->IsExcludeCollisionObject(Src)) {
 			return false;
 		}
-		if (!HitTest::AABB_AABB(SrcColl->GetWrappedAABB(), DestColl->GetWrappedAABB())) {
+		if(!HitTest::AABB_AABB(SrcColl->GetWrappedAABB(), DestColl->GetWrappedAABB())){
 			return false;
 		}
 		return true;
