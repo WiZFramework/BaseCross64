@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2000
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseCrossDx11VS2017", "Dx11\BaseCrossDx11VS2017.vcxproj", "{5184B598-9842-4856-85C8-5C2BBD8E5035}"
+	ProjectSection(ProjectDependencies) = postProject
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {371B9FA9-4C90-4AC6-A123-ACED756D6C77}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libs", "Libs", "{5FD3629C-1F59-4EBD-815D-73E8A9CA5825}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\Libs\DirectXTex\DirectXTex_Desktop_2017_Win10.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dx11Lib", "..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems", "{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxLib", "..\Libs\BaseLib\DxLib\DxLib.vcxitems", "{974C28F3-3934-456B-BE8E-408774EF14CF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DxShared", "DxShared\DxShared.vcxitems", "{2D875D87-FFF7-4071-AF2E-B2965A4BDF6C}"
+EndProject
+Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		DxShared\DxShared.vcxitems*{2d875d87-fff7-4071-af2e-b2965a4bdf6c}*SharedItemsImports = 9
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		DxShared\DxShared.vcxitems*{5184b598-9842-4856-85c8-5c2bbd8e5035}*SharedItemsImports = 4
+		..\Libs\BaseLib\Dx11Lib\Dx11Lib.vcxitems*{5184b598-9842-4856-85c8-5c2bbd8e5035}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{5184b598-9842-4856-85c8-5c2bbd8e5035}*SharedItemsImports = 4
+		..\Libs\BaseLib\DxLib\DxLib.vcxitems*{974c28f3-3934-456b-be8e-408774ef14cf}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5184B598-9842-4856-85C8-5C2BBD8E5035}.Debug|x64.ActiveCfg = Debug|x64
+		{5184B598-9842-4856-85C8-5C2BBD8E5035}.Debug|x64.Build.0 = Debug|x64
+		{5184B598-9842-4856-85C8-5C2BBD8E5035}.Release|x64.ActiveCfg = Release|x64
+		{5184B598-9842-4856-85C8-5C2BBD8E5035}.Release|x64.Build.0 = Release|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.ActiveCfg = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Debug|x64.Build.0 = Debug|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.ActiveCfg = Release|x64
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{371B9FA9-4C90-4AC6-A123-ACED756D6C77} = {5FD3629C-1F59-4EBD-815D-73E8A9CA5825}
+		{45D41ACC-2C3C-43D2-BC10-02AA73FFC7C7} = {5FD3629C-1F59-4EBD-815D-73E8A9CA5825}
+		{974C28F3-3934-456B-BE8E-408774EF14CF} = {5FD3629C-1F59-4EBD-815D-73E8A9CA5825}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {216D8A80-264B-4B9D-8C94-BB9C5550970C}
+	EndGlobalSection
+EndGlobal
