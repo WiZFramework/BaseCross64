@@ -273,7 +273,10 @@ namespace basecross{
 		m_Scale(Scale),
 		m_Rotation(Rotation),
 		m_Position(Position),
-		m_Velocity(0)
+		m_Velocity(0),
+		m_MaxVelocity(5.0f),
+		m_MinVelocity(0.05f),
+		m_Deceleration(0.95f)
 	{
 	}
 	MoveBox::~MoveBox() {}
@@ -312,8 +315,8 @@ namespace basecross{
 		auto shDest = Pair.m_Dest.lock();
 		if (shDest->IsFixed()) {
 			//Œ¸‘¬
-			m_Velocity *= 0.95f;
-			if (m_Velocity.length() < 0.05f) {
+			m_Velocity *= m_Deceleration;
+			if (m_Velocity.length() < m_MinVelocity) {
 				m_Velocity = Vec3(0);
 			}
 		}
@@ -324,9 +327,9 @@ namespace basecross{
 		auto shDest = Pair.m_Dest.lock();
 		m_Velocity -= shDest->GetVelocity();
 		m_Velocity.reflect(Pair.m_SrcHitNormal);
-		if (m_Velocity.length() > 5.0f) {
+		if (m_Velocity.length() > m_MaxVelocity) {
 			m_Velocity.normalize();
-			m_Velocity *= 5.0f;
+			m_Velocity *= m_MaxVelocity;
 		}
 
 	}

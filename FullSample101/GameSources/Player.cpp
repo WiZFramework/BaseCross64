@@ -163,9 +163,7 @@ namespace basecross{
 	}
 
 	void Player::OnCollisionExit(shared_ptr<GameObject>& Other) {
-//		if (Other->FindTag(L"MoveFixedBox")) {
-			GetComponent<Transform>()->ClearParent();
-//		}
+		GetComponent<Transform>()->ClearParent();
 	}
 
 	void Player::OnUpdate2() {

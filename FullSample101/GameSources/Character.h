@@ -157,6 +157,9 @@ namespace basecross{
 		Vec3 m_Rotation;
 		Vec3 m_Position;
 		Vec3 m_Velocity;
+		float m_MaxVelocity;
+		float m_MinVelocity;
+		float m_Deceleration;
 	public:
 		//ç\ízÇ∆îjä¸
 		MoveBox(const shared_ptr<Stage>& StagePtr,
