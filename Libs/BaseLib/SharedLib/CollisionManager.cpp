@@ -42,16 +42,20 @@ namespace basecross {
 	struct CollisionBlocks {
 		UINT m_CollisionCountOfTern;
 		CollisionPiece m_RootPiece;
+		AABB m_RootAABB;
 		CollisionBlocks():
 			m_CollisionCountOfTern(0)
 		{
-			AABB aabb(Vec3(-100.0f, -1000, -25.0f), Vec3(100.0f, 1000, 25.0f));
-			m_RootPiece.SetAABB(aabb);
+			AABB aabb(Vec3(-100.0f, -1000, -100.0f), Vec3(100.0f, 1000, 100.0f));
+			m_RootAABB = aabb;
+			m_RootPiece.SetAABB(m_RootAABB);
+		}
+		void SetRootAABB(const AABB& aabb) {
+			m_RootAABB = aabb;
 		}
 		void AllClear() {
 			m_RootPiece.Clear();
-			AABB aabb(Vec3(-100.0f, -1000, -25.0f), Vec3(100.0f, 1000, 25.0f));
-			m_RootPiece.SetAABB(aabb);
+			m_RootPiece.SetAABB(m_RootAABB);
 			g_NextPoolIndex = 0;
 		}
 
@@ -221,6 +225,11 @@ namespace basecross {
 		m_TempExitVec.clear();
 	}
 	CollisionManager::~CollisionManager() {}
+
+	void CollisionManager::SetRootAABB(const AABB& aabb) {
+		pImpl->m_CollisionBlocks.SetRootAABB(aabb);
+	}
+
 
 	bool CollisionManager::SimpleCollisionPair(CollisionPair& Pair) {
 		auto Src = Pair.m_Src.lock();
