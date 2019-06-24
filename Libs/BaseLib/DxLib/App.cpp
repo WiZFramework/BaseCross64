@@ -728,6 +728,7 @@ namespace basecross {
 	void App::DeleteApp() {
 		if (m_App.get()) {
 			m_App->GetSceneInterface()->OnDestroy();
+			m_App->OnDestroy();
 			m_App.reset();
 		}
 	}
@@ -840,6 +841,43 @@ namespace basecross {
 		return PtrWav;
 	}
 
+
+	void App::UpdateOnly() {
+		if (!m_SceneInterface) {
+			//シーンがが無効なら
+			throw BaseException(
+				L"シーンがありません",
+				L"if(!m_SceneInterface)",
+				L"App::UpdateOnly()"
+			);
+		}
+		//オーディオの更新
+		GetXAudio2Manager()->OnUpdate();
+		// シーン オブジェクトを更新します。
+		m_InputDevice.ResetControlerState();
+		m_Timer.Tick([&]()
+		{
+			//イベントキューの送信
+			m_EventDispatcher->DispatchDelayedEvwnt();
+			m_SceneInterface->OnUpdate();
+		});
+	}
+
+
+
+	void App::OnMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+	}
+
+#pragma comment( lib, "mfplay.lib" )
+
+	//--------------------------------------------------------------------------------------
+	///	ムービーで使用するグローバル変数
+	//--------------------------------------------------------------------------------------
+	ComPtr<IMFPMediaPlayer> g_Player;
+	ComPtr<MediaPlayerCallback> g_PlayerCB;
+	BOOL                    g_bHasVideo = FALSE;
+
+
 	void App::UpdateDraw(unsigned int SyncInterval) {
 		if (!m_SceneInterface) {
 			//シーンがが無効なら
@@ -854,23 +892,172 @@ namespace basecross {
 		// シーン オブジェクトを更新します。
 		m_InputDevice.ResetControlerState();
 		m_Timer.Tick([&]()
-		{
-			//イベントキューの送信
-			m_EventDispatcher->DispatchDelayedEvwnt();
-			m_SceneInterface->OnUpdate();
-		});
+			{
+				//イベントキューの送信
+				m_EventDispatcher->DispatchDelayedEvwnt();
+				m_SceneInterface->OnUpdate();
+			});
 		// 初回更新前にレンダリングは行わない。
 		if (GetFrameCount() == 0)
 		{
 			return;
 		}
-		m_SceneInterface->OnDraw();
-		// バックバッファからフロントバッファに転送
-		m_DeviceResources->Present(SyncInterval,0);
+		if (IsMovieActive()) {
+			//ムービーが有効
+			;
+
+		}
+		else {
+			//ムービーが無効
+			m_SceneInterface->OnDraw();
+			// バックバッファからフロントバッファに転送
+			m_DeviceResources->Present(SyncInterval, 0);
+		}
+	}
+
+	bool App::IsMovieActive() {
+		return g_bHasVideo;
+	}
+
+	void App::ClearMovie() {
+		if (g_Player)
+		{
+			g_Player->Shutdown();
+			g_Player.Reset();
+		}
+
+		if (g_PlayerCB)
+		{
+			g_PlayerCB.Reset();
+		}
+		g_bHasVideo = false;
 	}
 
 
-	void App::OnMessage(UINT message, WPARAM wParam, LPARAM lParam) {
+	void App::OnDestroy() {
+		ClearMovie();
+	}
+
+		
+	void OnMediaItemCreated(MFP_MEDIAITEM_CREATED_EVENT *pEvent)
+	{
+		HRESULT hr = S_OK;
+
+		// The media item was created successfully.
+
+		if (g_Player)
+		{
+			BOOL bHasVideo = FALSE, bIsSelected = FALSE;
+
+			// Check if the media item contains video.
+			hr = pEvent->pMediaItem->HasVideo(&bHasVideo, &bIsSelected);
+
+			if (FAILED(hr)) { goto done; }
+
+			g_bHasVideo = bHasVideo && bIsSelected;
+
+			// Set the media item on the player. This method completes asynchronously.
+			hr = g_Player->SetMediaItem(pEvent->pMediaItem);
+		}
+
+	done:
+		if (FAILED(hr))
+		{
+			throw BaseException(
+				L"ムービーファイルの登録に失敗しました",
+				L"if (FAILED(pEvent->pMediaItem->HasVideo))",
+				L"OnMediaItemCreated()"
+			);
+		}
+	}
+
+	void OnMediaItemSet(MFP_MEDIAITEM_SET_EVENT * /*pEvent*/)
+	{
+		HRESULT hr = S_OK;
+
+		hr = g_Player->Play();
+
+		if (FAILED(hr))
+		{
+			throw BaseException(
+				L"ムービーファイルの再生に失敗しました",
+				L"if (FAILED(g_Player->Play))",
+				L"OnMediaItemSet()"
+			);
+		}
+	}
+
+
+	void MediaPlayerCallback::OnMediaPlayerEvent(MFP_EVENT_HEADER * pEventHeader)
+	{
+
+		if (FAILED(pEventHeader->hrEvent))
+		{
+			throw BaseException(
+				L"ムービーのコールバック関数のイベント取得に失敗しました",
+				L"if (FAILED(pEventHeader->hrEvent))",
+				L" MediaPlayerCallback::OnMediaPlayerEvent()"
+			);
+		}
+
+		switch (pEventHeader->eEventType)
+		{
+		case MFP_EVENT_TYPE_MEDIAITEM_CREATED:
+			OnMediaItemCreated(MFP_GET_MEDIAITEM_CREATED_EVENT(pEventHeader));
+			break;
+
+		case MFP_EVENT_TYPE_MEDIAITEM_SET:
+			OnMediaItemSet(MFP_GET_MEDIAITEM_SET_EVENT(pEventHeader));
+			break;
+		}
+	}
+
+	void App::PlayMovie(const wstring& MovieFileName) {
+		HRESULT hr = S_OK;
+
+		// Create the MFPlayer object.
+		if (g_Player == nullptr)
+		{
+			g_PlayerCB = new (std::nothrow) MediaPlayerCallback();
+
+			if (g_PlayerCB == nullptr)
+			{
+				throw BaseException(
+					L"ムービーのコールバック関数の設定に失敗しました",
+					L"if (g_PlayerCB == nullptr)",
+					L"App::PlayMovie()"
+				);
+			}
+
+			hr = MFPCreateMediaPlayer(
+				NULL,
+				FALSE,          // Start playback automatically?
+				0,              // Flags
+				g_PlayerCB.Get(),    // Callback pointer
+				GetHWnd(),           // Video window
+				&g_Player
+			);
+
+			if (FAILED(hr)) {
+				throw BaseException(
+					L"ムービーのプレイヤーの作成に失敗しました",
+					L"FAILED MFPCreateMediaPlayer",
+					L"App::PlayMovie()"
+				);
+			}
+		}
+
+		// Create a new media item for this URL.
+		hr = g_Player->CreateMediaItemFromURL(MovieFileName.c_str(), FALSE, 0, NULL);
+
+		// The CreateMediaItemFromURL method completes asynchronously. 
+		// The application will receive an MFP_EVENT_TYPE_MEDIAITEM_CREATED 
+		// event. See MediaPlayerCallback::OnMediaPlayerEvent().
+
+	}
+
+	void App::UpdateMovie() {
+		g_Player->UpdateVideo();
 	}
 
 

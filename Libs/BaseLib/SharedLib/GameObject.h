@@ -1933,6 +1933,25 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	//	ムービーステージクラス
+	//--------------------------------------------------------------------------------------
+	class MovieStage : public Stage {
+	public:
+		//構築と破棄
+		MovieStage();
+		MovieStage(const wstring& MivieFileName);
+		virtual ~MovieStage();
+		//初期化
+		virtual void OnCreate()override;
+		void SetMovieFileName(const wstring& MivieFileName);
+		void Play();
+		virtual void OnDestroy()override;
+	private:
+		// pImplイディオム
+		struct Impl;
+		unique_ptr<Impl> pImpl;
+	};
 
 
 	//--------------------------------------------------------------------------------------

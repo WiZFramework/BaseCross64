@@ -1359,7 +1359,53 @@ namespace basecross {
 	}
 
 
+	//--------------------------------------------------------------------------------------
+	//	struct MovieStage::Impl;
+	//--------------------------------------------------------------------------------------
+	struct MovieStage::Impl {
+		wstring m_MovieFileName;
+		Impl() 
+		{}
+		~Impl() {}
+	};
 
+
+	//--------------------------------------------------------------------------------------
+	//	ムービーステージクラス
+	//--------------------------------------------------------------------------------------
+	MovieStage::MovieStage():
+		Stage(),
+		pImpl(new Impl())
+	{}
+
+	MovieStage::MovieStage(const wstring& MivieFileName) :
+		Stage(),
+		pImpl(new Impl())
+	{
+		pImpl->m_MovieFileName = MivieFileName;
+	}
+	MovieStage::~MovieStage() {}
+
+	void MovieStage::OnCreate() {
+		auto ptrView = CreateView<SingleView>();
+		if (pImpl->m_MovieFileName != L"") {
+			App::GetApp()->PlayMovie(pImpl->m_MovieFileName);
+		}
+	}
+
+	void MovieStage::SetMovieFileName(const wstring& MivieFileName) {
+		pImpl->m_MovieFileName = MivieFileName;
+	}
+
+	void MovieStage::Play() {
+		if (pImpl->m_MovieFileName != L"") {
+			App::GetApp()->PlayMovie(pImpl->m_MovieFileName);
+		}
+	}
+
+	void MovieStage::OnDestroy() {
+		App::GetApp()->ClearMovie();
+	}
 
 	//--------------------------------------------------------------------------------------
 	//	struct SceneBase::Impl;
