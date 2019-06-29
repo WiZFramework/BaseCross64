@@ -164,7 +164,7 @@ namespace basecross{
 	//文字列の表示
 	void Player::DrawStrings() {
 		//文字列表示
-		wstring messageStr = L"Bボタンでカメラ切り替え\n";
+		wstring messageStr = L"Bボタンでステージ切り替え\n";
 		//オブジェクト数
 		auto objCount = GetStage()->GetGameObjectVec().size();
 		wstring objCountStr(L"OBJ_COUNT: ");
