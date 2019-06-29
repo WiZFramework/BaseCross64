@@ -1452,6 +1452,7 @@ namespace basecross {
 			L"DeviceResources::Impl::CreateDeviceResources()"
 		);
 
+
 		//リソースをバージョンアップする
 		ThrowIfFailed(
 			temp_device.As(&m_D3D11Device),
@@ -1471,6 +1472,25 @@ namespace basecross {
 			L"temp_swapChain.As(&m_D3D11SwapChain)",
 			L"DeviceResources::Impl::CreateDeviceResources()"
 		);
+
+		IDXGIFactory* pfac = nullptr;
+		ThrowIfFailed(
+			m_D3D11SwapChain->GetParent(__uuidof(IDXGIFactory), (void**)&pfac),
+			L"Alt+Enter機能の削除ファクトリ作成に失敗しました",
+			L"m_D3D11SwapChain->GetParent(__uuidof(IDXGIFactory), (void**)&pfac)",
+			L"DeviceResources::Impl::CreateDeviceResources()"
+		);
+		if (!pfac) {
+			throw BaseException(
+				L"Alt+Enter機能の削除ファクトリがありません",
+				L"if (!pfac)",
+				L"DeviceResources::Impl::CreateDeviceResources()"
+			);
+		}
+		//Alt+Enter機能の無効化
+		pfac->MakeWindowAssociation(hWnd, DXGI_MWA_NO_WINDOW_CHANGES
+			| DXGI_MWA_NO_ALT_ENTER);
+
 
 		// Direct2D デバイス オブジェクトと、対応するコンテキストを作成します。
 
@@ -1499,6 +1519,7 @@ namespace basecross {
 			L"m_d2dDevice->CreateDeviceContext()",
 			L"DeviceResources::Impl::CreateDeviceResources()"
 		);
+/*
 		if (isFullScreen) {
 			ThrowIfFailed(
 				m_D3D11SwapChain->SetFullscreenState(true, NULL),
@@ -1508,6 +1529,7 @@ namespace basecross {
 			);
 
 		}
+*/
 
 	}
 

@@ -15,40 +15,49 @@ namespace basecross{
 	//構築と破棄
 	Player::Player(const shared_ptr<Stage>& StagePtr) :
 		GameObject(StagePtr),
-		m_Velocity(0)
+		m_Speed(6.0f)
 	{}
 
-	Vec3 Player::GetMoveVector() const {
-		Vec3 angle(0, 0, 0);
+	Vec2 Player::GetInputState() const {
+		Vec2 ret;
 		//コントローラの取得
 		auto cntlVec = App::GetApp()->GetInputDevice().GetControlerVec();
-		float fThumbLY = 0.0f;
-		float fThumbLX = 0.0f;
+		ret.x = 0.0f;
+		ret.y = 0.0f;
 		WORD wButtons = 0;
 		if (cntlVec[0].bConnected) {
-			fThumbLY = cntlVec[0].fThumbLY;
-			fThumbLX = cntlVec[0].fThumbLX;
-			wButtons = cntlVec[0].wButtons;
+			ret.x = cntlVec[0].fThumbLX;
+			ret.y = cntlVec[0].fThumbLY;
 		}
 		//キーボードの取得(キーボード優先)
 		auto KeyState = App::GetApp()->GetInputDevice().GetKeyState();
 		if (KeyState.m_bPushKeyTbl['W']) {
 			//前
-			fThumbLY = 1.0f;
+			ret.y = 1.0f;
 		}
 		else if (KeyState.m_bPushKeyTbl['A']) {
 			//左
-			fThumbLX = -1.0f;
+			ret.x = -1.0f;
 		}
 		else if (KeyState.m_bPushKeyTbl['S']) {
 			//後ろ
-			fThumbLY = -1.0f;
+			ret.y = -1.0f;
 		}
 		else if (KeyState.m_bPushKeyTbl['D']) {
 			//右
-			fThumbLX = 1.0f;
+			ret.x = 1.0f;
 		}
-		if (fThumbLX != 0 || fThumbLY != 0) {
+		return ret;
+	}
+
+
+	Vec3 Player::GetMoveVector() const {
+		Vec3 angle(0, 0, 0);
+		//入力の取得
+		auto inPut = GetInputState();
+		float moveX = inPut.x;
+		float moveZ = inPut.y;
+		if (moveX != 0 || moveZ != 0) {
 			float moveLength = 0;	//動いた時のスピード
 			auto ptrTransform = GetComponent<Transform>();
 			auto ptrCamera = OnGetDrawCamera();
@@ -59,8 +68,6 @@ namespace basecross{
 			//進行方向向きからの角度を算出
 			float frontAngle = atan2(front.z, front.x);
 			//コントローラの向き計算
-			float moveX = fThumbLX;
-			float moveZ = fThumbLY;
 			Vec2 moveVec(moveX, moveZ);
 			float moveSize = moveVec.length();
 			//コントローラの向きから角度を計算
@@ -84,7 +91,7 @@ namespace basecross{
 		auto angle = GetMoveVector();
 		if (angle.length() > 0.0f) {
 			auto pos = GetComponent<Transform>()->GetPosition();
-			pos += angle * elapsedTime * 6.0f;
+			pos += angle * elapsedTime * m_Speed;
 			GetComponent<Transform>()->SetPosition(pos);
 		}
 		//回転の計算
@@ -117,8 +124,6 @@ namespace basecross{
 		GetStage()->SetCollisionPerformanceActive(true);
 		GetStage()->SetUpdatePerformanceActive(true);
 		GetStage()->SetDrawPerformanceActive(true);
-
-
 
 		//文字列をつける
 		auto ptrString = AddComponent<StringSprite>();

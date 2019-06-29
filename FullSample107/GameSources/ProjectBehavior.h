@@ -17,7 +17,7 @@ namespace basecross {
 			//キーボードの取得（優先）
 			auto KeyState = App::GetApp()->GetInputDevice().GetKeyState();
 			if (KeyState.m_bPressedKeyTbl[VK_SPACE]) {
-				Obj->OnPushA();
+				Obj->OnPushB();
 				return;
 			}
 			//コントローラの取得
@@ -28,13 +28,12 @@ namespace basecross {
 					Obj->OnPushA();
 				}
 				//Bボタン
-				else if (cntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
+				if (cntlVec[0].wPressedButtons & XINPUT_GAMEPAD_B) {
 					Obj->OnPushB();
 				}
 			}
 		}
 	};
-
 
 }
 

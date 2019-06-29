@@ -33,6 +33,9 @@ namespace basecross{
 	///	敵の親
 	//--------------------------------------------------------------------------------------
 	class EnemyBase : public GameObject {
+		//基本の大きさ
+		Vec3 m_ScaleBase;
+		//スタート位置
 		Vec3 m_StartPos;
 		//フォース
 		Vec3 m_Force;
@@ -84,6 +87,8 @@ namespace basecross{
 	///	敵１
 	//--------------------------------------------------------------------------------------
 	class Enemy1 : public EnemyBase {
+		//大きさ
+		Vec3 m_Scale;
 		//ステートマシーン
 		unique_ptr<StateMachine<Enemy1>>  m_StateMachine;
 		//NearとFarを切り替える値

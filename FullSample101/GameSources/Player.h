@@ -13,14 +13,18 @@ namespace basecross{
 	///	プレイヤー
 	//--------------------------------------------------------------------------------------
 	class Player : public GameObject {
+		//プレイヤーが使用するコントローラとキーボードの入力
+		Vec2 GetInputState() const;
 		// コントローラから方向ベクトルを得る
 		Vec3 GetMoveVector() const;
+		//プレイヤーの移動
+		void MovePlayer();
 		//文字列の表示
 		void DrawStrings();
 		//入力ハンドラー
 		InputHandler<Player> m_InputHandler;
-		//速度
-		Vec3 m_Velocity;
+		//スピード
+		float m_Speed;
 	public:
 		//構築と破棄
 		//--------------------------------------------------------------------------------------
@@ -46,8 +50,6 @@ namespace basecross{
 		virtual void OnCollisionExit(shared_ptr<GameObject>& Other) override;
 		//Aボタン
 		void OnPushA();
-		void MovePlayer();
-
 	};
 
 

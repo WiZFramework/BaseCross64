@@ -1364,7 +1364,9 @@ namespace basecross {
 	//--------------------------------------------------------------------------------------
 	struct MovieStage::Impl {
 		wstring m_MovieFileName;
-		Impl() 
+		bool m_AutoRepeat;
+		Impl() :
+			m_AutoRepeat(true)
 		{}
 		~Impl() {}
 	};
@@ -1401,6 +1403,13 @@ namespace basecross {
 		if (pImpl->m_MovieFileName != L"") {
 			App::GetApp()->PlayMovie(pImpl->m_MovieFileName);
 		}
+	}
+
+	bool MovieStage::IsAutoRepeat() const {
+		return App::GetApp()->IsMovieAutoRepeat();
+	}
+	void MovieStage::SetAutoRepeat(bool b) {
+		App::GetApp()->SetMovieAutoRepeat(b);
 	}
 
 	void MovieStage::OnDestroy() {

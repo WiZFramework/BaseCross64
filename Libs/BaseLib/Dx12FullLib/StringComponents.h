@@ -1,7 +1,7 @@
 /*!
 @file StringComponents.h
 @brief 文字列描画コンポーネント
-@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi.
+@copyright Copyright (c) 2017 WiZ Tamura Hiroki,Yamanoi Yasushi,shike.y
 */
 #pragma once
 #include "stdafx.h"

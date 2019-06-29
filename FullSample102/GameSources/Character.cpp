@@ -14,6 +14,7 @@ namespace basecross{
 	//ç\ízÇ∆îjä¸
 	FallingBall::FallingBall(const shared_ptr<Stage>& StagePtr, const Vec3& Position, const Vec3& Velocity) :
 		GameObject(StagePtr),
+		m_Scale(0.5f),
 		m_Pos(Position),
 		m_Velocity(Velocity)
 	{}
@@ -24,7 +25,7 @@ namespace basecross{
 	void FallingBall::OnCreate() {
 		auto ptrTransform = GetComponent<Transform>();
 
-		ptrTransform->SetScale(0.5f, 0.5f,0.5f);
+		ptrTransform->SetScale(m_Scale);
 		ptrTransform->SetRotation(0, 0, 0);
 		ptrTransform->SetPosition(m_Pos);
 
@@ -44,8 +45,9 @@ namespace basecross{
 	}
 
 	void FallingBall::OnUpdate() {
+		const float activeY = 25.0f;
 		auto PtrTransform = GetComponent<Transform>();
-		if (abs(PtrTransform->GetPosition().y) > 25.0f) {
+		if (abs(PtrTransform->GetPosition().y) > activeY) {
 			//îÕàÕäOÇ…èoÇΩÇÁè¡Ç∑
 			GetStage()->RemoveGameObject<GameObject>(GetThis<GameObject>());
 		}

@@ -7,7 +7,6 @@
 #include "Project.h"
 
 namespace basecross{
-
 	//--------------------------------------------------------------------------------------
 	//	class Player : public GameObject;
 	//	用途: プレイヤー
@@ -157,7 +156,8 @@ namespace basecross{
 
 	//Bボタン
 	void Player::OnPushB() {
-		PostEvent(0.0f, GetThis<ObjectInterface>(), App::GetApp()->GetScene<Scene>(), L"ToMovieStage");
+		PostEvent(0.0f, GetThis<ObjectInterface>(),
+			App::GetApp()->GetScene<Scene>(), L"ToMovieStage");
 	}
 
 

@@ -12,6 +12,7 @@ namespace basecross{
 	///	•¨—ŒvZ‚·‚é—‰º‚·‚éƒ{[ƒ‹
 	//--------------------------------------------------------------------------------------
 	class FallingBall : public GameObject {
+		Vec3 m_Scale;
 		Vec3 m_Pos;
 		Vec3 m_Velocity;
 	public:

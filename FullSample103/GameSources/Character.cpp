@@ -54,6 +54,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	EnemyBase::EnemyBase(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		GameObject(StagePtr),
+		m_ScaleBase(0.25f),
 		m_StartPos(StartPos)
 	{}
 
@@ -61,7 +62,7 @@ namespace basecross{
 	void EnemyBase::OnCreate() {
 		auto ptrTrans = GetComponent<Transform>();
 		ptrTrans->SetPosition(m_StartPos);
-		ptrTrans->SetScale(0.25f, 0.25f, 0.25f);
+		ptrTrans->SetScale(m_ScaleBase);
 		ptrTrans->SetRotation(0.0f, 0.0f, 0.0f);
 
 		//オブジェクトのグループを得る
@@ -108,6 +109,7 @@ namespace basecross{
 	//--------------------------------------------------------------------------------------
 	Enemy1::Enemy1(const shared_ptr<Stage>& StagePtr, const Vec3& StartPos) :
 		EnemyBase(StagePtr, StartPos),
+		m_Scale(0.125f, 0.25f, 0.25f),
 		m_StateChangeSize(5.0f)
 	{}
 
@@ -115,8 +117,7 @@ namespace basecross{
 	void Enemy1::OnCreate() {
 		EnemyBase::OnCreate();
 		auto ptrTrans = GetComponent<Transform>();
-		ptrTrans->SetScale(0.125f, 0.25f, 0.25f);
-
+		ptrTrans->SetScale(m_Scale);
 
 		//Obbの衝突判定をつける
 		AddComponent<CollisionObb>();

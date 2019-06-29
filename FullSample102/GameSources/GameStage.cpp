@@ -17,14 +17,16 @@ namespace basecross {
 
 	//ビューとライトの作成
 	void GameStage::CreateViewLight() {
+		const Vec3 eye(0.0f, 5.0f, -5.0f);
+		const Vec3 at(0.0f);
 		auto ptrView = CreateView<SingleView>();
 		//ビューのカメラの設定
 		auto bkCamera = App::GetApp()->GetScene<Scene>()->GetBackupCamera();
 		if (!bkCamera) {
 			auto ptrMyCamera = ObjectFactory::Create<MyCamera>(10.0f);
 			ptrView->SetCamera(ptrMyCamera);
-			ptrMyCamera->SetEye(Vec3(0.0f, 5.0f, -5.0f));
-			ptrMyCamera->SetAt(Vec3(0.0f, 0.0f, 0.0f));
+			ptrMyCamera->SetEye(eye);
+			ptrMyCamera->SetAt(at);
 		}
 		else {
 			ptrView->SetCamera(bkCamera);
@@ -83,11 +85,13 @@ namespace basecross {
 	}
 
 	void GameStage::OnUpdate() {
+		const float fullMax = 20.0f;
+		const float halfMax = fullMax * 0.5f;
 		if (Util::DivProbability(10)) {
-			float x = Util::RandZeroToOne() * 10.0f - 5.0f;
-			float z = Util::RandZeroToOne() * 10.0f - 5.0f;
-			Vec3 velo(x * 2, 0, z * 2);
-			AddGameObject<FallingBall>(Vec3(x,10.0f,z), velo);
+			float x = Util::RandZeroToOne() * fullMax - halfMax;
+			float z = Util::RandZeroToOne() * fullMax - halfMax;
+			Vec3 velo(x, 0, z);
+			AddGameObject<FallingBall>(Vec3(x, halfMax,z), velo);
 		}
 	}
 

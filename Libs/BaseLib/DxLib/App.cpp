@@ -532,6 +532,326 @@ namespace basecross {
 
 
 
+#include <mfplay.h>
+#include <mferror.h>
+#pragma comment( lib, "mfplay.lib" )
+
+
+	//--------------------------------------------------------------------------------------
+	///	ムービーで使用するネームスペース
+	//--------------------------------------------------------------------------------------
+	namespace movie {
+
+		//--------------------------------------------------------------------------------------
+		///	ムービー用コールバッククラス
+		//--------------------------------------------------------------------------------------
+		class MediaPlayerCallback : public IMFPMediaPlayerCallback
+		{
+			long m_cRef; // Reference count
+
+		public:
+
+			MediaPlayerCallback() : m_cRef(1)
+			{
+			}
+
+			STDMETHODIMP QueryInterface(REFIID riid, void** ppv)
+			{
+				static const QITAB qit[] =
+				{
+					QITABENT(MediaPlayerCallback, IMFPMediaPlayerCallback),
+					{ 0 },
+				};
+				return QISearch(this, qit, riid, ppv);
+			}
+			STDMETHODIMP_(ULONG) AddRef()
+			{
+				return InterlockedIncrement(&m_cRef);
+			}
+			STDMETHODIMP_(ULONG) Release()
+			{
+				ULONG count = InterlockedDecrement(&m_cRef);
+				if (count == 0)
+				{
+					delete this;
+					return 0;
+				}
+				return count;
+			}
+
+			// IMFPMediaPlayerCallback methods
+			void STDMETHODCALLTYPE OnMediaPlayerEvent(MFP_EVENT_HEADER *pEventHeader);
+		};
+		//ムービー用データ
+		namespace data {
+			ComPtr<IMFPMediaPlayer> Player;
+			ComPtr<MediaPlayerCallback> PlayerCB;
+			BOOL                    bHasVideo = FALSE;
+			HWND ChildHWnd = 0;
+			bool bAutoRepeat = true;
+		}
+
+		//--------------------------------------------------------------------------------------
+		//	ムービー用チャイルドウインドウクラス登録
+		//--------------------------------------------------------------------------------------
+		BOOL RegisterChild(HINSTANCE hInst, WNDPROC WndProc, const wchar_t* szClassName)
+		{
+			WNDCLASS wc = {};
+			wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+			wc.lpfnWndProc = WndProc;    //プロシージャ名
+			wc.cbClsExtra = 0;
+			wc.cbWndExtra = 0;
+			wc.hInstance = hInst;        //インスタンス
+			wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+			wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+			wc.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+			wc.lpszMenuName = NULL;    //メニュー名
+			wc.lpszClassName = (LPCWSTR)szClassName;
+			return (RegisterClass(&wc));
+		}
+
+		LRESULT CALLBACK ChildProc(HWND hChdWnd, UINT msg, WPARAM wp, LPARAM lp)
+		{
+			switch (msg) {
+			case WM_LBUTTONDBLCLK:
+				if (data::Player)
+				{
+					MFP_MEDIAPLAYER_STATE state = MFP_MEDIAPLAYER_STATE_EMPTY;
+
+					auto hr = data::Player->GetState(&state);
+
+					if (SUCCEEDED(hr))
+					{
+						if (state == MFP_MEDIAPLAYER_STATE_PAUSED || state == MFP_MEDIAPLAYER_STATE_STOPPED)
+						{
+							hr = data::Player->Play();
+						}
+						else if (state == MFP_MEDIAPLAYER_STATE_PLAYING)
+						{
+							hr = data::Player->Pause();
+						}
+					}
+				}
+				break;
+			case WM_CLOSE:
+				DestroyWindow(hChdWnd);
+				break;
+			default:
+				return (DefWindowProc(hChdWnd, msg, wp, lp));
+			}
+			return 0L;
+		}
+
+
+		HWND CleateMobieWnd() {
+			auto hInst = App::GetApp()->GetHInstance();
+			movie::RegisterChild(App::GetApp()->GetHInstance(),
+				movie::ChildProc,
+				L"BaseCrossChildClass");
+			auto ParHWnd = App::GetApp()->GetHWnd();
+			RECT rectPar;
+			GetClientRect(ParHWnd, &rectPar);
+			data::ChildHWnd = CreateWindowExW(
+				WS_EX_TOPMOST,
+				L"BaseCrossChildClass",
+				L"",//タイトルバーにこの名前が表示されます
+				WS_CHILD,    //ウィンドウの種類
+				0,    //Ｘ座標
+				0,    //Ｙ座標
+				rectPar.right,    //幅
+				rectPar.bottom,    //高さ
+				ParHWnd,            //親ウィンドウのハンドル、親を作るときはNULL
+				0, //メニューハンドル、子供のID
+				hInst,            //インスタンスハンドル
+				NULL);
+			ShowWindow(data::ChildHWnd, SW_SHOW);
+			UpdateWindow(data::ChildHWnd);
+			return data::ChildHWnd;
+		}
+
+		void OnMediaItemCreated(MFP_MEDIAITEM_CREATED_EVENT *pEvent)
+		{
+			HRESULT hr = S_OK;
+
+			if (data::Player)
+			{
+				BOOL bHasVideo = FALSE, bIsSelected = FALSE;
+
+				// Check if the media item contains video.
+				hr = pEvent->pMediaItem->HasVideo(&bHasVideo, &bIsSelected);
+
+				if (FAILED(hr)) { 
+					throw BaseException(
+						L"ムービーファイルの登録に失敗しました",
+						L"if (FAILED(pEvent->pMediaItem->HasVideo))",
+						L"OnMediaItemCreated()"
+					);
+				}
+
+				data::bHasVideo = bHasVideo && bIsSelected;
+
+				hr = data::Player->SetMediaItem(pEvent->pMediaItem);
+			}
+
+		}
+
+		void OnMediaItemSet(MFP_MEDIAITEM_SET_EVENT * /*pEvent*/)
+		{
+			HRESULT hr = S_OK;
+
+			hr = data::Player->Play();
+
+			if (FAILED(hr))
+			{
+				throw BaseException(
+					L"ムービーファイルの再生に失敗しました",
+					L"if (FAILED(movie::g_Player->Play))",
+					L"OnMediaItemSet()"
+				);
+			}
+		}
+
+		void OnMediaPlayEnd() {
+			if (data::bAutoRepeat) {
+				HRESULT hr = S_OK;
+				hr = data::Player->Play();
+
+				if (FAILED(hr))
+				{
+					throw BaseException(
+						L"ムービーファイルの連続再生に失敗しました",
+						L"if (FAILED(movie::g_Player->Play))",
+						L"OnMediaPlayEnd()"
+					);
+				}
+			}
+		}
+
+		void MediaPlayerCallback::OnMediaPlayerEvent(MFP_EVENT_HEADER * pEventHeader)
+		{
+
+			if (FAILED(pEventHeader->hrEvent))
+			{
+				throw BaseException(
+					L"ムービーのコールバック関数のイベント取得に失敗しました",
+					L"if (FAILED(pEventHeader->hrEvent))",
+					L" MediaPlayerCallback::OnMediaPlayerEvent()"
+				);
+			}
+
+			switch (pEventHeader->eEventType)
+			{
+			case MFP_EVENT_TYPE_MEDIAITEM_CREATED:
+				OnMediaItemCreated(MFP_GET_MEDIAITEM_CREATED_EVENT(pEventHeader));
+				break;
+
+			case MFP_EVENT_TYPE_MEDIAITEM_SET:
+				OnMediaItemSet(MFP_GET_MEDIAITEM_SET_EVENT(pEventHeader));
+				break;
+			case MFP_EVENT_TYPE_PLAYBACK_ENDED:
+				OnMediaPlayEnd();
+				break;
+			}
+		}
+
+
+		void UpdateMovie() {
+			if (data::Player) {
+				data::Player->UpdateVideo();
+			}
+		}
+
+		bool IsMovieActive() {
+			return data::bHasVideo;
+		}
+
+		void ClearMovie() {
+			if (data::Player)
+			{
+				data::Player->Shutdown();
+				data::Player.Reset();
+			}
+
+			if (data::PlayerCB)
+			{
+				data::PlayerCB.Reset();
+			}
+			data::bHasVideo = false;
+			//ウインドウの削除
+			if (data::ChildHWnd) {
+				DestroyWindow(data::ChildHWnd);
+			}
+			data::ChildHWnd = NULL;
+		}
+
+		void PlayMovie(const wstring& MovieFileName) {
+
+			auto hwnd = CleateMobieWnd();
+
+			HRESULT hr = S_OK;
+
+			// Create the MFPlayer object.
+			if (data::Player == nullptr)
+			{
+				data::PlayerCB = new (std::nothrow) movie::MediaPlayerCallback();
+
+				if (data::PlayerCB == nullptr)
+				{
+					throw BaseException(
+						L"ムービーのコールバック関数の設定に失敗しました",
+						L"if (g_PlayerCB == nullptr)",
+						L"App::PlayMovie()"
+					);
+				}
+
+				hr = MFPCreateMediaPlayer(
+					NULL,
+					FALSE,          // Start playback automatically?
+					0,              // Flags
+					data::PlayerCB.Get(),    // Callback pointer
+					hwnd,           // Video window
+					&data::Player
+				);
+
+				if (FAILED(hr)) {
+					throw BaseException(
+						L"ムービーのプレイヤーの作成に失敗しました",
+						L"FAILED MFPCreateMediaPlayer",
+						L"App::PlayMovie()"
+					);
+				}
+			}
+			hr = data::Player->CreateMediaItemFromURL(MovieFileName.c_str(), FALSE, 0, NULL);
+		}
+
+		void OnSize()
+		{
+			if (data::ChildHWnd) {
+				auto ParHWnd = App::GetApp()->GetHWnd();
+				RECT rectPar;
+				GetClientRect(ParHWnd, &rectPar);
+				MoveWindow(
+					data::ChildHWnd,
+					0,
+					0,
+					rectPar.right,
+					rectPar.bottom,
+					true);
+			}
+			if (data::Player)
+			{
+				data::Player->UpdateVideo();
+			}
+		}
+
+		bool IsMovieAutoRepeat() {
+			return data::bAutoRepeat;
+		}
+		void SetMovieAutoRepeat(bool b) {
+			data::bAutoRepeat = b;
+		}
+
+	}//end namespace movie
 
 	//--------------------------------------------------------------------------------------
 	//	class App;
@@ -664,9 +984,6 @@ namespace basecross {
 				//成功した
 				m_wstrRelativeAssetsPath += L"\\";
 			}
-
-
-
 			////デバイスリソースの構築
 			m_DeviceResources = shared_ptr<DeviceResources>(new DeviceResources(hWnd, FullScreen, Width, Height));
 			//オーディオマネージャの取得
@@ -756,6 +1073,7 @@ namespace basecross {
 				L"App::AfterInitContents()"
 			);
 		}
+		m_ShadowActive = ShadowActive;
 		m_DeviceResources->AfterInitContents(ShadowActive);
 	}
 
@@ -841,42 +1159,45 @@ namespace basecross {
 		return PtrWav;
 	}
 
-
-	void App::UpdateOnly() {
-		if (!m_SceneInterface) {
-			//シーンがが無効なら
-			throw BaseException(
-				L"シーンがありません",
-				L"if(!m_SceneInterface)",
-				L"App::UpdateOnly()"
-			);
-		}
-		//オーディオの更新
-		GetXAudio2Manager()->OnUpdate();
-		// シーン オブジェクトを更新します。
-		m_InputDevice.ResetControlerState();
-		m_Timer.Tick([&]()
-		{
-			//イベントキューの送信
-			m_EventDispatcher->DispatchDelayedEvwnt();
-			m_SceneInterface->OnUpdate();
-		});
-	}
-
-
-
 	void App::OnMessage(UINT message, WPARAM wParam, LPARAM lParam) {
 	}
 
-#pragma comment( lib, "mfplay.lib" )
+	void App::OnSize() {
+		movie::OnSize();
+	}
 
-	//--------------------------------------------------------------------------------------
-	///	ムービーで使用するグローバル変数
-	//--------------------------------------------------------------------------------------
-	ComPtr<IMFPMediaPlayer> g_Player;
-	ComPtr<MediaPlayerCallback> g_PlayerCB;
-	BOOL                    g_bHasVideo = FALSE;
 
+	void App::SetFullScreenMode() {
+		if (IsFullScreen()) {
+			return;
+		}
+		//ボーダーレスウインドウを使用
+		auto iClientWidth = GetSystemMetrics(SM_CXSCREEN);
+		auto iClientHeight = GetSystemMetrics(SM_CYSCREEN);
+		auto HWnd = GetHWnd();
+		//ウィンドウのスタイルを変える
+		SetWindowLong(HWnd, GWL_STYLE, WS_POPUP);
+		SetWindowPos(
+			HWnd, HWND_TOP,
+			0, 0, iClientWidth, iClientHeight,
+			SWP_SHOWWINDOW
+		);
+		m_FullScreen = true;
+	}
+
+	void App::SetWindowMode(const RECT& r) {
+		auto HWnd = GetHWnd();
+		if (IsFullScreen()) {
+			//フルスクリーンならウインドウスタイルを変える
+			SetWindowLong(HWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		}
+		SetWindowPos(
+			HWnd, HWND_TOP,
+			r.left, r.top, r.right - r.left, r.bottom - r.top,
+			SWP_SHOWWINDOW
+		);
+		m_FullScreen = false;
+	}
 
 	void App::UpdateDraw(unsigned int SyncInterval) {
 		if (!m_SceneInterface) {
@@ -902,12 +1223,7 @@ namespace basecross {
 		{
 			return;
 		}
-		if (IsMovieActive()) {
-			//ムービーが有効
-			;
-
-		}
-		else {
+		if (!movie::IsMovieActive()) {
 			//ムービーが無効
 			m_SceneInterface->OnDraw();
 			// バックバッファからフロントバッファに転送
@@ -916,152 +1232,31 @@ namespace basecross {
 	}
 
 	bool App::IsMovieActive() {
-		return g_bHasVideo;
+		return movie::IsMovieActive();
 	}
 
 	void App::ClearMovie() {
-		if (g_Player)
-		{
-			g_Player->Shutdown();
-			g_Player.Reset();
-		}
-
-		if (g_PlayerCB)
-		{
-			g_PlayerCB.Reset();
-		}
-		g_bHasVideo = false;
+		movie::ClearMovie();
 	}
-
 
 	void App::OnDestroy() {
-		ClearMovie();
-	}
-
-		
-	void OnMediaItemCreated(MFP_MEDIAITEM_CREATED_EVENT *pEvent)
-	{
-		HRESULT hr = S_OK;
-
-		// The media item was created successfully.
-
-		if (g_Player)
-		{
-			BOOL bHasVideo = FALSE, bIsSelected = FALSE;
-
-			// Check if the media item contains video.
-			hr = pEvent->pMediaItem->HasVideo(&bHasVideo, &bIsSelected);
-
-			if (FAILED(hr)) { goto done; }
-
-			g_bHasVideo = bHasVideo && bIsSelected;
-
-			// Set the media item on the player. This method completes asynchronously.
-			hr = g_Player->SetMediaItem(pEvent->pMediaItem);
-		}
-
-	done:
-		if (FAILED(hr))
-		{
-			throw BaseException(
-				L"ムービーファイルの登録に失敗しました",
-				L"if (FAILED(pEvent->pMediaItem->HasVideo))",
-				L"OnMediaItemCreated()"
-			);
-		}
-	}
-
-	void OnMediaItemSet(MFP_MEDIAITEM_SET_EVENT * /*pEvent*/)
-	{
-		HRESULT hr = S_OK;
-
-		hr = g_Player->Play();
-
-		if (FAILED(hr))
-		{
-			throw BaseException(
-				L"ムービーファイルの再生に失敗しました",
-				L"if (FAILED(g_Player->Play))",
-				L"OnMediaItemSet()"
-			);
-		}
-	}
-
-
-	void MediaPlayerCallback::OnMediaPlayerEvent(MFP_EVENT_HEADER * pEventHeader)
-	{
-
-		if (FAILED(pEventHeader->hrEvent))
-		{
-			throw BaseException(
-				L"ムービーのコールバック関数のイベント取得に失敗しました",
-				L"if (FAILED(pEventHeader->hrEvent))",
-				L" MediaPlayerCallback::OnMediaPlayerEvent()"
-			);
-		}
-
-		switch (pEventHeader->eEventType)
-		{
-		case MFP_EVENT_TYPE_MEDIAITEM_CREATED:
-			OnMediaItemCreated(MFP_GET_MEDIAITEM_CREATED_EVENT(pEventHeader));
-			break;
-
-		case MFP_EVENT_TYPE_MEDIAITEM_SET:
-			OnMediaItemSet(MFP_GET_MEDIAITEM_SET_EVENT(pEventHeader));
-			break;
-		}
+		movie::ClearMovie();
 	}
 
 	void App::PlayMovie(const wstring& MovieFileName) {
-		HRESULT hr = S_OK;
-
-		// Create the MFPlayer object.
-		if (g_Player == nullptr)
-		{
-			g_PlayerCB = new (std::nothrow) MediaPlayerCallback();
-
-			if (g_PlayerCB == nullptr)
-			{
-				throw BaseException(
-					L"ムービーのコールバック関数の設定に失敗しました",
-					L"if (g_PlayerCB == nullptr)",
-					L"App::PlayMovie()"
-				);
-			}
-
-			hr = MFPCreateMediaPlayer(
-				NULL,
-				FALSE,          // Start playback automatically?
-				0,              // Flags
-				g_PlayerCB.Get(),    // Callback pointer
-				GetHWnd(),           // Video window
-				&g_Player
-			);
-
-			if (FAILED(hr)) {
-				throw BaseException(
-					L"ムービーのプレイヤーの作成に失敗しました",
-					L"FAILED MFPCreateMediaPlayer",
-					L"App::PlayMovie()"
-				);
-			}
-		}
-
-		// Create a new media item for this URL.
-		hr = g_Player->CreateMediaItemFromURL(MovieFileName.c_str(), FALSE, 0, NULL);
-
-		// The CreateMediaItemFromURL method completes asynchronously. 
-		// The application will receive an MFP_EVENT_TYPE_MEDIAITEM_CREATED 
-		// event. See MediaPlayerCallback::OnMediaPlayerEvent().
-
+		movie::PlayMovie(MovieFileName);
 	}
 
 	void App::UpdateMovie() {
-		g_Player->UpdateVideo();
+		movie::UpdateMovie();
 	}
 
-
-
+	bool App::IsMovieAutoRepeat() const {
+		return movie::IsMovieAutoRepeat();
+	}
+	void App::SetMovieAutoRepeat(bool b) {
+		movie::SetMovieAutoRepeat(b);
+	}
 
 
 }
