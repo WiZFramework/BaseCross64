@@ -35,10 +35,13 @@
 <pre>
 //ステージ内の更新（シーンからよばれる）
 void Stage::UpdateStage() {
+    if (IsUpdatePerformanceActive()) {
+        pImpl->m_UpdatePerformance.Start();
+    }
     //追加・削除まちオブジェクトの追加と削除
     SetWaitToObjectVec();
     //Transformコンポーネントの値をバックアップにコピー
-    for (auto ptr : GetGameObjectVec()) {
+    for (auto& ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             auto ptr2 = ptr->GetComponent&lt;Transform>();
             ptr2->SetToBefore();
@@ -48,12 +51,14 @@ void Stage::UpdateStage() {
     if (IsPhysicsActive()) {
         pImpl->m_BasePhysics.InitForce();
     }
+
     //配置オブジェクトの更新処理
-    for (auto ptr : GetGameObjectVec()) {
+    for (auto& ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             ptr->OnUpdate();
         }
     }
+
     //自身の更新処理
     if (IsUpdateActive()) {
         OnUpdate();
@@ -63,15 +68,16 @@ void Stage::UpdateStage() {
         pImpl->m_BasePhysics.Update(false);
     }
     //配置オブジェクトのコンポーネント更新
-    for (auto ptr : GetGameObjectVec()) {
+    for (auto& ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             ptr->ComponentUpdate();
         }
     }
+
     ////衝突判定
     UpdateCollision();
     //配置オブジェクトの更新後処理
-    for (auto ptr : GetGameObjectVec()) {
+    for (auto& ptr : GetGameObjectVec()) {
         if (ptr->IsUpdateActive()) {
             ptr->OnUpdate2();
         }
@@ -82,13 +88,16 @@ void Stage::UpdateStage() {
     }
 
     //自身のビューをアップデート
-    auto ViewPtr = GetView(false);
+    auto& ViewPtr = GetView(false);
     if (ViewPtr && ViewPtr->IsUpdateActive()) {
         ViewPtr->OnUpdate();
     }
     //子供ステージの更新
-    for (auto PtrChileStage : GetChileStageVec()) {
+    for (auto& PtrChileStage : GetChileStageVec()) {
         PtrChileStage->UpdateStage();
+    }
+    if (IsUpdatePerformanceActive()) {
+        pImpl->m_UpdatePerformance.End();
     }
 }
 </pre>
@@ -308,6 +317,9 @@ void Player::OnCollisionEnter(shared_ptr&lt;GameObject>& Other) {
 <pre>
 //ステージ内のすべての描画（シーンからよばれる）
 void Stage::RenderStage() {
+    if (IsDrawPerformanceActive()) {
+        pImpl->m_DrawPerformance.Start();
+    }
     //描画デバイスの取得
     auto Dev = App::GetApp()->GetDeviceResources();
     auto MultiPtr = dynamic_pointer_cast&lt;MultiView>(GetView());
@@ -351,6 +363,9 @@ void Stage::RenderStage() {
     //子供ステージの描画
     for (auto PtrChileStage : GetChileStageVec()) {
         PtrChileStage->RenderStage();
+    }
+    if (IsDrawPerformanceActive()) {
+        pImpl->m_DrawPerformance.End();
     }
 }
 </pre>

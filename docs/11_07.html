@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<link href="css/main.css" rel="stylesheet" type="text/css">
+<title>BaseCross64ドキュメント</title>
+</head>
+<body>
+<!-- 全体コンテナ　-->
+<div id="container">
+<div id="header">
+<h2>【１】フルバージョン</h2>
+</div>
+<!-- コンテンツ　-->
+<div id="contents">
+<h2>１１．チュートリアル</h2>
+<h3>１１０７．動画の再生</h3>
+　このサンプルは<b>FullSample107</b>というディレクトリに含まれます。<br />
+　<b>BaseCrossDx11VS2017.sln</b>というソリューションをVS2017で開くと<b>Dx11版</b>が起動します。<br />
+<br />
+　ゲームの待機時間、あるいはタイトルなどに動画を再生できると便利です。<br />
+　このサンプルではその方法を紹介しています。<br />
+　サンプルを起動すると、以下のような動画が再生されます。WiZの学生さんが作成したものです。
+<p>&nbsp;</p>
+<img src="img/1107a.png" width="80%"/>
+<p>図1107a</p>
+<p>&nbsp;</p>
+　ここで<b>Bボタン</b>を押すとステージが切り替わり、ゲームステージが表示されます。
+<p>&nbsp;</p>
+<img src="img/1107b.png" width="80%"/>
+<p>図1107b</p>
+<p>&nbsp;</p>
+　ゲームステージでも<b>Bボタン</b>を押すと、動画ステージになります。<br />
+　動画ステージ上でマウスをダブルクリックすると、一時停止します。<b>Ctrl+Enter</b>で最大画面になります。
+<h4>動画用ステージの準備</h4>
+　動画再生するには専用のステージを作成します。サンプルでは、<b>GameStage.h/cpp</b>で以下の様なクラスを作成しました。
+
+<div class="box1">
+<pre>
+//--------------------------------------------------------------------------------------
+//  ムービーステージクラス
+//--------------------------------------------------------------------------------------
+class MyMovieStage : public <span class="red">MovieStage</span> {
+    //入力ハンドラー
+    InputHandler&lt;MyMovieStage> m_InputHandler;
+public:
+    //構築と破棄
+    MyMovieStage() :MovieStage() {}
+    virtual ~MyMovieStage() {}
+    //初期化
+    virtual void OnCreate()override;
+    virtual void OnUpdate() override;
+    //Aボタン
+    void OnPushA();
+    //Bボタン
+    void OnPushB();
+};
+</pre>
+</div>
+　このように<b>MovieStage</b>の派生クラス、として作成します。<br />
+　以下は実体です。<b>OnCreate</b>で、ムービーファイル名を指定しています。冒頭で<b>MovieStage::OnCreate();</b>と親クラスの関数を呼び出すのを忘れないでください。
+<div class="box1">
+<pre>
+void MyMovieStage::OnCreate() {
+    <span class="red">MovieStage::OnCreate();</span>
+    wstring dataDir;
+    //サンプルのためアセットディレクトリを取得
+    App::GetApp()->GetAssetsDirectory(dataDir);
+    wstring strMovie = dataDir + L"testMovie.mp4";
+    SetMovieFileName(strMovie);
+    //再生
+    <span class="red">Play();</span>
+}
+</pre>
+</div>
+　この関数の最後に<b>Play();</b>と呼び出しています。これで再生します。<br />
+　<b>Bボタン</b>は
+<div class="box1">
+<pre>
+//Bボタン
+void MyMovieStage::OnPushB() {
+    //ゲームステージに移行
+    PostEvent(0.0f, GetThis&lt;ObjectInterface>(),
+        App::GetApp()->GetScene&lt;Scene>(), L"ToGameStage");
+}
+</pre>
+</div>
+　このように、再生そのものはいたって簡単です。<br />
+　あとはどんな素敵な動画を作成するか、ですね。皆さん頑張って！！
+</div>
+<!-- /コンテンツ　-->
+<hr>
+<!-- フッタ　-->
+<ul class="foot_navi">
+<li><a href="11_05.html">前へ</a></li>
+<li><a href="index.html">目次</a></li>
+</ul>
+<!-- /フッタ　-->
+
+
+</div>
+<!-- /全体コンテナ　-->
+</body>
+</html>
