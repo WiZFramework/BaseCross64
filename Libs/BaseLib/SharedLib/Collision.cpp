@@ -16,6 +16,7 @@ namespace basecross {
 		bool m_Fixed;		//静止オブジェクトかどうか
 		weak_ptr<MeshResource> m_MeshResource;	//メッシュリソース
 		weak_ptr<GameObjectGroup> m_ExcludeCollisionGroup;	//判定から除外するグループ
+		vector<weak_ptr<GameObject>> m_ExcludeCollisionGameObjects; //判定から除外するゲームオブジェクトの配列
 		//判定から除外するタグ
 		set<wstring> m_ExcludeCollisionTags;
 		//衝突後の処理
@@ -70,6 +71,28 @@ namespace basecross {
 	bsm::Vec3 Collision::GetVelocity() const {
 		return GetGameObject()->GetComponent<Transform>()->GetVelocity();
 	}
+
+	vector<weak_ptr<GameObject>>& Collision::GetExcludeCollisionGameObjects() const {
+		return pImpl->m_ExcludeCollisionGameObjects;
+	}
+
+	void Collision::AddExcludeCollisionGameObject(const shared_ptr<GameObject>& obj) {
+		pImpl->m_ExcludeCollisionGameObjects.push_back(obj);
+	}
+
+	void  Collision::RemoveExcludeCollisionGameObject(const shared_ptr<GameObject>& obj) {
+		for (auto it = pImpl->m_ExcludeCollisionGameObjects.begin();
+			it != pImpl->m_ExcludeCollisionGameObjects.end();
+			it++ ) 
+		{
+			auto shobj = (*it).lock();
+			if (shobj && (shobj == obj)) {
+				pImpl->m_ExcludeCollisionGameObjects.erase(it);
+				return;
+			}
+		}
+	}
+
 
 
 	shared_ptr<GameObjectGroup> Collision::GetExcludeCollisionGroup() const {
@@ -133,6 +156,13 @@ namespace basecross {
 				}
 			}
 		}
+		for (auto v : pImpl->m_ExcludeCollisionGameObjects) {
+			auto shobj = v.lock();
+			if (shobj && (shobj == Obj)) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 

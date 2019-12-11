@@ -2391,11 +2391,10 @@ namespace basecross{
 		*/
 		//--------------------------------------------------------------------------------------
 		bool IsInState(const shared_ptr< ObjState<T> >& st)const{
-			auto shptr = m_CurrentState.lock();
-			if (!shptr){
-				return false;
+			if (st == GetCurrentState()) {
+				return true;
 			}
-			return typeid(shptr) == typeid(st);
+			return false;
 		}
 	};
 

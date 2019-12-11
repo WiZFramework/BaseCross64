@@ -230,6 +230,14 @@ namespace basecross {
 		pImpl->m_CollisionBlocks.SetRootAABB(aabb);
 	}
 
+	void CollisionManager::SetRootXZ(float f) {
+		float h = f / 2.0f;
+		AABB aabb(Vec3(-h, -1000, -h), Vec3(h, 1000, h));
+		pImpl->m_CollisionBlocks.SetRootAABB(aabb);
+
+	}
+
+
 
 	bool CollisionManager::SimpleCollisionPair(CollisionPair& Pair) {
 		auto Src = Pair.m_Src.lock();
