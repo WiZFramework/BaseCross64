@@ -319,6 +319,8 @@ namespace basecross {
 
 
 	void StringSprite::OnDraw(){
+		//WindowsSDK‚ÌUpdate‚É‚æ‚èD2DŠÖ˜A‚ª‘Î‰žŠO
+		return;
 
 		auto Dev = App::GetApp()->GetDeviceResources();
 		auto Dev11On12 = Dev->Get11On12Device();

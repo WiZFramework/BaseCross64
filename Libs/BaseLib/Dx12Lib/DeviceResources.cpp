@@ -784,6 +784,7 @@ namespace basecross {
 		}
 		// Query the desktop's dpi settings, which will be used to create
 		 // D2D's render targets.
+		/*
 		float dpiX;
 		float dpiY;
 		m_d2dFactory->GetDesktopDpi(&dpiX, &dpiY);
@@ -793,6 +794,7 @@ namespace basecross {
 			dpiX,
 			dpiY
 		);
+		*/
 
 		//デスクプリタヒープの作成.
 		{
@@ -858,7 +860,7 @@ namespace basecross {
 					L"m_WrappedBackBuffers[n].As(&surface)",
 					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 				);
-
+				/*
 				ThrowIfFailed(m_d2dDeviceContext->CreateBitmapFromDxgiSurface(
 					surface.Get(),
 					&bitmapProperties,
@@ -868,6 +870,7 @@ namespace basecross {
 					L"m_d2dDeviceContext->CreateBitmapFromDxgiSurface()",
 					L"Dx12DeviceResources::Impl::CreateDeviceResources()"
 				);
+				*/
 
 				rtvHandle.Offset(1, m_RtvDescriptorSize);
 
