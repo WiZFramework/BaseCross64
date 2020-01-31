@@ -175,27 +175,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void BoneInit() {
 /*
-			auto MeshRes = m_MeshResource.lock();
-			if (MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0) {
-				//先頭のボーン数の行列で初期化
-				m_LocalBonesMatrix.resize(MeshRes->GetBoneCount());
-				auto& SampleMatrixVec = MeshRes->GetSampleMatrixVec();
-				for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-					m_LocalBonesMatrix[i] = SampleMatrixVec[i];
-				}
-			}
-			//マルチメッシュ用
-			auto MultiMeshRes = m_MultiMeshResource.lock();
-			if (MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0) {
-				m_MultiLocalBonesMatrix.resize(MultiMeshRes->GetMeshVecCount());
-				for (size_t i = 0; i < MultiMeshRes->GetMeshVecCount(); i++) {
-					m_MultiLocalBonesMatrix[i].resize(MultiMeshRes->GetBoneCount(i));
-					auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(i);
-					for (UINT j = 0; j < m_MultiLocalBonesMatrix[i].size(); j++) {
-						m_MultiLocalBonesMatrix[i][j] = SampleMatrixVec[j];
-					}
-				}
-			}
+未定義
 */
 
 		}
@@ -209,36 +189,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		void ChangeCurrentAnimation(const wstring& AnemationName, float StartTime = 0.0f) {
 /*
-			auto MeshRes = m_MeshResource.lock();
-			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
-			//マルチメッシュ用
-			auto MultiMeshRes = m_MultiMeshResource.lock();
-			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
-			if (MeshResFlg || MultiMeshResFlg) {
-				if (AnemationName == L"") {
-					throw BaseException(
-						L"アニメーション名が空白です",
-						L"if (AnemationName == L\"\")",
-						L"DrawObjectBase::SetCurrentAnimation()"
-					);
-				}
-				auto it = m_AnimationMap.find(AnemationName);
-				if (it != m_AnimationMap.end()) {
-					//指定の名前が見つかった
-					m_CurrentAnimeName = AnemationName;
-					m_CurrentAnimeTime = StartTime;
-					//アニメーションは終了していない
-					it->second.m_IsAnimeEnd = false;
-				}
-				else {
-					//見つからない
-					throw BaseException(
-						L"指定のアニメーションは登録されてません",
-						AnemationName,
-						L"DrawObjectBase::SetCurrentAnimation()"
-					);
-				}
-			}
+未定義
 */
 		}
 		//--------------------------------------------------------------------------------------
@@ -255,41 +206,7 @@ namespace basecross {
 		void AddAnimation(const wstring& Name, int StartSample, int SampleLength, bool Loop,
 			float SamplesParSecond = 30.0f) {
 /*
-			auto MeshRes = m_MeshResource.lock();
-			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
-			//マルチメッシュ用
-			auto MultiMeshRes = m_MultiMeshResource.lock();
-			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
-			if (MeshResFlg || MultiMeshResFlg) {
-				if (Name == L"") {
-					throw BaseException(
-						L"アニメーション名が空白です",
-						L"if (Name == L\"\")",
-						L"DrawObjectBase::AddAnimation()"
-					);
-				}
-				if (StartSample < 0 || SampleLength < 0) {
-					throw BaseException(
-						L"開始サンプルかサンプル数が0未満です",
-						L"if (StartSample < 0 || SampleLength < 0)",
-						L"DrawObjectBase::AddAnimation()"
-					);
-				}
-				if (SamplesParSecond <= 0.0f) {
-					throw BaseException(
-						L"サンプル毎秒が0以下です",
-						L"if (SamplesParSecond <= 0.0f)",
-						L"DrawObjectBase::AddAnimation()"
-					);
-				}
-				//重複キーがあれば差し替える
-				AnimationData Data((UINT)StartSample, (UINT)SampleLength, Loop, SamplesParSecond);
-				m_AnimationMap[Name] = Data;
-				if (m_AnimationMap.size() == 1) {
-					//1つしか登録がなかったら、カレントアニメは該当アニメとなる
-					ChangeCurrentAnimation(Name, 0);
-				}
-			}
+未定義
 */
 		}
 		//--------------------------------------------------------------------------------------
@@ -330,22 +247,7 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		AnimationData& GetAnimationData() {
 /*
-			auto MeshRes = m_MeshResource.lock();
-			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
-			//マルチメッシュ用
-			auto MultiMeshRes = m_MultiMeshResource.lock();
-			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
-			if (MeshResFlg || MultiMeshResFlg) {
-				if (m_CurrentAnimeName == L"") {
-					//見つからない
-					throw BaseException(
-						L"カレントアニメーションが設定されてません",
-						L"if (m_CurrentAnimeName == L\"\")",
-						L"DrawObjectBase::GetAnimationData()"
-					);
-				}
-				return m_AnimationMap[m_CurrentAnimeName];
-			}
+未定義
 */
 			//ボーンデータではない
 			throw BaseException(
@@ -364,184 +266,7 @@ namespace basecross {
 		bool UpdateAnimation(float ElapsedTime) {
 			return false;
 /*
-			auto MeshRes = m_MeshResource.lock();
-			bool MeshResFlg = MeshRes && MeshRes->IsSkining() && MeshRes->GetBoneCount() > 0 && MeshRes->GetSampleCount() > 0;
-			//マルチメッシュ用
-			auto MultiMeshRes = m_MultiMeshResource.lock();
-			bool MultiMeshResFlg = MultiMeshRes && MultiMeshRes->IsSkining(0) && MultiMeshRes->GetBoneCount(0) > 0 && MultiMeshRes->GetSampleCount(0) > 0;
-			if (MeshResFlg || MultiMeshResFlg) {
-				if (ElapsedTime < 0.0f) {
-					throw BaseException(
-						L"アニメーション更新にマイナスは設定できません",
-						L"if (ElapsedTime < 0.0f)",
-						L"DrawObjectBase::UpdateAnimation()"
-					);
-				}
-				if (m_CurrentAnimeName == L"") {
-					//見つからない
-					throw BaseException(
-						L"カレントアニメーションが設定されてません",
-						L"if (m_CurrentAnimeName == L\"\")",
-						L"DrawObjectBase::UpdateAnimation()"
-					);
-				}
-				if (MeshResFlg) {
-					auto PtrMesh = MeshRes;
-					UINT SampleCount = PtrMesh->GetSampleCount();
-					auto& SampleMatrixVec = PtrMesh->GetSampleMatrixVec();
-					UINT BoneCount = PtrMesh->GetBoneCount();
-					auto& TgtAnimeData = m_AnimationMap[m_CurrentAnimeName];
-					if (TgtAnimeData.m_StartSample >= SampleCount) {
-						//スタートのサンプルが最後のサンプル以降だった
-						TgtAnimeData.m_StartSample = SampleCount - 1;
-						TgtAnimeData.m_SampleLength = 0;
-						UINT UITgtSample = TgtAnimeData.m_StartSample;
-						//最後のサンプルを表示
-						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-							m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-						}
-						m_CurrentAnimeTime = 0;
-						if (TgtAnimeData.m_IsLoop) {
-							TgtAnimeData.m_IsAnimeEnd = false;
-							return false;
-						}
-						else {
-							TgtAnimeData.m_IsAnimeEnd = true;
-							return true;
-						}
-					}
-					//すでにアニメが終了している
-					if (TgtAnimeData.m_IsAnimeEnd) {
-						//現在のローカル行列を使用
-						return true;
-					}
-					//カレントタイムを更新
-					m_CurrentAnimeTime += ElapsedTime;
-					//スタート位置を計算
-					auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
-					UINT UITgtSample = (UINT)FLOATTgtSample;
-					UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
-					if (UILastSample >= SampleCount) {
-						UILastSample = SampleCount - 1;
-					}
-					if (UITgtSample >= UILastSample) {
-						UITgtSample = UILastSample - 1;
-						//最後のサンプルを表示
-						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-							m_LocalBonesMatrix[i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-						}
-						if (TgtAnimeData.m_IsLoop) {
-							TgtAnimeData.m_IsAnimeEnd = false;
-							//ループするのでカレントタイムを0にする
-							m_CurrentAnimeTime = 0;
-							return false;
-						}
-						else {
-							m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
-							TgtAnimeData.m_IsAnimeEnd = true;
-							return true;
-						}
-					}
-					else {
-						//サンプルとサンプルの間の割合を計算
-						FLOATTgtSample -= (float)UITgtSample;
-						UINT UINextSample = UITgtSample + 1;
-						for (UINT i = 0; i < m_LocalBonesMatrix.size(); i++) {
-							InterpolationMatrix(
-								SampleMatrixVec[BoneCount * UITgtSample + i],
-								SampleMatrixVec[BoneCount * UINextSample + i],
-								FLOATTgtSample, m_LocalBonesMatrix[i]);
-						}
-						//アニメは終わってない
-						return false;
-					}
-					return true;
-				}
-				else if (MultiMeshResFlg) {
-					//サンプル数は最初のメッシュのを使用
-					UINT SampleCount = MultiMeshRes->GetSampleCount(0);
-					auto& TgtAnimeData = m_AnimationMap[m_CurrentAnimeName];
-					if (TgtAnimeData.m_StartSample >= SampleCount) {
-						//スタートのサンプルが最後のサンプル以降だった
-						TgtAnimeData.m_StartSample = SampleCount - 1;
-						TgtAnimeData.m_SampleLength = 0;
-						UINT UITgtSample = TgtAnimeData.m_StartSample;
-						//最後のサンプルを表示
-						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
-							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
-							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
-							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
-								m_MultiLocalBonesMatrix[mc][i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-							}
-						}
-						m_CurrentAnimeTime = 0;
-						if (TgtAnimeData.m_IsLoop) {
-							TgtAnimeData.m_IsAnimeEnd = false;
-							return false;
-						}
-						else {
-							TgtAnimeData.m_IsAnimeEnd = true;
-							return true;
-						}
-					}
-					//すでにアニメが終了している
-					if (TgtAnimeData.m_IsAnimeEnd) {
-						//現在のローカル行列を使用
-						return true;
-					}
-					//カレントタイムを更新
-					m_CurrentAnimeTime += ElapsedTime;
-					//スタート位置を計算
-					auto FLOATTgtSample = (float)TgtAnimeData.m_StartSample + m_CurrentAnimeTime * TgtAnimeData.m_SamplesParSecond;
-					UINT UITgtSample = (UINT)FLOATTgtSample;
-					UINT UILastSample = TgtAnimeData.m_StartSample + TgtAnimeData.m_SampleLength;
-					if (UILastSample >= SampleCount) {
-						UILastSample = SampleCount - 1;
-					}
-					if (UITgtSample >= UILastSample) {
-						UITgtSample = UILastSample - 1;
-						//最後のサンプルを表示
-						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
-							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
-							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
-							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
-								m_MultiLocalBonesMatrix[mc][i] = SampleMatrixVec[BoneCount * UITgtSample + i];
-							}
-						}
-						if (TgtAnimeData.m_IsLoop) {
-							TgtAnimeData.m_IsAnimeEnd = false;
-							//ループするのでカレントタイムを0にする
-							m_CurrentAnimeTime = 0;
-							return false;
-						}
-						else {
-							m_CurrentAnimeTime = TgtAnimeData.m_SampleLength / TgtAnimeData.m_SamplesParSecond;
-							TgtAnimeData.m_IsAnimeEnd = true;
-							return true;
-						}
-					}
-					else {
-						//サンプルとサンプルの間の割合を計算
-						FLOATTgtSample -= (float)UITgtSample;
-						UINT UINextSample = UITgtSample + 1;
-						for (size_t mc = 0; mc < MultiMeshRes->GetMeshVecCount(); mc++) {
-							auto& SampleMatrixVec = MultiMeshRes->GetSampleMatrixVec(mc);
-							UINT BoneCount = MultiMeshRes->GetBoneCount(mc);
-
-							for (UINT i = 0; i < m_MultiLocalBonesMatrix[mc].size(); i++) {
-								InterpolationMatrix(
-									SampleMatrixVec[BoneCount * UITgtSample + i],
-									SampleMatrixVec[BoneCount * UINextSample + i],
-									FLOATTgtSample, m_MultiLocalBonesMatrix[mc][i]);
-							}
-						}
-						//アニメは終わってない
-						return false;
-					}
-					return true;
-				}
-			}
-			return true;
+未定義
 */
 		}
 	};
@@ -961,68 +686,8 @@ namespace basecross {
 		//--------------------------------------------------------------------------------------
 		template<typename T_VShader, typename T_PShader>
 		void DrawSprite(const MeshPrimData& data) {
-/*
-			auto Dev = App::GetApp()->GetDeviceResources();
-			auto pD3D11DeviceContext = Dev->GetD3DDeviceContext();
-			auto RenderState = Dev->GetRenderState();
-			//NULLのシェーダリソースの準備
-			ID3D11ShaderResourceView* pNull[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = { nullptr };
-			//サンプラーの準備
-			ID3D11SamplerState* pNullSR[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = { nullptr };
-			//各オブジェクト共通処理
-			//シェーダの設定
-			//頂点シェーダ
-			pD3D11DeviceContext->VSSetShader(T_VShader::GetPtr()->GetShader(), nullptr, 0);
-			//インプットレイアウトの設定
-			pD3D11DeviceContext->IASetInputLayout(T_VShader::GetPtr()->GetInputLayout());
-			//ピクセルシェーダ
-			pD3D11DeviceContext->PSSetShader(T_PShader::GetPtr()->GetShader(), nullptr, 0);
-			//個別処理
-			SpriteConstants sb;
-			//コンスタントバッファの作成
-			SetConstants(sb);
-			//テクスチャ
-			auto shTex = GetTextureResource();
-			//コンスタントバッファの更新
-			pD3D11DeviceContext->UpdateSubresource(CBSprite::GetPtr()->GetBuffer(), 0, nullptr, &sb, 0, 0);
-			//コンスタントバッファの設定
-			ID3D11Buffer* pConstantBuffer = CBSprite::GetPtr()->GetBuffer();
-			ID3D11Buffer* pNullConstantBuffer = nullptr;
-			//頂点シェーダに渡す
-			pD3D11DeviceContext->VSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ピクセルシェーダに渡す
-			pD3D11DeviceContext->PSSetConstantBuffers(0, 1, &pConstantBuffer);
-			//ストライドとオフセット
-			UINT stride = data.m_NumStride;
-			UINT offset = 0;
-			//描画方法のセット
-			pD3D11DeviceContext->IASetPrimitiveTopology(data.m_PrimitiveTopology);
-			//頂点バッファのセット
-			pD3D11DeviceContext->IASetVertexBuffers(0, 1, data.m_VertexBuffer.GetAddressOf(), &stride, &offset);
-			//インデックスバッファのセット
-			pD3D11DeviceContext->IASetIndexBuffer(data.m_IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
-			//各レンダリングステートの設定
-			//ブレンドステート
-			RenderState->SetBlendState(pD3D11DeviceContext, GetBlendState());
-			//デプスステンシルステート
-			RenderState->SetDepthStencilState(pD3D11DeviceContext, GetDepthStencilState());
-			//テクスチャとサンプラー
-			if (shTex) {
-				pD3D11DeviceContext->PSSetShaderResources(0, 1, shTex->GetShaderResourceView().GetAddressOf());
-				//サンプラーを設定
-				RenderState->SetSamplerState(pD3D11DeviceContext, GetSamplerState(), 0);
-			}
-			else {
-				//シェーダーリソースもクリア
-				pD3D11DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, pNull);
-				//サンプラーもクリア
-				RenderState->SetSamplerAllClear(pD3D11DeviceContext);
-			}
-			//ラスタライザステートと描画
-			RenderState->SetRasterizerState(pD3D11DeviceContext, GetRasterizerState());
-			//描画
-			pD3D11DeviceContext->DrawIndexed(data.m_NumIndicis, 0, 0);
-*/
+//未定義
+
 		}
 		//--------------------------------------------------------------------------------------
 		/*!

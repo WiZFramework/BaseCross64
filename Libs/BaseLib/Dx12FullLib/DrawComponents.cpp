@@ -1187,7 +1187,7 @@ namespace basecross {
 		auto Pos = PtrTrans->GetWorldMatrix().transInMatrix();
 		bsm::Vec3 PosSpan = StageLight.m_Directional;
 		PosSpan *= 0.1f;
-		Pos += PosSpan;
+//		Pos += PosSpan;
 		//ワールド行列の決定
 		World.affineTransformation(
 			PtrTrans->GetScale(),			//スケーリング
@@ -1356,81 +1356,21 @@ namespace basecross {
 		}
 		//ボーンの設定
 /*
-		size_t BoneSz = pImpl->m_SmDrawObject.m_LocalBonesMatrix.size();
-		if (BoneSz > 0) {
-			UINT cb_count = 0;
-			for (size_t b = 0; b < BoneSz; b++) {
-				bsm::Mat4x4 mat = pImpl->m_SmDrawObject.m_LocalBonesMatrix[b];
-				mat.transpose();
-				SmCb.Bones[cb_count] = ((XMMATRIX)mat).r[0];
-				SmCb.Bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-				SmCb.Bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-				cb_count += 3;
-			}
-		}
-		else if (pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix.size() > data.m_MultiMeshIndex) {
-			//マルチメッシュのボーンがあった
-			//ボーンの設定
-			BoneSz = pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex].size();
-			if (BoneSz > 0) {
-				UINT cb_count = 0;
-				for (size_t b = 0; b < BoneSz; b++) {
-					bsm::Mat4x4 mat = pImpl->m_SmDrawObject.m_MultiLocalBonesMatrix[data.m_MultiMeshIndex][b];
-					mat.transpose();
-					SmCb.Bones[cb_count] = ((XMMATRIX)mat).r[0];
-					SmCb.Bones[cb_count + 1] = ((XMMATRIX)mat).r[1];
-					SmCb.Bones[cb_count + 2] = ((XMMATRIX)mat).r[2];
-					cb_count += 3;
-				}
-			}
-		}
+未定義
 */
 	}
 
 	//行列バッファの作成
 	void SmBaseDraw::CreateMatrixBuffer() {
 /*
-		//インスタンス行列バッファの作成
-		//Max値で作成する
-		vector<bsm::Mat4x4> matrices(pImpl->m_SmDrawObject.m_MaxInstance);
-		for (auto& m : matrices) {
-			m = bsm::Mat4x4();
-		}
-		MeshResource::CreateDynamicVertexBuffer(pImpl->m_SmDrawObject.m_MatrixBuffer, matrices);
+未定義
 */
 	}
 
 	//行列バッファのマップ
 	void SmBaseDraw::MapMatrixBuffer() {
 /*
-		//デバイスの取得
-		auto Dev = App::GetApp()->GetDeviceResources();
-		auto pDx11Device = Dev->GetD3DDevice();
-		auto pID3D11DeviceContext = Dev->GetD3DDeviceContext();
-		//インスタンスバッファにマップ
-		D3D11_MAP mapType = D3D11_MAP_WRITE_DISCARD;
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer;
-		//行列のマップ
-		if (FAILED(pID3D11DeviceContext->Map(pImpl->m_SmDrawObject.m_MatrixBuffer.Get(), 0, mapType, 0, &mappedBuffer))) {
-			// Map失敗
-			throw BaseException(
-				L"行列のMapに失敗しました。",
-				L"if(FAILED(pID3D11DeviceContext->Map()))",
-				L"SmBaseDraw::MapMatrixBuffer()"
-			);
-		}
-		//行列の変更
-		auto* matrices = (bsm::Mat4x4*)mappedBuffer.pData;
-		bsm::Mat4x4 World;
-		for (size_t i = 0; i < pImpl->m_SmDrawObject.m_MatrixVec.size(); i++) {
-			//ワールド行列
-			World = pImpl->m_SmDrawObject.m_MatrixVec[i];
-			//転置する
-			World.transpose();
-			matrices[i] = World;
-		}
-		//アンマップ
-		pID3D11DeviceContext->Unmap(pImpl->m_SmDrawObject.m_MatrixBuffer.Get(), 0);
+未定義
 */
 	}
 
@@ -1715,16 +1655,7 @@ namespace basecross {
 */
 	void SmBaseDraw::GetStaticMeshLocalPositions(vector<bsm::Vec3>& vertices) {
 /*
-		auto ReshRes = GetMeshResource();
-		if (!ReshRes) {
-			throw BaseException(
-				L"メッシュリソースがありません",
-				L"if (!ReshRes)",
-				L"SmBaseDraw::GetStaticMeshLocalPositions()"
-			);
-		}
-		vertices.clear();
-		ReshRes->GetLocalPositions(vertices);
+未定義
 */
 	}
 
@@ -1765,44 +1696,7 @@ namespace basecross {
 
 	void SmBaseDraw::GetSkinedMeshLocalPositions(vector<bsm::Vec3>& vertices) {
 /*
-		if (GetVecLocalBones().size() == 0) {
-			throw BaseException(
-				L"ボーン行列がありません",
-				L"if (GetVecLocalBones().size() == 0)",
-				L"SmBaseDraw::GetSkinedMeshLocalPositions()"
-			);
-		}
-		auto ReshRes = GetMeshResource();
-		if (!ReshRes) {
-			throw BaseException(
-				L"メッシュリソースがありません",
-				L"if (!ReshRes)",
-				L"SmBaseDraw::GetSkinedMeshLocalPositions()"
-			);
-		}
-		vertices.clear();
-		auto& Bones = GetVecLocalBones();
-		auto& PosVec = ReshRes->GetVerteces();
-		auto& SkinVec = ReshRes->GetSkins();
-		for (auto& v : PosVec) {
-			vertices.push_back(v.position);
-		}
-		//スキニング処理
-		for (size_t j = 0; j < vertices.size(); j++) {
-			bsm::Mat4x4 skinning(0);
-			for (size_t i = 0; i < 4; i++)
-			{
-				skinning += Bones[SkinVec[j].indices[i]] * SkinVec[j].weights[i];
-			}
-			skinning._14 = 1.0f;
-			skinning._24 = 1.0f;
-			skinning._34 = 1.0f;
-			skinning._44 = 1.0f;
-			bsm::Vec4 p(vertices[j]);
-			p.w = 1.0f;
-			p *= skinning;
-			vertices[j] = p;
-		}
+未定義
 */
 	}
 
