@@ -289,7 +289,9 @@ namespace basecross {
 				ParWorld.scaleIdentity();
 				pImpl->m_WorldMatrix *= ParWorld;
 			}
-			pImpl->m_DirtyFlg = false;
+			else {
+				pImpl->m_DirtyFlg = false;
+			}
 		}
 		return pImpl->m_WorldMatrix;
 	}
