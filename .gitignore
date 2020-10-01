@@ -1,6 +1,12 @@
 *.user
 *.aps
+*.lib
+*.dll
+*.pdb
+*.cso
 /Libs/lib/
 /**/Temp/
-/**/media/Shaders/
+/**/Debug/
+/**/Release/
 /**/.vs/
+.vs/
