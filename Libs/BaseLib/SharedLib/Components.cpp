@@ -387,11 +387,16 @@ namespace basecross {
 		pImpl->m_BeforePosition = pImpl->m_Position;
 	}
 
-	bsm::Vec3 Transform::GetForword() const {
+	bsm::Vec3 Transform::GetForward() const {
 		bsm::Vec3 ret = GetWorldMatrix().rotZInMatrix();
 		ret.normalize();
 		return ret;
 	}
+
+	bsm::Vec3 Transform::GetForword() const {
+		return GetForward();
+	}
+
 
 	bsm::Vec3 Transform::GetUp() const {
 		bsm::Vec3 ret = GetWorldMatrix().rotYInMatrix();
