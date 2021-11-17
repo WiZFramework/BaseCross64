@@ -44,7 +44,7 @@ https://wizframework.github.io/Documents/img/yy.png
 　それでは末永くよろしくお願いします。  
 
 　また、付属している「DirectXTex」は、米国マイクロソフト社の製品です。  
-　詳しくは
+　詳しくは  
 　https://github.com/microsoft/DirectXTex  
 　を参照ください。
   
