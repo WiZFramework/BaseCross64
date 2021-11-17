@@ -42,6 +42,11 @@ https://wizframework.github.io/Documents/img/yy.png
   
 　なおライセンスは「MITライセンス」となります。改変など自由ですが、くれぐれもご自分の責任においてお使いください。  
 　それでは末永くよろしくお願いします。  
+
+　また、付属している「DirectXTex」は、米国マイクロソフト社の製品です。  
+　詳しくは
+　https://github.com/microsoft/DirectXTex  
+　を参照ください。
   
 　　　　　　　　　　　　　　　　　　　　　2019年9月　山ノ井　靖（WiZゲーム科非常勤講師：C++担当）  
 
