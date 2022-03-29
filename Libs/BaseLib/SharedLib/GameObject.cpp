@@ -1416,6 +1416,22 @@ namespace basecross {
 		App::GetApp()->ClearMovie();
 	}
 
+
+	//--------------------------------------------------------------------------------------
+	///	デバッグ文字列用のゲームオブジェクト
+	//--------------------------------------------------------------------------------------
+	DebugString::DebugString(const shared_ptr<Stage>& StagePtr):
+		GameObject(StagePtr)
+	{}
+	DebugString::~DebugString(){}
+	void DebugString::OnCreate() {
+		//文字列をつける
+		auto ptrString = AddComponent<StringSprite>();
+		ptrString->SetText(L"");
+		ptrString->SetTextRect(Rect2D<float>(16.0f,16.0f,1200.0f,720.0f));
+	}
+
+
 	//--------------------------------------------------------------------------------------
 	//	struct SceneBase::Impl;
 	//	用途: Implイディオム

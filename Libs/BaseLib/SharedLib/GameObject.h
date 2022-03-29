@@ -2007,19 +2007,29 @@ namespace basecross {
 		unique_ptr<Impl> pImpl;
 	};
 
+	//--------------------------------------------------------------------------------------
+	///	デバッグ文字列用のゲームオブジェクト
+	//--------------------------------------------------------------------------------------
+	class DebugString : public GameObject
+	{
+	public:
+		DebugString(const shared_ptr<Stage>& StagePtr);
+		virtual ~DebugString();
+		virtual void OnCreate() override;
+	};
 
 	//--------------------------------------------------------------------------------------
 	///	シーン親クラス
 	//--------------------------------------------------------------------------------------
 	class SceneBase :public SceneInterface {
 		void SetActiveStage(const shared_ptr<Stage>& stage);
-
 		void ConvertVertex(const vector<VertexPositionNormalTexture>& vertices,
 			vector<VertexPositionColor>& new_pc_vertices,
 			vector<VertexPositionNormal>& new_pn_vertices,
 			vector<VertexPositionTexture>& new_pt_vertices,
 			vector<VertexPositionNormalTangentTexture>& new_pntnt_vertices
 		);
+		wstring m_DebugString;
 	protected:
 		SceneBase();
 		virtual ~SceneBase();
@@ -2092,6 +2102,9 @@ namespace basecross {
 				);
 			}
 			SetActiveStage(StagePtr);
+			//デバッグ用文字列
+			auto dbgPtr = StagePtr->AddGameObject<DebugString>();
+			StagePtr->SetSharedGameObject(L"DebugString", dbgPtr);
 			return Ptr;
 		}
 		//--------------------------------------------------------------------------------------
@@ -2122,6 +2135,29 @@ namespace basecross {
 			SetActiveStage(StagePtr);
 			return Ptr;
 		}
+		wstring GetDebugString() const {
+			return m_DebugString;
+		}
+		void SetDebugString(const wstring& str) {
+			m_DebugString = str;
+			auto st = GetActiveStage();
+			auto ptrTarget = st->GetSharedObject(L"DebugString");
+			if (ptrTarget) {
+				auto strComp = ptrTarget->GetComponent<StringSprite>();
+				strComp->SetText(m_DebugString);
+			}
+		}
+		shared_ptr<StringSprite> GetDebugStringSprite() {
+			auto st = GetActiveStage();
+			auto ptrTarget = st->GetSharedObject(L"DebugString");
+			if (ptrTarget) {
+				return ptrTarget->GetComponent<StringSprite>();
+			}
+			else {
+				return nullptr;
+			}
+		}
+
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	シーンを変化させる
