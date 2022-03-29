@@ -2138,9 +2138,22 @@ namespace basecross {
 			StagePtr->SetSharedGameObject(L"DebugString", dbgPtr);
 			return Ptr;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デバッグ文字列を得る
+		@return	デバッグ文字列
+		*/
+		//--------------------------------------------------------------------------------------
 		wstring GetDebugString() const {
 			return m_DebugString;
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デバッグ文字列を設定する
+		@param[in]	str	文字列
+		@return	なし
+		*/
+		//--------------------------------------------------------------------------------------
 		void SetDebugString(const wstring& str) {
 			m_DebugString = str;
 			auto st = GetActiveStage();
@@ -2150,6 +2163,12 @@ namespace basecross {
 				strComp->SetText(m_DebugString);
 			}
 		}
+		//--------------------------------------------------------------------------------------
+		/*!
+		@brief	デバッグ文字列用のStringSpriteコンポーネントを得る
+		@return	StringSpriteコンポーネント
+		*/
+		//--------------------------------------------------------------------------------------
 		shared_ptr<StringSprite> GetDebugStringSprite() {
 			auto st = GetActiveStage();
 			auto ptrTarget = st->GetSharedObject(L"DebugString");
@@ -2160,7 +2179,6 @@ namespace basecross {
 				return nullptr;
 			}
 		}
-
 		//--------------------------------------------------------------------------------------
 		/*!
 		@brief	シーンを変化させる
