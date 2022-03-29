@@ -2133,6 +2133,9 @@ namespace basecross {
 				);
 			}
 			SetActiveStage(StagePtr);
+			//デバッグ用文字列
+			auto dbgPtr = StagePtr->AddGameObject<DebugString>();
+			StagePtr->SetSharedGameObject(L"DebugString", dbgPtr);
 			return Ptr;
 		}
 		wstring GetDebugString() const {
