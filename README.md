@@ -7,7 +7,10 @@
 https://github.com/WiZFramework/BaseCross  
   
 ＊「BaseCross64」の開発環境はVisualStudio2017、2019、x64です。  
-＊基本エンジンは、Dx11およびDx12です（Dx12の場合は実装が完全ではありません）。  
+＊基本エンジンは、Dx11です  
+　Dx12版は  
+https://github.com/yasyamanoi/BaseCrossDx12.git  
+　を参照ください。  
 ＊SDKのバージョンはVS2017はWindows10SDK（SDKバージョン「10.0.17134.0」以降）です。VS2019に関しては、常に最新のSDKが使われるのでVisualStudioの更新を常に行っていれば問題ありません。  
 　つまりは（VS2017にせよVS2019にせよ）VisualStudioの状態を常に最新にしておけば、問題にはなりません。  
 ＊「BaseCross」が32ビット（Win32）だったのに対して、「BaseCross64」は64ビット環境となります。  
@@ -16,16 +19,8 @@ https://github.com/WiZFramework/BaseCross
 https://wizframework.github.io/BaseCross64/  
 
   
-　DirectX12も、少しずつですが、本家（マイクロソフト社）のサンプルも充実してきて、フレームワークも作成しやすい環境が整いつつあります。  
-　ですが、なかなかネイティブで動作するマシンも追いつくのがやっとというのが現状かと思います。  
-　ゲーム専用のマシンならともかく、ビジネス用のマシンでは、もう少し時間がかかりそうです。  
-  
-　というわけで、少し気長にかまえながらフレームワークの作成をはじめたいと思います。  
-　とりあえずの目標としましては「BaseCross」の持っている機能は一通り、Dx11、Dx12対応しつつ、「BaseCross」の使いにくい部分を修正していきたいと思います。  
-　「BaseCross」が「Dx11の場合はSDK8.1、Dx12の場合はWin10SDK」とちょっと入り組んだ環境だったのですが「BaseCross64」では「Dx11、Dx12いずれもWin10SDKの64ビット」とスッキリしましたので、「Dx12向けのフルバージョン」も実装できるかと思います。  
-  
 　「BaseCross64」のダウンロード方法は、この文書が表示されているページの、右側にあります、「DownloadZIP」のボタンをクリックして、パソコン等にダウンロードしてください。  
-　zipでダウンロードした場合は、zipの状態で「プロパティ」でセキュリティの設定を外してください。こうしないとVisualStudio2017が正常にビルドできない場合があります。  
+　zipでダウンロードした場合は、zipの状態で「プロパティ」でセキュリティの設定を外してください。こうしないとVisualStudioが正常にビルドできない場合があります。  
 　もしくはレポジトリをSourceTreeなどでクローンしておくのも手です。こうしておくと、「プロパティ」の設定は必要ないばかりではなく、定期的にPULLしておくことで最新の状態を保つことができます。  
   
 　更新や追加情報はfacebookにて紹介いたします。  
@@ -39,6 +34,9 @@ https://wizframework.github.io/Documents/img/yy.png
 2018年11月5日　基本機能実装（一部Dx11のみ）  
 2019年6月12日　VS2019対応  
 2019年9月16日　GitHub Pages　docsディレクトリ公開に変更  
+2022年7月6日　Dx12版を削除。Dx12版は  
+https://github.com/yasyamanoi/BaseCrossDx12.git  
+　を参照ください。  
   
 　なおライセンスは「MITライセンス」となります。改変など自由ですが、くれぐれもご自分の責任においてお使いください。  
 　それでは末永くよろしくお願いします。  
@@ -48,7 +46,7 @@ https://wizframework.github.io/Documents/img/yy.png
 　https://github.com/microsoft/DirectXTex  
 　を参照ください。
   
-　　　　　　　　　　　　　　　　　　　　　2019年9月　山ノ井　靖（WiZゲーム科非常勤講師：C++担当）  
+　　　　　　　　　　　　　　　　　　　　　2022年7月　山ノ井　靖（WiZゲーム科非常勤講師：C++担当）  
 
 
 
